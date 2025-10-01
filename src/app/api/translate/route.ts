@@ -7,8 +7,8 @@ function SysTranslatePrompt(languageConfig: LanguageConfig){
 
 // Minimal request body type
 type Body = {
-  content?: string;
-  languageConfig?: LanguageConfig;
+  content: string;
+  languageConfig: LanguageConfig;
 };
 
 export async function POST(request: NextRequest) {
