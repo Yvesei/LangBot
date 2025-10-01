@@ -1,103 +1,182 @@
-import Image from "next/image";
+"use client"
+import { useState, useRef, useEffect } from "react";
+import { send } from "@/lib/api/index";
+import { ChatMessage, ConversationContext } from "@/lib/types";
+import { ChatHeader } from "@/components/ui/chat/ChatHeader";
+import { ChatInput } from "@/components/ui/chat/ChatInput";
+import { Message } from "@/components/ui/chat/Message";
+import { LoadingIndicator } from "@/components/ui/indicators/LoadingIndicator";
+import { ErrorDisplay } from "@/components/ui/states/ErrorDisplay";
+import { EmptyState } from "@/components/ui/states/EmptyState";
+import { TopicsPanel } from "@/components/ui/panels/TopicsPanel";
+import { setLanguageConfig } from "@/lib/config/language";
+import { LanguageConfig } from "@/lib/types/language";
 
-export default function Home() {
+export default function Page() {
+  const [prompt, setPrompt] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [context, setContext] = useState<ConversationContext>({
+    messages: [],
+    learningLanguage: 'English',
+    userLevel: 'beginner',
+    topicsDiscussed: [],
+    commonMistakes: []
+  });
+  const [languageSelected, setLanguageSelected] = useState(false);
+
+  const handleLanguageSelect = (config: LanguageConfig) => {
+    setLanguageConfig(config);
+    setLanguageSelected(true);
+  };
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Wait a tick for DOM update, then scroll
+    const el = messagesEndRef.current;
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [messages, loading]);
+  
+  useEffect(() => {
+    setContext(prev => ({
+      ...prev,
+      messages: messages
+    }));
+  }, [messages]);
+
+  async function handleSend() {
+    const trimmedPrompt = prompt.trim();
+    if (!trimmedPrompt || loading) return;
+
+    setPrompt('');
+    setError(null);
+    setLoading(true);
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: trimmedPrompt,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+
+    try {
+      const response = await send(trimmedPrompt, messages, context);
+
+      if (response.success) {
+        const aiMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: response.message,
+          timestamp: new Date()
+        };
+
+        setMessages(prev => [...prev, aiMessage]);
+        updateLearningContext(trimmedPrompt, response.message);
+      } else {
+        setError(response.error || 'Failed to get response');
+      }
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+      console.error('Chat error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function updateLearningContext(userInput: string, aiResponse: string) {
+    setContext(prev => {
+      const newContext = { ...prev };
+      
+      const topics = extractTopics(userInput);
+      topics.forEach(topic => {
+        if (!newContext.topicsDiscussed?.includes(topic)) {
+          newContext.topicsDiscussed = [...(newContext.topicsDiscussed || []), topic];
+        }
+      });
+      
+      if (aiResponse.includes('correct') || aiResponse.includes('should be') || aiResponse.includes('instead of')) {
+        const mistake = userInput.toLowerCase();
+        if (!newContext.commonMistakes?.includes(mistake)) {
+          newContext.commonMistakes = [...(newContext.commonMistakes || []), mistake];
+        }
+      }
+      
+      return newContext;
+    });
+  }
+
+  function extractTopics(text: string): string[] {
+    const topicKeywords = {
+      food: ['eat', 'restaurant', 'cook', 'dinner', 'lunch', 'breakfast'],
+      travel: ['trip', 'vacation', 'country', 'airport', 'hotel'],
+      work: ['job', 'office', 'meeting', 'colleague', 'boss'],
+      hobbies: ['hobby', 'interest', 'sport', 'music', 'movie'],
+      family: ['family', 'parent', 'child', 'brother', 'sister']
+    };
+    
+    const topics: string[] = [];
+    const lowerText = text.toLowerCase();
+    
+    Object.entries(topicKeywords).forEach(([topic, keywords]) => {
+      if (keywords.some(keyword => lowerText.includes(keyword))) {
+        topics.push(topic);
+      }
+    });
+    
+    return topics;
+  }
+
+  function clearChat() {
+    setMessages([]);
+    setError(null);
+    setContext({
+      messages: [],
+      learningLanguage: 'English',
+      userLevel: 'beginner', 
+      topicsDiscussed: [],
+      commonMistakes: []
+    });
+  }
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="relative flex flex-col h-screen bg-white dark:bg-gray-900">
+      <ChatHeader />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-3xl px-4 py-6">
+          {messages.length === 0 ? (
+            <EmptyState onLanguageSelect={handleLanguageSelect}/>
+          ) : (
+            <>
+              <TopicsPanel topics={context.topicsDiscussed} onClearChat={clearChat} />
+              
+              <div className="space-y-6">
+                {messages.map((message) => (
+                  <Message key={message.id} message={message} />
+                ))}
+              </div>
+            </>
+          )}
+          
+          {loading && <LoadingIndicator />}
+          {error && <ErrorDisplay error={error} />}
+          <div ref={messagesEndRef} />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+
+      <ChatInput 
+        prompt={prompt}
+        setPrompt={setPrompt}
+        loading={loading}
+        onSend={handleSend}
+        disabled={!languageSelected}
+      />
     </div>
   );
 }
