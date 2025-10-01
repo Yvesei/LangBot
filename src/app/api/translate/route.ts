@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { LanguageConfig } from '@/lib/types/index';
 
-function SysTranslatePrompt(languageConfig: any){
+function SysTranslatePrompt(languageConfig: LanguageConfig){
   return `You are a translator, you speacialize in ${languageConfig.targetLanguage} to ${languageConfig.nativeLanguage}. Translate the user's text  exactly and reply ONLY with the translated text — no explanations, no extra commentary, keep the same format of the text.`
 }
 
 // Minimal request body type
 type Body = {
   content?: string;
-  languageConfig?: { targetLanguage: string; nativeLanguage: string; };
+  languageConfig?: LanguageConfig;
 };
 
 export async function POST(request: NextRequest) {
