@@ -6,7 +6,7 @@ import { Mic, Plus } from "lucide-react";
  * - maxPx matches your Tailwind max-h (200px).
  * - call it with the textarea ref and the current value (prompt).
  */
-function useAutoResizeTextarea(ref: React.RefObject<HTMLTextAreaElement>, value: string, maxPx = 200) {
+function useAutoResizeTextarea(ref: React.RefObject<HTMLTextAreaElement | null>, value: string, maxPx = 200) {
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
