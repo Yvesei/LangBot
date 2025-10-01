@@ -513,6 +513,7 @@ npm test
 ```
 
 ## 🗺️ Roadmap
+- [ ] add tests
 - [ ] user input validation and safe output parsing
 - [ ] CI/CD
 - [ ] VERCEL Analytics
