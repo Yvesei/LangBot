@@ -146,7 +146,7 @@ graph TB
 ### Prerequisites
 
 - Node.js 18+ 
-- npm or yarn
+- pnpm
 - Mistral AI API key
 
 ### Installation
@@ -159,7 +159,7 @@ cd LangBot
 
 2. Install dependencies:
 ```bash
-npm install
+pnpm install
 ```
 
 3. Create a `.env.local` file in the root directory:
@@ -169,7 +169,7 @@ MISTRAL_API_KEY=your_mistral_api_key_here
 
 4. Run the development server:
 ```bash
-npm run dev
+pnpm dev
 ```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
@@ -509,7 +509,7 @@ interface ConversationContext {
 
 Run tests:
 ```bash
-npm test
+pnpm test
 ```
 
 ## 🗺️ Roadmap
