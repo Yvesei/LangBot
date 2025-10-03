@@ -24,6 +24,10 @@ export function Message({ message }: { message: ChatMessage }) {
     ? (showCorrection && correctedContent ? correctedContent : message.content)
     : (showTranslation && translation ? translation : message.content);
 
+
+  // handle delete
+  const [isDeleted, setIsDeleted] = useState(false);
+
   // Handle translation
   const handleTranslate = async () => {
     if (translation) {
@@ -79,24 +83,28 @@ export function Message({ message }: { message: ChatMessage }) {
     }
   };
 
+  const handleDelete = async () => {
+    setIsDeleted(true);
+  }
+
   // Handle copy
   const handleCopy = async () => {
+    console.log(navigator.clipboard);
+    console.log(navigator.clipboard?.writeText);
     if (navigator.clipboard && navigator.clipboard.writeText) {
       try {
         await navigator.clipboard.writeText(displayContent);
-        console.log("Copied to clipboard!");
       } catch (err) {
         console.error("Failed to copy: ", err);
       }
     } else {
-      // Fallback
+      // Fallback for local dev environment without HTTPS
       const textarea = document.createElement("textarea");
       textarea.value = displayContent;
       document.body.appendChild(textarea);
       textarea.select();
       document.execCommand("copy");
       document.body.removeChild(textarea);
-      console.log("Copied with fallback!");
     }
   };
 
@@ -115,7 +123,7 @@ export function Message({ message }: { message: ChatMessage }) {
   };
 
   return (
-    <div className={`group flex ${isUser ? "justify-end" : "justify-start"}`}>
+    <div className={`group flex ${isUser ? "justify-end" : "justify-start"} ${isDeleted ? 'hidden' : ''}`}>
       {!isUser && (
         <div className="flex-shrink-0">
           <div className="w-7 mt-4 h-7 bg-gradient-to-br from-blue-500 to-purple-600 rounded-md flex items-center justify-center">
@@ -174,6 +182,9 @@ export function Message({ message }: { message: ChatMessage }) {
               >
                 <Copy className="w-4 h-4" />
               </button>
+              <button onClick={handleDelete} className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors">
+                <Trash className="w-4 h-4" />
+              </button>
             </>
           ) : (
             <>
@@ -184,7 +195,7 @@ export function Message({ message }: { message: ChatMessage }) {
               >
                 <ScanLine className={`w-4 h-4 ${isCorrecting ? 'animate-pulse' : ''}`} />
               </button>
-              <button className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors">
+              <button onClick={handleDelete} className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors">
                 <Trash className="w-4 h-4" />
               </button>
               <button 
