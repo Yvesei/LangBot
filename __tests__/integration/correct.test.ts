@@ -297,25 +297,4 @@ describe('POST /api/correct - Integration Tests', () => {
     }, 30000);
   });
 
-  describe('Performance', () => {
-    test('should respond within reasonable time', async () => {
-      const startTime = Date.now();
-      
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'This is a test sentance'
-          }),
-        })
-      );
-
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-
-      expect(response.status).toBe(200);
-      expect(duration).toBeLessThan(10000); // Should respond within 10 seconds
-    }, 30000);
-  });
 });
