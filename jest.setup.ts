@@ -8,6 +8,10 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 const MIN_INTERVAL_MS = Number(process.env.TEST_MIN_INTERVAL_MS || 1500);
 let lastCall = 0;
 
+declare global {
+  var rateCall: <T>(fn: () => Promise<T>) => Promise<T>;
+}
+
 // helper that enforces a delay between API calls
 global.rateCall = async function rateCall<T>(fn: () => Promise<T>): Promise<T> {
   const now = Date.now();
