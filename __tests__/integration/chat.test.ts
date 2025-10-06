@@ -247,7 +247,7 @@ describe('POST /api/chat - Integration Tests', () => {
 
       // Should either succeed or fail gracefully, not crash
       expect([200, 400, 500]).toContain(response.status);
-    }), 30000;
+    }, 30000);
 
     test('should handle missing history gracefully', async () => {
       const response = await global.rateCall(() =>
