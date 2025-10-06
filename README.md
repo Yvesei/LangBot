@@ -556,6 +556,31 @@ To run a specific test file (e.g., `chat.test.ts`):
 pnpm run test __tests__/integration/chat.test.ts  
 ```
 
+## CI/CD Pipeline
+
+This project uses GitHub Actions for continuous integration and deployment to Vercel.
+
+### Workflow Overview
+
+**On Pull Requests:**
+- Runs unit tests, builds the app, and runs integration tests
+- Deploys to Vercel preview environment
+- Posts preview URL as a PR comment for review
+
+**On Main Branch (after merge):**
+- Runs the full test suite
+- Automatically deploys to production on Vercel
+
+### Required Secrets
+
+Add these in **Settings → Secrets and variables → Actions**:
+
+- `VERCEL_TOKEN` - Authentication token from Vercel dashboard
+- `VERCEL_ORG_ID` - Found in `.vercel/project.json` after running `vercel link`
+- `VERCEL_PROJECT_ID` - Also in `.vercel/project.json`
+- `MISTRAL_API_KEY` - API key for Mistral AI
+- `TEST_MIN_INTERVAL_MS` - Minimum interval for rate-limited tests
+
 ## 🗺️ Roadmap
 - [x] add tests
 - [x] CI/CD
