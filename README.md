@@ -558,7 +558,7 @@ pnpm run test __tests__/integration/chat.test.ts
 
 ## 🗺️ Roadmap
 - [x] add tests
+- [x] CI/CD
 - [ ] user input validation and safe output parsing
-- [ ] CI/CD
 - [ ] User authentication
 - [ ] Voice input/output
