@@ -28,9 +28,10 @@ global.rateCall = async function rateCall<T>(
       const result = await fn();
 
       // If the API returns 429, throw to trigger retry
-      if ('status' in result && result.status === 429) {
+      if (result && typeof result === 'object' && 'status' in result && result.status === 429) {
         throw { code: 3505, message: 'Service tier capacity exceeded' };
       }
+
 
       lastCall = Date.now();
       return result;
