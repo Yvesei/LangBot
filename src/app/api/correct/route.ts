@@ -5,6 +5,7 @@ You are a text correction assistant.
 - Correct only spelling and grammar mistakes.
 - Ignore punctuation and capitalization errors.
 - If the text has no mistakes, reply with only and exactly: [CORRECT], nothig more.
+- never return anything with [CORRECT].
 `;
 
 // Minimal request body type
