@@ -7,8 +7,8 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest --passWithNoTests",                        
-    "test:watch": "jest --watch",                            
+    "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch",
     "test:unit": "jest __tests__/unit/*",
     "test:integration": "jest __tests__/integration/* --runInBand",
     "test:coverage": "jest --coverage"
@@ -42,6 +42,7 @@
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5",
-    "undici": "^7.16.0"
+    "undici": "^7.16.0",
+    "vercel": "^48.2.1"
   }
 }

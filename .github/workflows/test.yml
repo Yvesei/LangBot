@@ -1,4 +1,4 @@
-name: Run Tests
+name: CI
 
 on:
   push:
@@ -77,3 +77,77 @@ jobs:
             kill $(cat server.pid) || true
             rm server.pid
           fi
+          
+  # JOB 2: DEPLOY PREVIEW     
+  deploy-preview:
+      if: github.event_name == 'pull_request'
+      needs: test
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Deploy to Vercel Preview
+          uses: amondnet/vercel-action@v25
+          id: vercel-deploy
+          with:
+            vercel-token: ${{ secrets.VERCEL_TOKEN }}
+            vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+            vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+            scope: ${{ secrets.VERCEL_ORG_ID }}
+
+        - name: Comment Preview URL on PR
+          uses: actions/github-script@v7
+          with:
+            script: |
+              const previewUrl = '${{ steps.vercel-deploy.outputs.preview-url }}';
+              const comment = `## 🚀 Preview Deployment Ready!
+              
+              **Preview URL:** ${previewUrl}
+              
+              ✅ All tests passed
+              📦 Built with commit: ${context.sha.substring(0, 7)}`;
+
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+              });
+
+              const botComment = comments.find(comment => 
+                comment.user.type === 'Bot' && 
+                comment.body.includes('Preview Deployment Ready')
+              );
+
+              if (botComment) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                  body: comment
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: comment
+                });
+              }
+
+deploy-production:
+  if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  needs: test
+  runs-on: ubuntu-latest
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Vercel Production
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+        vercel-args: '--prod'
+        scope: ${{ secrets.VERCEL_ORG_ID }}
