@@ -237,7 +237,7 @@ sequenceDiagram
 - Uses the language configuration set at startup
 
 ![original message (before translation)](./imgs/before_translation.png)
-![Translated message (after translation)](./imgs/translation.gif)
+![Translated message (before translation)](./imgs/translation.gif)
 
 
 #### Grammar Correction
@@ -523,9 +523,37 @@ interface ConversationContext {
 
 ## 🧪 Testing
 
-Run tests:
+All tests are located in the `__tests__` directory, organized into **unit** and **integration** categories:
+```
+├── __tests__  
+│   ├── integration  
+│   │   ├── chat.test.ts  
+│   │   ├── correct.test.ts  
+│   │   └── translate.test.ts  
+│   └── unit  
+│       ├── chat.test.ts  
+│       ├── correct.test.ts  
+│       └── translate.test.ts  
+```
+### 🧩 Test Structure
+- **Unit tests** focus on individual modules and functions.  
+- **Integration tests** validate how multiple components interact (for example, API routes or service integrations).  
+
+### 🚀 Running Tests
+You can execute tests using **pnpm** commands defined in `package.json`:
+
+- `pnpm run test` — Runs all Jest tests (passes even if no tests are found).  
+- `pnpm run test:unit` — Runs only the unit tests located in `__tests__/unit/`.  
+- `pnpm run test:integration` — Runs only the integration tests located in `__tests__/integration/`.  
+
+### ✅ Example Usage
+To run all integration tests:  
 ```bash
-pnpm test
+pnpm run test:integration  
+```
+To run a specific test file (e.g., `chat.test.ts`):  
+```bash
+pnpm run test __tests__/integration/chat.test.ts  
 ```
 
 ## 🗺️ Roadmap
