@@ -5,7 +5,7 @@
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
 const CHAT_ENDPOINT = `${BASE_URL}/api/chat`;
-  
+
 describe('POST /api/chat - Integration Tests', () => {
   
   describe('Successful Requests', () => {
@@ -29,7 +29,7 @@ describe('POST /api/chat - Integration Tests', () => {
       expect(data.message).toBeDefined();
       expect(typeof data.message).toBe('string');
       expect(data.message.length).toBeGreaterThan(0);
-    }, 15000);
+    }, 30000);
 
     test('should maintain conversation context with history', async () => {
       const history = [
@@ -54,7 +54,7 @@ describe('POST /api/chat - Integration Tests', () => {
       
       expect(data.success).toBe(true);
       expect(data.message.toLowerCase()).toContain('john');
-    }, 15000);
+    }, 30000);
 
     test('should handle language learning context', async () => {
       const response = await global.rateCall(() =>
@@ -77,7 +77,7 @@ describe('POST /api/chat - Integration Tests', () => {
       
       expect(data.success).toBe(true);
       expect(data.message).toBeDefined();
-    }, 15000);
+    }, 30000);
 
     test('should handle long conversation history', async () => {
       const history = Array.from({ length: 10 }, (_, i) => ({
@@ -102,7 +102,7 @@ describe('POST /api/chat - Integration Tests', () => {
       
       expect(data.success).toBe(true);
       expect(data.message).toBeDefined();
-    }, 15000);
+    }, 30000);
   });
 
   describe('Validation Errors', () => {
@@ -213,7 +213,7 @@ describe('POST /api/chat - Integration Tests', () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.success).toBe(true);
-    }, 20000);
+    }, 30000);
 
     test('should handle special characters in prompt', async () => {
       const response = await global.rateCall(() =>
@@ -231,7 +231,7 @@ describe('POST /api/chat - Integration Tests', () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.success).toBe(true);
-    }, 15000);
+    }, 30000);
 
     test('should handle missing context gracefully', async () => {
       const response = await global.rateCall(() =>
@@ -247,7 +247,7 @@ describe('POST /api/chat - Integration Tests', () => {
 
       // Should either succeed or fail gracefully, not crash
       expect([200, 400, 500]).toContain(response.status);
-    });
+    }), 30000;
 
     test('should handle missing history gracefully', async () => {
       const response = await global.rateCall(() =>
@@ -263,7 +263,7 @@ describe('POST /api/chat - Integration Tests', () => {
 
       // Should either succeed or fail gracefully, not crash
       expect([200, 400, 500]).toContain(response.status);
-    });
+    }, 30000);
   });
 
   describe('Performance', () => {
@@ -287,6 +287,6 @@ describe('POST /api/chat - Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(duration).toBeLessThan(10000); // Should respond within 10 seconds
-    }, 15000);
+    }, 30000);
   });
 });

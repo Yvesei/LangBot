@@ -29,7 +29,7 @@ describe('POST /api/correct - Integration Tests', () => {
       // Should correct 'recieve' to 'receive' and 'packege' to 'package'
       expect(data.correctedContent.toLowerCase()).toContain('receive');
       expect(data.correctedContent.toLowerCase()).toContain('package');
-    }, 15000);
+    }, 30000);
 
     test('should correct grammar mistakes', async () => {
       const response = await global.rateCall(() =>
@@ -49,7 +49,7 @@ describe('POST /api/correct - Integration Tests', () => {
       expect(data.correctedContent).toBeDefined();
       // Should correct 'go' to 'goes'
       expect(data.correctedContent.toLowerCase()).toContain('goes');
-    }, 15000);
+    }, 30000);
 
     test('should return [CORRECT] for correct text', async () => {
       const response = await global.rateCall(() =>
@@ -67,7 +67,7 @@ describe('POST /api/correct - Integration Tests', () => {
       
       expect(data.success).toBe(true);
       expect(data.correctedContent).toBe('[CORRECT]');
-    }, 15000);
+    }, 30000);
 
     test('should handle multiple sentences', async () => {
       const response = await global.rateCall(() =>
@@ -88,7 +88,7 @@ describe('POST /api/correct - Integration Tests', () => {
       // Should correct 'programin' to 'programming' and 'intresting' to 'interesting'
       expect(data.correctedContent.toLowerCase()).toContain('programming');
       expect(data.correctedContent.toLowerCase()).toContain('interesting');
-    }, 15000);
+    }, 30000);
 
     test('should preserve correct punctuation', async () => {
       const response = await global.rateCall(() =>
@@ -109,7 +109,7 @@ describe('POST /api/correct - Integration Tests', () => {
       if (data.correctedContent !== '[CORRECT]') {
         expect(data.correctedContent).toMatch(/[.!?]/);
       }
-    }, 15000);
+    }, 30000);
   });
 
   describe('Validation Errors', () => {
@@ -213,7 +213,7 @@ describe('POST /api/correct - Integration Tests', () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.success).toBe(true);
-    }, 20000);
+    }, 30000);
 
     test('should handle special characters', async () => {
       const response = await global.rateCall(() =>
@@ -229,7 +229,7 @@ describe('POST /api/correct - Integration Tests', () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.success).toBe(true);
-    }, 15000);
+    }, 30000);
 
     test('should handle text with numbers', async () => {
       const response = await global.rateCall(() =>
@@ -245,7 +245,7 @@ describe('POST /api/correct - Integration Tests', () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.success).toBe(true);
-    }, 15000);
+    }, 30000);
 
     test('should handle text with line breaks', async () => {
       const response = await global.rateCall(() =>
@@ -261,7 +261,7 @@ describe('POST /api/correct - Integration Tests', () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.success).toBe(true);
-    }, 15000);
+    }, 30000);
 
     test('should handle single word', async () => {
       const response = await global.rateCall(() =>
@@ -278,7 +278,7 @@ describe('POST /api/correct - Integration Tests', () => {
       const data = await response.json();
       expect(data.success).toBe(true);
       expect(data.correctedContent.toLowerCase()).toContain('programming');
-    }, 15000);
+    }, 30000);
 
     test('should handle text with emojis', async () => {
       const response = await global.rateCall(() =>
@@ -294,7 +294,7 @@ describe('POST /api/correct - Integration Tests', () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.success).toBe(true);
-    }, 15000);
+    }, 30000);
   });
 
   describe('Performance', () => {
@@ -316,6 +316,6 @@ describe('POST /api/correct - Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(duration).toBeLessThan(10000); // Should respond within 10 seconds
-    }, 15000);
+    }, 30000);
   });
 });

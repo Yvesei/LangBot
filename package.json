@@ -10,7 +10,7 @@
     "test": "jest --passWithNoTests",                        
     "test:watch": "jest --watch",                            
     "test:unit": "jest __tests__/unit/*",
-    "test:integration": "jest __tests__/integration/*",
+    "test:integration": "jest __tests__/integration/* --runInBand",
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
