@@ -16,7 +16,13 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
+    # Set environment variables for all steps in this job
+    env:
+      NODE_ENV: production
+      MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+      TEST_MIN_INTERVAL_MS: ${{ secrets.TEST_MIN_INTERVAL_MS }}
+
     steps:
       # Checkout the repository code at the current commit
       - name: Checkout code
@@ -43,19 +49,15 @@ jobs:
       - name: Run unit tests
         run: pnpm run test:unit
 
-     # Build the Next.js application
+      # Build the Next.js application
       - name: Build Next.js app
         run: pnpm run build
-        env:
-          NODE_ENV: test  # Use test environment configuration
 
       # Start the server in the background for integration tests
       - name: Start server
         run: |
           pnpm run start &
           echo $! > server.pid
-        env:
-          NODE_ENV: test
 
       # Wait for the server to be fully ready before running tests
       - name: Wait for server to be ready
@@ -67,8 +69,6 @@ jobs:
       # Run integration tests
       - name: Run integration tests
         run: pnpm run test:integration
-        env:
-          NODE_ENV: test
 
       # stop the server
       - name: Stop server
@@ -78,15 +78,3 @@ jobs:
             kill $(cat server.pid) || true
             rm server.pid
           fi
-
-      # Upload test artifacts (coverage reports, test results) if tests fail
-      # Artifacts are kept for 7 days then automatically deleted
-      - name: Upload test results
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            coverage/
-            test-results/
-          retention-days: 7
