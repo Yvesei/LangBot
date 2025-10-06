@@ -19,7 +19,6 @@ jobs:
 
     # Set environment variables for all steps in this job
     env:
-      NODE_ENV: production
       MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
       TEST_MIN_INTERVAL_MS: ${{ secrets.TEST_MIN_INTERVAL_MS }}
 
