@@ -25,6 +25,15 @@ A Next.js-based AI-powered language learning application that helps users practi
 
 ```
 ├── README.md
+├── __tests__
+│   ├── integration
+│   │   ├── chat.test.ts
+│   │   ├── correct.test.ts
+│   │   └── tranlsate.test.ts
+│   └── unit
+│       ├── chat.test.ts
+│       ├── correct.test.ts
+│       └── translate.test.ts
 ├── imgs
 ├── public
 ├── src
@@ -227,9 +236,16 @@ sequenceDiagram
 - Messages can be translated between target and native languages
 - Uses the language configuration set at startup
 
+![original message (before translation)](./imgs/before_translation.png)
+![Translated message (after translation)](./imgs/translation.gif)
+
+
 #### Grammar Correction
 - Automatic detection of spelling and grammar mistakes
 - Returns `[CORRECT]` if no mistakes found
+
+![Original message (before correction)](./imgs/before_correction.png)
+![Corrected message (after correction)](./imgs/correction.gif)
 
 #### Topic Tracking
 - Automatically detects discussion topics (food, travel, work, hobbies, family)
@@ -513,9 +529,8 @@ pnpm test
 ```
 
 ## 🗺️ Roadmap
-- [ ] add tests
+- [x] add tests
 - [ ] user input validation and safe output parsing
 - [ ] CI/CD
-- [ ] VERCEL Analytics
 - [ ] User authentication
 - [ ] Voice input/output
