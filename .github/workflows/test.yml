@@ -1,0 +1,86 @@
+name: Run Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Cancel in-progress runs when a new run is triggered on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Checkout the repository code at the current commit
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Install pnpm package manager with a specific version
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      # Setup Node.js environment with caching enabled
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      # Install dependencies using the lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Run unit tests first
+      - name: Run unit tests
+        run: pnpm run test:unit
+
+      # Start the server in the background for integration tests
+      - name: Start server
+        run: |
+          pnpm run start &
+          echo $! > server.pid
+        env:
+          NODE_ENV: test
+
+      # Wait for the server to be fully ready before running tests
+      - name: Wait for server to be ready
+        run: |
+          echo "Waiting for server to start..."
+          timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
+          echo "Server is ready!"
+
+      # Run integration tests
+      - name: Run integration tests
+        run: pnpm run test:integration
+        env:
+          NODE_ENV: test
+
+      # stop the server
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) || true
+            rm server.pid
+          fi
+
+      # Upload test artifacts (coverage reports, test results) if tests fail
+      # Artifacts are kept for 7 days then automatically deleted
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            coverage/
+            test-results/
+          retention-days: 7
