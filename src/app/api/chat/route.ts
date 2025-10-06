@@ -69,8 +69,19 @@ function createContextualPrompt(context: ChatRequest['context'] = {}) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Parse request body
-    const body: ChatRequest = await request.json();
+    let body: ChatRequest;
+
+    try {
+      // Try to parse JSON
+      body = await request.json();
+    } catch (err) {
+      // If parsing fails, return 400
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON' },
+        { status: 400 }
+      );
+    }
+    
     const { prompt, history = [], context = {} } = body;
 
     // Input validation

@@ -14,7 +14,20 @@ type Body = {
 
 export async function POST(request: NextRequest) {
   try {
-    const body: Body = await request.json();
+    
+    let body: Body;
+
+    try {
+      // Try to parse JSON
+      body = await request.json();
+    } catch (err) {
+      // If parsing fails, return 400
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON' },
+        { status: 400 }
+      );
+    }
+
     const content = body?.content?.trim();
 
     if (!content) {
