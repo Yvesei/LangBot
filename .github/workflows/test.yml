@@ -43,6 +43,12 @@ jobs:
       - name: Run unit tests
         run: pnpm run test:unit
 
+     # Build the Next.js application
+      - name: Build Next.js app
+        run: pnpm run build
+        env:
+          NODE_ENV: test  # Use test environment configuration
+
       # Start the server in the background for integration tests
       - name: Start server
         run: |
