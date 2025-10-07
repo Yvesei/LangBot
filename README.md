@@ -63,6 +63,7 @@ A Next.js-based AI-powered language learning application that helps users practi
 │   │           ├── EmptyState.tsx
 │   │           └── ErrorDisplay.tsx
 │   └── lib
+│       ├── utils.ts
 │       ├── api
 │       │   ├── chat.ts
 │       │   ├── correct.ts
@@ -174,6 +175,8 @@ pnpm install
 3. Create a `.env.local` file in the root directory:
 ```env
 MISTRAL_API_KEY=your_mistral_api_key_here
+# 1 second delay test backend calls
+TEST_MIN_INTERVAL_MS=1000
 ```
 
 4. Run the development server:
@@ -190,45 +193,7 @@ pnpm dev
 1. **Select Languages**: On first load, choose your native language and target language
 2. **Start Chatting**: Begin practicing your target language with the AI tutor
 
-
-```mermaid
-sequenceDiagram
-  %% Application Initialization Flow
-  participant User as User
-  participant UI as "Next.js UI<br>(page.tsx)"
-  participant Empty as "EmptyState<br>Component"
-  participant LangCfg as "@/lib/config/language"
-  participant State as "State<br>(useState)"
-
-  User->>UI: Open application
-  activate UI
-
-  UI->>State: Initialize states<br>(messages, loading, context)
-  UI->>UI: Check languageSelected<br>(false)
-
-  UI->>Empty: Render EmptyState
-  activate Empty
-
-  Empty-->>User: Display language selection
-  deactivate Empty
-
-  User->>Empty: Select native & target languages
-  activate Empty
-
-  Empty->>UI: onLanguageSelect(config)
-  deactivate Empty
-
-  UI->>LangCfg: setLanguageConfig(config)
-  activate LangCfg
-  LangCfg->>LangCfg: Store language configuration
-  deactivate LangCfg
-
-  UI->>State: setLanguageSelected(true)
-  UI->>UI: Enable chat input
-
-  UI-->>User: Ready to chat
-  deactivate UI
-```
+![Getting started](./imgs/getting_started.png)
 
 ### Features Usage
 
@@ -429,46 +394,6 @@ Corrects spelling and grammar mistakes.
 }
 ```
 
-```mermaid
-sequenceDiagram
-  %% Application Initialization Flow
-  participant User as User
-  participant UI as "Next.js UI<br>(page.tsx)"
-  participant Empty as "EmptyState<br>Component"
-  participant LangCfg as "@/lib/config/language"
-  participant State as "State<br>(useState)"
-
-  User->>UI: Open application
-  activate UI
-
-  UI->>State: Initialize states<br>(messages, loading, context)
-  UI->>UI: Check languageSelected<br>(false)
-
-  UI->>Empty: Render EmptyState
-  activate Empty
-
-  Empty-->>User: Display language selection
-  deactivate Empty
-
-  User->>Empty: Select native & target languages
-  activate Empty
-
-  Empty->>UI: onLanguageSelect(config)
-  deactivate Empty
-
-  UI->>LangCfg: setLanguageConfig(config)
-  activate LangCfg
-  LangCfg->>LangCfg: Store language configuration
-  deactivate LangCfg
-
-  UI->>State: setLanguageSelected(true)
-  UI->>UI: Enable chat input
-
-  UI-->>User: Ready to chat
-  deactivate UI
-```
-
-
 
 ## 🎯 AI Tutor Behavior
 
@@ -525,15 +450,15 @@ interface ConversationContext {
 
 All tests are located in the `__tests__` directory, organized into **unit** and **integration** categories:
 ```
-├── __tests__  
-│   ├── integration  
-│   │   ├── chat.test.ts  
-│   │   ├── correct.test.ts  
-│   │   └── translate.test.ts  
-│   └── unit  
-│       ├── chat.test.ts  
-│       ├── correct.test.ts  
-│       └── translate.test.ts  
+__tests__  
+├── integration  
+│   ├── chat.test.ts  
+│   ├── correct.test.ts  
+│   └── translate.test.ts  
+└── unit  
+│   ├── chat.test.ts  
+│   ├── correct.test.ts  
+│   └── translate.test.ts  
 ```
 ### 🧩 Test Structure
 - **Unit tests** focus on individual modules and functions.  
