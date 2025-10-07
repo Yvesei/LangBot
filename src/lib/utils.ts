@@ -1,31 +1,29 @@
+export async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3) {
+  let lastError: Error | null = null;
 
-export async function fetchWithRetry(url, options, maxRetries = 3) {
-  let lastError;
-  
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const response = await fetch(url, options);
 
-      // If we get a 429, retry with exponential backoff
-      if (response.status === 429) {
-        if (attempt < maxRetries - 1) {
-          const waitTime = Math.min(1000 * Math.pow(2, attempt), 10000);
-          console.log(`Rate limited. Retrying in ${waitTime}ms... (attempt ${attempt + 1}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-          continue;
-        }
+      if (!response) {
+        throw new Error('No response received from server');
       }
 
-      // If response is not ok and not a 429, throw error
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      // Only retry on 429 (rate limit)
+      if (response.status === 429 && attempt < maxRetries - 1) {
+        const waitTime = Math.min(1000 * Math.pow(2, attempt), 10000);
+        console.log(`Rate limited. Retrying in ${waitTime}ms... (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
       }
 
-      // Success - return the response
+      // For any other response (success or error), return it
       return response;
 
     } catch (error) {
-      lastError = error;
+      // Only network errors (fetch threw an exception) end up here
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
       if (attempt < maxRetries - 1) {
         const waitTime = Math.min(1000 * Math.pow(2, attempt), 10000);
         console.log(`Request failed. Retrying in ${waitTime}ms... (attempt ${attempt + 1}/${maxRetries})`);
@@ -33,6 +31,6 @@ export async function fetchWithRetry(url, options, maxRetries = 3) {
       }
     }
   }
-  
-  throw new Error(`Failed after ${maxRetries} attempts: ${lastError.message}`);
+
+  throw new Error(`Failed after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`);
 }
