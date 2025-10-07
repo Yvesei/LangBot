@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LanguageConfig } from '@/lib/types/index';
+import { fetchWithRetry } from '@/lib/utils';
 
 function SysTranslatePrompt(languageConfig: LanguageConfig){
   return `You are a translator, you speacialize in ${languageConfig.targetLanguage} to ${languageConfig.nativeLanguage}. Translate the user's text  exactly and reply ONLY with the translated text — no explanations, no extra commentary, keep the same format of the text.`
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     console.log('/api/translate message : ', messages);
 
-    const resp = await fetch('https://api.mistral.ai/v1/chat/completions', {
+    const resp = await fetchWithRetry('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

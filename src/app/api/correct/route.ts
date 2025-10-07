@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchWithRetry } from '@/lib/utils';
 
 const CORRECTION_INSTRUCTIONS = `
 You are a text correction assistant.
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
       { role: 'user', content: content }
     ];
 
-    const resp = await fetch('https://api.mistral.ai/v1/chat/completions', {
+    const resp = await fetchWithRetry('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ChatRequest, MistralMessage } from '@/lib/types';
-
+import { fetchWithRetry } from '@/lib/utils';
 
 
 const LANGUAGE_LEARNING_PROMPTS = {
@@ -119,9 +119,8 @@ export async function POST(request: NextRequest) {
       }
     ];
 
-    console.log(messages)
     // Call Mistral API
-    const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+    const response = await fetchWithRetry('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
