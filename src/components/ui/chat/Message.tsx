@@ -5,10 +5,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck } from '@fortawesome/free-solid-svg-icons';
 import { translateMessage, correctMessage } from "@/lib/api/index";
 import { ChatMessage } from "@/lib/types";
+import { escapeHTML } from "@/lib/utils";
 
 export function Message({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
-  
+  message.content = escapeHTML(message.content);
+
   // State for translation
   const [translation, settranslation] = useState<string | null>(null);
   const [showTranslation, setShowTranslation] = useState(false);
@@ -122,6 +124,7 @@ export function Message({ message }: { message: ChatMessage }) {
     }
   };
 
+  
   return (
     <div className={`group flex ${isUser ? "justify-end" : "justify-start"} ${isDeleted ? 'hidden' : ''}`}>
       {!isUser && (

@@ -1,5 +1,6 @@
 import React, { useRef, useLayoutEffect } from "react";
 import { Mic, Plus } from "lucide-react";
+import DOMPurify from "dompurify";
 
 /**
  * Hook: auto-resize a textarea ref to its content.
@@ -37,6 +38,7 @@ export function ChatInput({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
+      prompt = DOMPurify.sanitize(prompt);
       onSend();
     }
   };

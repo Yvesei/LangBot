@@ -31,6 +31,20 @@ export async function fetchWithRetry(url: string, options: RequestInit, maxRetri
       }
     }
   }
+  
+  throw new Error(`Failed after ${maxRetries} attempts: ${lastError.message}`);
+}
 
-  throw new Error(`Failed after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`);
+
+
+export function escapeHTML(str: string): string {
+  return str.replace(/[&<>"']/g, function (match) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    }[match];
+  });
 }
