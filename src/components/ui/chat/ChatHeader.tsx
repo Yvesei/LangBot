@@ -1,4 +1,4 @@
-import { Plus, Star, Share2 } from "lucide-react";
+import { Plus, Github } from "lucide-react";
 
 export function ChatHeader() {
   return (
@@ -10,11 +10,8 @@ export function ChatHeader() {
         </button>
       </div>
       <div className="flex items-center gap-2">
-        <button className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors">
-          <Star className="w-5 h-5" />
-        </button>
-        <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors">
-          <Share2 className="w-4 h-4" />
+        <button onClick={() => window.open('https://github.com/Yvesei/LangBot', '_blank')} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors">
+          <Github className="w-4 h-4 bg-gray" />
         </button>
       </div>
     </div>
