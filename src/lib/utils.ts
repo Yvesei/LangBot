@@ -31,6 +31,6 @@ export async function fetchWithRetry(url: string, options: RequestInit, maxRetri
       }
     }
   }
-
-  throw new Error(`Failed after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`);
+  
+  throw new Error(`Failed after ${maxRetries} attempts: ${lastError ? lastError.message : 'Unknown error'}`);
 }

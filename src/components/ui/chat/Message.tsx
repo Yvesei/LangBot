@@ -8,7 +8,7 @@ import { ChatMessage } from "@/lib/types";
 
 export function Message({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
-  
+
   // State for translation
   const [translation, settranslation] = useState<string | null>(null);
   const [showTranslation, setShowTranslation] = useState(false);
@@ -122,6 +122,7 @@ export function Message({ message }: { message: ChatMessage }) {
     }
   };
 
+  
   return (
     <div className={`group flex ${isUser ? "justify-end" : "justify-start"} ${isDeleted ? 'hidden' : ''}`}>
       {!isUser && (
