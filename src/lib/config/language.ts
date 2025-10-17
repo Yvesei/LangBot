@@ -17,9 +17,27 @@ export function setLanguageConfig(config: LanguageConfig): void {
 }
 
 /**
- * Get the current language configuration
- * @returns Current language configuration
+ * Get language configuration from localStorage
+ * @returns Language configuration object or null if not set
  */
-export function getLanguageConfig(): LanguageConfig {
-  return languageConfig;
+export function getLanguageConfigFromStorage(): {
+  nativeLanguage: string;
+  targetLanguage: string;
+} | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const native = localStorage.getItem('langbot-native');
+  const target = localStorage.getItem('langbot-target');
+
+  if (!native || !target) {
+    return null;
+  }
+
+  return {
+    nativeLanguage: native,
+    targetLanguage: target
+  };
 }
+

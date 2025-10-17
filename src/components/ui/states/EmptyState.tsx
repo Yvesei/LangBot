@@ -1,10 +1,6 @@
 import { useState } from "react";
 import { Bot, Globe } from "lucide-react";
-
-interface LanguageConfig {
-  nativeLanguage: string;
-  targetLanguage: string;
-}
+import { LanguageConfig } from "@/lib/types/language";
 
 interface EmptyStateProps {
   onLanguageSelect: (config: LanguageConfig) => void;
@@ -26,9 +22,21 @@ const LANGUAGES = [
 ];
 
 export function EmptyState({ onLanguageSelect }: EmptyStateProps) {
-  const [nativeLanguage, setNativeLanguage] = useState('fr');
-  const [targetLanguage, setTargetLanguage] = useState('en');
   const [hasStarted, setHasStarted] = useState(false);
+    const [nativeLanguage, setNativeLanguage] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('langbot-native');
+      return saved || 'fr';
+    }
+    return 'fr';
+  });
+  const [targetLanguage, setTargetLanguage] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('langbot-target');
+      return saved || 'en';
+    }
+    return 'en';
+  });
 
   const handleStart = () => {
     if (nativeLanguage === targetLanguage) {
@@ -36,8 +44,12 @@ export function EmptyState({ onLanguageSelect }: EmptyStateProps) {
       return;
     }
     
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('langbot-native', nativeLanguage);
+      localStorage.setItem('langbot-target', targetLanguage);
+    }
+    
     onLanguageSelect({ nativeLanguage, targetLanguage });
-    console.log('Language configuration set:', { nativeLanguage, targetLanguage });
     setHasStarted(true);
   };
   

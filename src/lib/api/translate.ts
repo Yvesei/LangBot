@@ -1,4 +1,4 @@
-import { getLanguageConfig } from '../config/language';
+import { getLanguageConfigFromStorage } from '../config/language';
 
 /**
  * Translate a message using the translation API
@@ -21,7 +21,7 @@ export async function translateMessage(
       },
       body: JSON.stringify({ 
         content: content.trim(),
-        languageConfig: getLanguageConfig()
+        languageConfig: getLanguageConfigFromStorage()
       }),
     });
 
