@@ -1,21 +1,5 @@
 import { LanguageConfig } from '../types/language';
 
-// Store language configuration
-let languageConfig: LanguageConfig = {
-  nativeLanguage: 'en',
-  targetLanguage: 'fr'
-};
-
-
-/**
- * Set the language configuration for the session
- * @param config - Language configuration object
- */
-export function setLanguageConfig(config: LanguageConfig): void {
-  languageConfig = config;
-  console.log('Language configuration updated:', languageConfig);
-}
-
 /**
  * Get language configuration from localStorage
  * @returns Language configuration object or null if not set
@@ -34,10 +18,30 @@ export function getLanguageConfigFromStorage(): {
   if (!native || !target) {
     return null;
   }
+  
+  console.log('Retrieved language configuration from storage:', { native, target });
 
   return {
     nativeLanguage: native,
     targetLanguage: target
   };
+}
+
+
+/**
+ * Save language configuration to localStorage
+ * @param config - Language configuration object
+ */
+export function saveLanguageConfigToStorage(config: LanguageConfig): void {
+
+
+  if (config.nativeLanguage === config.targetLanguage) {
+    alert('Please select different languages for native and target.');
+    return;
+  }
+
+
+  localStorage.setItem('langbot-native', config.nativeLanguage);
+  localStorage.setItem('langbot-target', config.targetLanguage);
 }
 

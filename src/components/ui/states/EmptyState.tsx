@@ -4,6 +4,8 @@ import { LanguageConfig } from "@/lib/types/language";
 
 interface EmptyStateProps {
   onLanguageSelect: (config: LanguageConfig) => void;
+  hasStarted: boolean;
+  setHasStarted: (value: boolean) => void;
 }
 
 const LANGUAGES = [
@@ -21,34 +23,11 @@ const LANGUAGES = [
   { code: 'hi', name: 'Hindi' },
 ];
 
-export function EmptyState({ onLanguageSelect }: EmptyStateProps) {
-  const [hasStarted, setHasStarted] = useState(false);
-    const [nativeLanguage, setNativeLanguage] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('langbot-native');
-      return saved || 'fr';
-    }
-    return 'fr';
-  });
-  const [targetLanguage, setTargetLanguage] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('langbot-target');
-      return saved || 'en';
-    }
-    return 'en';
-  });
+export function EmptyState({ onLanguageSelect, hasStarted, setHasStarted }: EmptyStateProps) {
+  const [nativeLanguage, setNativeLanguage] = useState('fr');
+  const [targetLanguage, setTargetLanguage] = useState('en');
 
   const handleStart = () => {
-    if (nativeLanguage === targetLanguage) {
-      alert('Please select different languages for native and target.');
-      return;
-    }
-    
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('langbot-native', nativeLanguage);
-      localStorage.setItem('langbot-target', targetLanguage);
-    }
-    
     onLanguageSelect({ nativeLanguage, targetLanguage });
     setHasStarted(true);
   };

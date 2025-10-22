@@ -1,4 +1,5 @@
 import { ChatMessage, ChatResponse, ConversationContext } from "../types/index";
+import { getLanguageConfigFromStorage } from '../config/language';
 
 /**
  * Send user input to the backend API with conversation history
@@ -26,7 +27,8 @@ export async function send(
       body: JSON.stringify({ 
         prompt: userPrompt.trim(),
         history: conversationHistory.slice(-10), 
-        context: context
+        context: context,
+        languageConfig: getLanguageConfigFromStorage()
       }),
     });
 

@@ -9,7 +9,7 @@ import { LoadingIndicator } from "@/components/ui/indicators/LoadingIndicator";
 import { ErrorDisplay } from "@/components/ui/states/ErrorDisplay";
 import { EmptyState } from "@/components/ui/states/EmptyState";
 import { TopicsPanel } from "@/components/ui/panels/TopicsPanel";
-import { setLanguageConfig } from "@/lib/config/language";
+import { saveLanguageConfigToStorage, getLanguageConfigFromStorage } from "@/lib/config/language";
 import { LanguageConfig } from "@/lib/types/language";
 
 export default function Page() {
@@ -25,16 +25,24 @@ export default function Page() {
     commonMistakes: []
   });
   const [languageSelected, setLanguageSelected] = useState(false);
-
-  const handleLanguageSelect = (config: LanguageConfig) => {
-    setLanguageConfig(config);
-    setLanguageSelected(true);
-  };
-  
+  const [showLanguageSelector, setShowLanguageSelector] = useState(true); // Start with true to show on first load
+  const [hasStarted, setHasStarted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const handleLanguageSelect = (config: LanguageConfig) => {
+    saveLanguageConfigToStorage(config);
+    setLanguageSelected(true);
+    setShowLanguageSelector(false);
+  };
+
+  const handleChangeLanguages = () => {
+    setShowLanguageSelector(true);
+    setHasStarted(false);
+    setError(null);
+    setLanguageSelected(false);
+  };
+  
   useEffect(() => {
-    // Wait a tick for DOM update, then scroll
     const el = messagesEndRef.current;
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -47,6 +55,21 @@ export default function Page() {
       messages: messages
     }));
   }, [messages]);
+
+  useEffect(() => {
+  const storedConfig = getLanguageConfigFromStorage();
+
+  if (storedConfig && storedConfig.nativeLanguage && storedConfig.targetLanguage) {
+    setHasStarted(true);
+    setShowLanguageSelector(false);
+    setLanguageSelected(true);
+  } else {
+    setHasStarted(false);
+    setShowLanguageSelector(true);
+    setLanguageSelected(false);
+  }
+}, []);
+
 
   async function handleSend() {
     const trimmedPrompt = prompt.trim();
@@ -146,12 +169,14 @@ export default function Page() {
 
   return (
     <div className="relative flex flex-col h-screen bg-white dark:bg-gray-900">
-      <ChatHeader />
+      <ChatHeader onChangeLanguages={handleChangeLanguages} />
 
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl px-4 py-6">
-          {messages.length === 0 ? (
-            <EmptyState onLanguageSelect={handleLanguageSelect}/>
+          {showLanguageSelector ? (
+            <EmptyState onLanguageSelect={handleLanguageSelect} hasStarted={hasStarted} setHasStarted={setHasStarted}/>
+          ) : messages.length === 0 ? (
+            <EmptyState onLanguageSelect={handleLanguageSelect} hasStarted={hasStarted} setHasStarted={setHasStarted}/>
           ) : (
             <>
               <TopicsPanel topics={context.topicsDiscussed} onClearChat={clearChat} />
