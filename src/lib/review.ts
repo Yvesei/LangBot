@@ -1,4 +1,4 @@
-import { wordDiff } from './diff';
+import { wordDiff, type DiffPart } from './diff';
 import type { StudyCard } from './learning';
 import type { LanguageConfig, Vocabulary } from './schemas';
 
@@ -15,24 +15,21 @@ function normalizeText(text: string): string {
   return text.trim().toLocaleLowerCase().replace(/\s+/g, ' ');
 }
 
+function getChangedText(parts: DiffPart[], type: 'removed' | 'added'): string {
+  return parts
+    .filter((part) => part.type === type)
+    .map((part) => part.text)
+    .join(' ');
+}
+
 function getReviewKey(card: StudyCard): string {
   let originalText = card.originalText;
   let correctedText = card.correctedText;
 
   if (card.kind === 'correction' && originalText) {
     const parts = wordDiff(originalText, correctedText, card.languageConfig.targetLanguage);
-    const removedText: string[] = [];
-    const addedText: string[] = [];
-    for (const part of parts) {
-      if (part.type === 'removed') {
-        removedText.push(part.text);
-      }
-      if (part.type === 'added') {
-        addedText.push(part.text);
-      }
-    }
-    originalText = removedText.join(' ');
-    correctedText = addedText.join(' ');
+    originalText = getChangedText(parts, 'removed');
+    correctedText = getChangedText(parts, 'added');
   }
 
   if (!originalText && !correctedText) {
@@ -49,38 +46,46 @@ function getReviewKey(card: StudyCard): string {
   ]);
 }
 
+function addReviewOccurrence(reviewGroup: ReviewGroup, card: StudyCard) {
+  reviewGroup.card = card;
+  reviewGroup.ids.push(card.id);
+  if (!reviewGroup.sourceMessageIds.includes(card.sourceMessageId)) {
+    reviewGroup.sourceMessageIds.push(card.sourceMessageId);
+    reviewGroup.occurrences += 1;
+  }
+  reviewGroup.dueAt = Math.min(reviewGroup.dueAt, card.dueAt);
+}
+
+function addCardToReviewGroup(reviewGroups: Map<string, ReviewGroup>, card: StudyCard) {
+  const reviewKey = getReviewKey(card);
+  const reviewGroup = reviewGroups.get(reviewKey);
+  if (reviewGroup) {
+    addReviewOccurrence(reviewGroup, card);
+    return;
+  }
+  reviewGroups.set(reviewKey, {
+    key: reviewKey,
+    card,
+    ids: [card.id],
+    sourceMessageIds: [card.sourceMessageId],
+    occurrences: 1,
+    dueAt: card.dueAt,
+  });
+}
+
+function compareReviewGroups(first: ReviewGroup, second: ReviewGroup): number {
+  if (first.occurrences !== second.occurrences) {
+    return second.occurrences - first.occurrences;
+  }
+  return first.dueAt - second.dueAt;
+}
+
 export function groupReviewCards(cards: StudyCard[]): ReviewGroup[] {
   const reviewGroups = new Map<string, ReviewGroup>();
-
   for (const card of cards) {
-    const reviewKey = getReviewKey(card);
-    const reviewGroup = reviewGroups.get(reviewKey);
-    if (reviewGroup) {
-      reviewGroup.card = card;
-      reviewGroup.ids.push(card.id);
-      if (!reviewGroup.sourceMessageIds.includes(card.sourceMessageId)) {
-        reviewGroup.sourceMessageIds.push(card.sourceMessageId);
-        reviewGroup.occurrences += 1;
-      }
-      reviewGroup.dueAt = Math.min(reviewGroup.dueAt, card.dueAt);
-      continue;
-    }
-    reviewGroups.set(reviewKey, {
-      key: reviewKey,
-      card,
-      ids: [card.id],
-      sourceMessageIds: [card.sourceMessageId],
-      occurrences: 1,
-      dueAt: card.dueAt,
-    });
+    addCardToReviewGroup(reviewGroups, card);
   }
-
-  return Array.from(reviewGroups.values()).sort((first, second) => {
-    if (first.occurrences !== second.occurrences) {
-      return second.occurrences - first.occurrences;
-    }
-    return first.dueAt - second.dueAt;
-  });
+  return Array.from(reviewGroups.values()).sort(compareReviewGroups);
 }
 
 export function createVocabularyCards(
