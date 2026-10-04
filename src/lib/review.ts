@@ -16,57 +16,57 @@ function normalizeText(text: string): string {
 }
 
 function getReviewKey(card: StudyCard): string {
-  let before = card.originalText;
-  let after = card.correctedText;
+  let originalText = card.originalText;
+  let correctedText = card.correctedText;
 
-  if (card.kind === 'correction' && before) {
-    const parts = wordDiff(before, after, card.languageConfig.targetLanguage);
-    const removed: string[] = [];
-    const added: string[] = [];
+  if (card.kind === 'correction' && originalText) {
+    const parts = wordDiff(originalText, correctedText, card.languageConfig.targetLanguage);
+    const removedText: string[] = [];
+    const addedText: string[] = [];
     for (const part of parts) {
       if (part.type === 'removed') {
-        removed.push(part.text);
+        removedText.push(part.text);
       }
       if (part.type === 'added') {
-        added.push(part.text);
+        addedText.push(part.text);
       }
     }
-    before = removed.join(' ');
-    after = added.join(' ');
+    originalText = removedText.join(' ');
+    correctedText = addedText.join(' ');
   }
 
-  if (!before && !after) {
-    before = card.exercise?.sentence ?? card.focus;
-    after = card.exercise?.answer ?? '';
+  if (!originalText && !correctedText) {
+    originalText = card.exercise?.sentence ?? card.focus;
+    correctedText = card.exercise?.answer ?? '';
   }
 
   return JSON.stringify([
     card.languageConfig.nativeLanguage,
     card.languageConfig.targetLanguage,
     card.kind,
-    normalizeText(before),
-    normalizeText(after),
+    normalizeText(originalText),
+    normalizeText(correctedText),
   ]);
 }
 
 export function groupReviewCards(cards: StudyCard[]): ReviewGroup[] {
-  const groups = new Map<string, ReviewGroup>();
+  const reviewGroups = new Map<string, ReviewGroup>();
 
   for (const card of cards) {
-    const key = getReviewKey(card);
-    const group = groups.get(key);
-    if (group) {
-      group.card = card;
-      group.ids.push(card.id);
-      if (!group.sourceMessageIds.includes(card.sourceMessageId)) {
-        group.sourceMessageIds.push(card.sourceMessageId);
-        group.occurrences += 1;
+    const reviewKey = getReviewKey(card);
+    const reviewGroup = reviewGroups.get(reviewKey);
+    if (reviewGroup) {
+      reviewGroup.card = card;
+      reviewGroup.ids.push(card.id);
+      if (!reviewGroup.sourceMessageIds.includes(card.sourceMessageId)) {
+        reviewGroup.sourceMessageIds.push(card.sourceMessageId);
+        reviewGroup.occurrences += 1;
       }
-      group.dueAt = Math.min(group.dueAt, card.dueAt);
+      reviewGroup.dueAt = Math.min(reviewGroup.dueAt, card.dueAt);
       continue;
     }
-    groups.set(key, {
-      key,
+    reviewGroups.set(reviewKey, {
+      key: reviewKey,
       card,
       ids: [card.id],
       sourceMessageIds: [card.sourceMessageId],
@@ -75,7 +75,7 @@ export function groupReviewCards(cards: StudyCard[]): ReviewGroup[] {
     });
   }
 
-  return Array.from(groups.values()).sort((first, second) => {
+  return Array.from(reviewGroups.values()).sort((first, second) => {
     if (first.occurrences !== second.occurrences) {
       return second.occurrences - first.occurrences;
     }
@@ -94,22 +94,22 @@ export function createVocabularyCards(
   const seen = new Set<string>();
   const originalMessage = normalizeText(content);
 
-  for (const item of vocabulary) {
-    const original = normalizeText(item.original);
-    if (!originalMessage.includes(original) || seen.has(original)) {
+  for (const vocabularyEntry of vocabulary) {
+    const normalizedOriginal = normalizeText(vocabularyEntry.original);
+    if (!originalMessage.includes(normalizedOriginal) || seen.has(normalizedOriginal)) {
       continue;
     }
-    seen.add(original);
+    seen.add(normalizedOriginal);
     cards.push({
       id: messageId + ':vocabulary:' + cards.length,
       sourceMessageId: messageId,
       languageConfig: config,
       kind: 'vocabulary',
-      originalText: item.original,
-      correctedText: item.translation,
-      example: item.example,
+      originalText: vocabularyEntry.original,
+      correctedText: vocabularyEntry.translation,
+      example: vocabularyEntry.example,
       exercise: null,
-      focus: item.explanation,
+      focus: vocabularyEntry.explanation,
       dueAt: now,
       streak: 0,
       attempts: 0,

@@ -2,17 +2,17 @@ import { createHash } from 'node:crypto';
 import { ApiError } from './errors';
 
 const buckets = new Map<string, { count: number; expires: number }>();
-const script = `
+const incrementScript = `
 local n = redis.call('INCR', KEYS[1])
 if n == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
 return n`;
 
-function positiveInt(value: string | undefined, fallback: number) {
-  const n = Number(value);
-  return Number.isSafeInteger(n) && n > 0 ? n : fallback;
+function parsePositiveInteger(value: string | undefined, fallback: number) {
+  const parsedInteger = Number(value);
+  return Number.isSafeInteger(parsedInteger) && parsedInteger > 0 ? parsedInteger : fallback;
 }
 
-async function increment(key: string, seconds: number): Promise<number> {
+async function incrementLimitCount(key: string, seconds: number): Promise<number> {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (url && token) {
@@ -23,25 +23,25 @@ async function increment(key: string, seconds: number): Promise<number> {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(['EVAL', script, '1', `langbot:${key}`, String(seconds)]),
+        body: JSON.stringify(['EVAL', incrementScript, '1', `langbot:${key}`, String(seconds)]),
         signal: AbortSignal.timeout(3000),
         cache: 'no-store',
       });
       if (!response.ok) {
         throw new Error('Limit store unavailable');
       }
-      const data: unknown = await response.json();
+      const storeResponse: unknown = await response.json();
       if (
-        !data ||
-        typeof data !== 'object' ||
-        !('result' in data) ||
-        typeof data.result !== 'number' ||
-        !Number.isSafeInteger(data.result) ||
-        data.result < 1
+        !storeResponse ||
+        typeof storeResponse !== 'object' ||
+        !('result' in storeResponse) ||
+        typeof storeResponse.result !== 'number' ||
+        !Number.isSafeInteger(storeResponse.result) ||
+        storeResponse.result < 1
       ) {
         throw new Error('Invalid limit store response');
       }
-      return data.result;
+      return storeResponse.result;
     } catch {
       throw new ApiError(
         503,
@@ -79,13 +79,13 @@ export async function enforceLimits(request: Request) {
       ? request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() || 'shared'
       : 'shared';
   const identity = createHash('sha256').update(ip).digest('hex').slice(0, 24);
-  const perMinute = positiveInt(process.env.REQUESTS_PER_MINUTE, 20);
-  if ((await increment(`minute:${identity}`, 60)) > perMinute) {
+  const perMinute = parsePositiveInteger(process.env.REQUESTS_PER_MINUTE, 20);
+  if ((await incrementLimitCount(`minute:${identity}`, 60)) > perMinute) {
     throw new ApiError(429, 'Too many requests. Try again in a minute.', 60);
   }
   const day = new Date().toISOString().slice(0, 10);
-  const daily = positiveInt(process.env.DAILY_REQUEST_LIMIT, 1000);
-  if ((await increment(`daily:${day}`, 172800)) > daily) {
+  const daily = parsePositiveInteger(process.env.DAILY_REQUEST_LIMIT, 1000);
+  if ((await incrementLimitCount(`daily:${day}`, 172800)) > daily) {
     const midnight = new Date(`${day}T00:00:00Z`).getTime() + 86400000;
     throw new ApiError(
       429,
