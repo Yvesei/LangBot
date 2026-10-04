@@ -6,6 +6,31 @@ const transcriptSchema = z.object({ text: z.string().max(MAX_MESSAGE_LENGTH) });
 
 const errorSchema = z.object({ error: z.string() });
 
+function getTranscriptionErrorMessage(responseBody: unknown): string {
+  const parsedError = errorSchema.safeParse(responseBody);
+
+  if (parsedError.success) {
+    return parsedError.data.error;
+  }
+  return 'Transcription failed. Please try again.';
+}
+
+function parseTranscript(responseBody: unknown): string {
+  const transcript = transcriptSchema.safeParse(responseBody);
+
+  if (!transcript.success) {
+    throw new Error('Transcription returned an invalid response. Please try again.');
+  }
+
+  const text = transcript.data.text.trim();
+
+  if (!text) {
+    throw new Error('I didn’t catch that. Please try again.');
+  }
+
+  return text;
+}
+
 export async function transcribeAudio(
   audio: Blob,
   config: LanguageConfig,
@@ -21,30 +46,9 @@ export async function transcribeAudio(
       'X-Target-Language': config.targetLanguage,
     },
   });
-
   const responseBody: unknown = await response.json();
-
   if (!response.ok) {
-    const parsedError = errorSchema.safeParse(responseBody);
-
-    if (parsedError.success) {
-      throw new Error(parsedError.data.error);
-    }
-
-    throw new Error('Transcription failed. Please try again.');
+    throw new Error(getTranscriptionErrorMessage(responseBody));
   }
-
-  const transcript = transcriptSchema.safeParse(responseBody);
-
-  if (!transcript.success) {
-    throw new Error('Transcription returned an invalid response. Please try again.');
-  }
-
-  const text = transcript.data.text.trim();
-
-  if (!text) {
-    throw new Error('I didn’t catch that. Please try again.');
-  }
-
-  return text;
+  return parseTranscript(responseBody);
 }
