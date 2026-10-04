@@ -33,7 +33,7 @@ import { VoiceCall } from '@/components/ui/voice/VoiceCall';
 import { ReviewDialog } from '@/components/ui/panels/ReviewDialog';
 import { createVocabularyCards, groupReviewCards } from '@/lib/review';
 
-interface ActiveRequest {
+interface ActiveChatRequest {
   controller: AbortController;
   messageId: string;
 }
@@ -41,8 +41,8 @@ interface ActiveRequest {
 export default function Page() {
   const [config, setConfig] = useState<LanguageConfig | null>(null);
   const [level, setLevel] = useState<Level>('beginner');
-  const [ready, setReady] = useState(false);
-  const [selecting, setSelecting] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const [isSelectingLanguages, setIsSelectingLanguages] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [cards, setCards] = useState<StudyCard[]>([]);
@@ -53,7 +53,7 @@ export default function Page() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewRequested, setReviewRequested] = useState(false);
 
-  const activeRequest = useRef<ActiveRequest | null>(null);
+  const activeChatRequest = useRef<ActiveChatRequest | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -70,20 +70,20 @@ export default function Page() {
       });
       setReviewOpen(hasDueCards);
     }
-    setReady(true);
+    setIsReady(true);
 
     return () => {
-      activeRequest.current?.controller.abort();
+      activeChatRequest.current?.controller.abort();
     };
   }, []);
 
   useEffect(() => {
-    if (ready && !saveCards(cards)) {
+    if (isReady && !saveCards(cards)) {
       setStorageWarning(
         'Browser storage is unavailable. Practice progress will last only for this visit.',
       );
     }
-  }, [cards, ready]);
+  }, [cards, isReady]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
@@ -106,14 +106,14 @@ export default function Page() {
   }, [reviewRequested, loading, voiceOpen]);
 
   function handleCancel() {
-    const pendingRequest = activeRequest.current;
+    const pendingRequest = activeChatRequest.current;
 
     if (!pendingRequest) {
       return;
     }
 
     pendingRequest.controller.abort();
-    activeRequest.current = null;
+    activeChatRequest.current = null;
     setMessages((current) => {
       return updateMessageStatus(current, pendingRequest.messageId, 'failed');
     });
@@ -136,7 +136,7 @@ export default function Page() {
     setReviewOpen(false);
     setReviewRequested(false);
     setConfig(nextConfig);
-    setSelecting(false);
+    setIsSelectingLanguages(false);
 
     if (!saveLanguageConfigToStorage(nextConfig, level)) {
       setStorageWarning('Language settings could not be saved in this browser.');
@@ -156,7 +156,7 @@ export default function Page() {
     setVoiceOpen(false);
     setReviewOpen(false);
     setReviewRequested(false);
-    setSelecting(true);
+    setIsSelectingLanguages(true);
   }
 
   function handleDeleteMessage(messageId: string) {
@@ -243,28 +243,28 @@ export default function Page() {
     void sendMessage(message);
   }
 
-  async function sendMessage(retry?: ConversationMessage, spokenContent?: string) {
-    if (!config || activeRequest.current || selecting) {
+  async function sendMessage(retryMessage?: ConversationMessage, spokenContent?: string) {
+    if (!config || activeChatRequest.current || isSelectingLanguages) {
       return;
     }
 
-    const content = retry?.content ?? spokenContent?.trim() ?? prompt.trim();
+    const content = retryMessage?.content ?? spokenContent?.trim() ?? prompt.trim();
 
     if (!content) {
       return;
     }
 
-    const messageId = retry?.id ?? crypto.randomUUID();
+    const messageId = retryMessage?.id ?? crypto.randomUUID();
     const controller = new AbortController();
 
-    activeRequest.current = {
+    activeChatRequest.current = {
       controller,
       messageId,
     };
     setLoading(true);
     setError('');
 
-    if (retry) {
+    if (retryMessage) {
       setMessages((current) => updateMessageStatus(current, messageId, 'pending'));
     } else {
       if (spokenContent === undefined) {
@@ -284,7 +284,7 @@ export default function Page() {
 
     function isCurrentRequest() {
       return (
-        !controller.signal.aborted && activeRequest.current?.controller === controller
+        !controller.signal.aborted && activeChatRequest.current?.controller === controller
       );
     }
 
@@ -295,38 +295,38 @@ export default function Page() {
         cards: visibleCards,
         config,
         level,
-        retryMessageId: retry?.id,
+        retryMessageId: retryMessage?.id,
       });
 
-      const result = await send(requestBody, controller.signal);
+      const tutorResponse = await send(requestBody, controller.signal);
 
       if (!isCurrentRequest()) {
         return;
       }
 
-      setMessages((current) => addAssistantReply(current, messageId, result));
+      setMessages((current) => addAssistantReply(current, messageId, tutorResponse));
 
-      const newCard = createCard(
+      const correctionCard = createCard(
         messageId,
-        result.correction,
+        tutorResponse.correction,
         config,
         Date.now(),
         content,
       );
-      const newCards = createVocabularyCards(
+      const generatedCards = createVocabularyCards(
         messageId,
         content,
-        result.vocabulary ?? [],
+        tutorResponse.vocabulary ?? [],
         config,
       );
-      if (newCard) {
-        newCards.push(newCard);
+      if (correctionCard) {
+        generatedCards.push(correctionCard);
       }
 
-      if (newCards.length > 0) {
+      if (generatedCards.length > 0) {
         setCards((current) => {
-          const otherCards = current.filter((card) => card.sourceMessageId !== messageId);
-          return [...otherCards, ...newCards].slice(-100);
+          const retainedCards = current.filter((card) => card.sourceMessageId !== messageId);
+          return [...retainedCards, ...generatedCards].slice(-100);
         });
       }
     } catch (error) {
@@ -341,24 +341,24 @@ export default function Page() {
           : 'Could not send the message. Please retry.',
       );
     } finally {
-      if (activeRequest.current?.controller === controller) {
-        activeRequest.current = null;
+      if (activeChatRequest.current?.controller === controller) {
+        activeChatRequest.current = null;
         setLoading(false);
       }
     }
   }
 
   function renderChatContent() {
-    if (!ready) {
+    if (!isReady) {
       return <p role="status">Loading your preferences…</p>;
     }
 
-    if (!config || selecting) {
+    if (!config || isSelectingLanguages) {
       return (
         <EmptyState
           initial={config}
           onLanguageSelect={handleLanguageSelect}
-          onCancel={config ? () => setSelecting(false) : undefined}
+          onCancel={config ? () => setIsSelectingLanguages(false) : undefined}
         />
       );
     }
@@ -468,7 +468,7 @@ export default function Page() {
         onSend={handleSend}
         onCancel={handleCancel}
         onVoiceCall={handleOpenVoiceCall}
-        disabled={!ready || !config || selecting}
+        disabled={!isReady || !config || isSelectingLanguages}
       />
 
       {config && voiceOpen && (

@@ -46,7 +46,7 @@ const LOCALES: Record<keyof typeof LANGUAGES, string> = {
   hi: 'hi-IN',
 };
 
-function readableStatus(state: CallState) {
+function getCallStatusLabel(state: CallState) {
   if (state === 'listening') {
     return 'Listening…';
   }
@@ -68,15 +68,15 @@ function readableStatus(state: CallState) {
   return 'Starting microphone…';
 }
 
-function speechText(text: string) {
+function getSpeechText(text: string) {
   return text
     .replace(/[`*_#>]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-function getUnavailableReason(secure: boolean): string {
-  if (!secure) {
+function getUnavailableReason(isSecureConnection: boolean): string {
+  if (!isSecureConnection) {
     return 'Microphone access needs a secure connection. Open http://localhost:3000 on this computer, or use an HTTPS address.';
   }
 
@@ -106,13 +106,13 @@ export function VoiceCall({
   onClearError,
   onClose,
 }: VoiceCallProps) {
-  const [supported, setSupported] = useState<boolean | null>(null);
+  const [isRecordingSupported, setIsRecordingSupported] = useState<boolean | null>(null);
   const [callState, setCallState] = useState<CallState>('starting');
   const [micEnabled, setMicEnabled] = useState(true);
   const [speakerEnabled, setSpeakerEnabled] = useState(true);
   const [speakerAvailable, setSpeakerAvailable] = useState(true);
   const [unavailableReason, setUnavailableReason] = useState('');
-  const [interim, setInterim] = useState('');
+  const [interimTranscript, setInterimTranscript] = useState('');
   const [voiceError, setVoiceError] = useState('');
   const [sessionStart, setSessionStart] = useState(0);
   const recognition = useRef<Recognition | null>(null);
@@ -120,8 +120,8 @@ export function VoiceCall({
   const finalTranscript = useRef('');
   const shouldListen = useRef(true);
   const isOpen = useRef(open);
-  const isBusy = useRef(loading);
-  const stateRef = useRef<CallState>('starting');
+  const isRequestBusy = useRef(loading);
+  const callStateRef = useRef<CallState>('starting');
   const lastSpokenId = useRef<string | null>(null);
   const restartTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dialog = useRef<HTMLDivElement>(null);
@@ -141,9 +141,9 @@ export function VoiceCall({
     window.speechSynthesis?.cancel();
   }, []);
 
-  const setState = useCallback((next: CallState) => {
-    stateRef.current = next;
-    setCallState(next);
+  const setState = useCallback((nextState: CallState) => {
+    callStateRef.current = nextState;
+    setCallState(nextState);
   }, []);
 
   const stopListening = useCallback(() => {
@@ -152,7 +152,7 @@ export function VoiceCall({
     }
     restartTimer.current = null;
     finalTranscript.current = '';
-    setInterim('');
+    setInterimTranscript('');
     recognitionActive.current = false;
     try {
       recognition.current?.abort();
@@ -165,9 +165,9 @@ export function VoiceCall({
     if (
       !isOpen.current ||
       !shouldListen.current ||
-      isBusy.current ||
+      isRequestBusy.current ||
       recognitionActive.current ||
-      stateRef.current === 'speaking' ||
+      callStateRef.current === 'speaking' ||
       !recognition.current
     ) {
       return;
@@ -188,7 +188,7 @@ export function VoiceCall({
   }, [setState]);
 
   useEffect(() => {
-    isBusy.current = loading;
+    isRequestBusy.current = loading;
   }, [loading]);
   useEffect(() => {
     onSendRef.current = onSend;
@@ -199,10 +199,10 @@ export function VoiceCall({
     }
     previousFocus.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const previous = document.body.style.overflow;
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = previous;
+      document.body.style.overflow = previousOverflow;
       previousFocus.current?.focus();
     };
   }, [open]);
@@ -212,61 +212,61 @@ export function VoiceCall({
       return;
     }
     isOpen.current = true;
-    const secure = window.isSecureContext !== false;
-    const available = secure && canRecord();
-    const playback = Boolean(
+    const isSecureConnection = window.isSecureContext !== false;
+    const isRecordingAvailable = isSecureConnection && canRecord();
+    const hasSpeechPlayback = Boolean(
       window.speechSynthesis && typeof SpeechSynthesisUtterance !== 'undefined',
     );
-    setSpeakerAvailable(playback);
-    setUnavailableReason(getUnavailableReason(secure));
-    setSupported(available);
+    setSpeakerAvailable(hasSpeechPlayback);
+    setUnavailableReason(getUnavailableReason(isSecureConnection));
+    setIsRecordingSupported(isRecordingAvailable);
     setSessionStart(messages.length);
     lastSpokenId.current =
       [...messages].reverse().find((message) => message.role === 'assistant')?.id ?? null;
     shouldListen.current = true;
     setMicEnabled(true);
-    setSpeakerEnabled(playback);
+    setSpeakerEnabled(hasSpeechPlayback);
     setVoiceError('');
-    setInterim('');
-    setState(available ? 'starting' : 'error');
+    setInterimTranscript('');
+    setState(isRecordingAvailable ? 'starting' : 'error');
     closeButton.current?.focus();
 
-    if (!available) {
+    if (!isRecordingAvailable) {
       return () => {
         isOpen.current = false;
       };
     }
-    const instance = new RecordedRecognition(config);
-    instance.onprocessing = () => {
+    const recordedRecognition = new RecordedRecognition(config);
+    recordedRecognition.onprocessing = () => {
       if (isOpen.current) {
         setState('transcribing');
       }
     };
-    instance.onstart = () => {
+    recordedRecognition.onstart = () => {
       if (!isOpen.current || !shouldListen.current) {
-        instance.abort();
+        recordedRecognition.abort();
         return;
       }
       recognitionActive.current = true;
       setState('listening');
     };
-    instance.onresult = (event) => {
+    recordedRecognition.onresult = (event) => {
       if (!isOpen.current || !shouldListen.current || !recognitionActive.current) {
         return;
       }
-      let live = '';
+      let interimText = '';
       for (let index = event.resultIndex; index < event.results.length; index++) {
-        const result = event.results[index];
-        const text = result[0]?.transcript ?? '';
-        if (result.isFinal) {
+        const recognitionResult = event.results[index];
+        const text = recognitionResult[0]?.transcript ?? '';
+        if (recognitionResult.isFinal) {
           finalTranscript.current = `${finalTranscript.current} ${text}`.trim();
         } else {
-          live += text;
+          interimText += text;
         }
       }
-      setInterim(`${finalTranscript.current} ${live}`.trim());
+      setInterimTranscript(`${finalTranscript.current} ${interimText}`.trim());
     };
-    instance.onerror = (event) => {
+    recordedRecognition.onerror = (event) => {
       if (event.error === 'aborted' || event.error === 'no-speech') {
         return;
       }
@@ -277,14 +277,14 @@ export function VoiceCall({
       setState('error');
       setVoiceError(getRecognitionErrorMessage(event));
     };
-    instance.onend = () => {
+    recordedRecognition.onend = () => {
       if (!isOpen.current || !shouldListen.current || !recognitionActive.current) {
         return;
       }
       recognitionActive.current = false;
       const text = finalTranscript.current.trim();
       finalTranscript.current = '';
-      setInterim('');
+      setInterimTranscript('');
       if (text) {
         if (text.length > 2000) {
           shouldListen.current = false;
@@ -294,30 +294,30 @@ export function VoiceCall({
           return;
         }
         setState('thinking');
-        isBusy.current = true;
+        isRequestBusy.current = true;
         onSendRef.current(text);
         return;
       }
       if (
         isOpen.current &&
         shouldListen.current &&
-        !isBusy.current &&
-        stateRef.current !== 'speaking'
+        !isRequestBusy.current &&
+        callStateRef.current !== 'speaking'
       ) {
         restartTimer.current = setTimeout(startListening, 250);
       }
     };
-    recognition.current = instance;
+    recognition.current = recordedRecognition;
     startListening();
 
     return () => {
       isOpen.current = false;
       shouldListen.current = false;
-      instance.onstart = null;
-      instance.onresult = null;
-      instance.onerror = null;
-      instance.onend = null;
-      instance.onprocessing = null;
+      recordedRecognition.onstart = null;
+      recordedRecognition.onresult = null;
+      recordedRecognition.onerror = null;
+      recordedRecognition.onend = null;
+      recordedRecognition.onprocessing = null;
       stopListening();
       recognition.current = null;
       recognitionActive.current = false;
@@ -338,16 +338,16 @@ export function VoiceCall({
   }, [error, open, setState, stopListening]);
 
   useEffect(() => {
-    if (!open || loading || !supported) {
+    if (!open || loading || !isRecordingSupported) {
       return;
     }
-    const latest = [...messages.slice(sessionStart)]
+    const latestAssistantMessage = [...messages.slice(sessionStart)]
       .reverse()
       .find((message) => message.role === 'assistant');
-    if (!latest || latest.id === lastSpokenId.current) {
+    if (!latestAssistantMessage || latestAssistantMessage.id === lastSpokenId.current) {
       return;
     }
-    lastSpokenId.current = latest.id;
+    lastSpokenId.current = latestAssistantMessage.id;
     if (!speakerEnabled || !speakerAvailable) {
       setState(micEnabled ? 'starting' : 'paused');
       if (micEnabled) {
@@ -358,7 +358,7 @@ export function VoiceCall({
     setState('speaking');
     stopListening();
     stopSpeaking();
-    const utterance = new SpeechSynthesisUtterance(speechText(latest.content));
+    const utterance = new SpeechSynthesisUtterance(getSpeechText(latestAssistantMessage.content));
     activeSpeech.current = utterance;
     utterance.lang = LOCALES[config.targetLanguage];
     const language = utterance.lang.toLowerCase().split('-')[0];
@@ -403,7 +403,7 @@ export function VoiceCall({
     sessionStart,
     speakerEnabled,
     speakerAvailable,
-    supported,
+    isRecordingSupported,
     setState,
     startListening,
     stopListening,
@@ -418,7 +418,7 @@ export function VoiceCall({
       behavior: 'smooth',
       block: 'nearest',
     });
-  }, [interim, messages, open]);
+  }, [interimTranscript, messages, open]);
 
   useEffect(() => {
     if (!open) {
@@ -459,23 +459,23 @@ export function VoiceCall({
   }, [onClose, open, stopListening, stopSpeaking]);
 
   const sessionMessages = useMemo(
-    () => (supported === null ? [] : messages.slice(sessionStart)),
-    [messages, sessionStart, supported],
+    () => (isRecordingSupported === null ? [] : messages.slice(sessionStart)),
+    [messages, sessionStart, isRecordingSupported],
   );
 
   function toggleMicrophone() {
-    const next = !micEnabled;
-    setMicEnabled(next);
-    shouldListen.current = next;
-    if (!next) {
+    const isEnabled = !micEnabled;
+    setMicEnabled(isEnabled);
+    shouldListen.current = isEnabled;
+    if (!isEnabled) {
       stopListening();
-      if (stateRef.current !== 'speaking') {
+      if (callStateRef.current !== 'speaking') {
         setState(loading ? 'thinking' : 'paused');
       }
     } else {
       onClearError();
       setVoiceError('');
-      if (stateRef.current === 'speaking') {
+      if (callStateRef.current === 'speaking') {
         return;
       }
       setState(loading ? 'thinking' : 'starting');
@@ -486,9 +486,9 @@ export function VoiceCall({
   }
 
   function toggleSpeaker() {
-    const next = !speakerEnabled;
-    setSpeakerEnabled(next);
-    if (!next && stateRef.current === 'speaking') {
+    const isEnabled = !speakerEnabled;
+    setSpeakerEnabled(isEnabled);
+    if (!isEnabled && callStateRef.current === 'speaking') {
       stopSpeaking();
       setState(micEnabled ? 'starting' : 'paused');
       if (micEnabled) {
@@ -551,7 +551,7 @@ export function VoiceCall({
           </button>
         </header>
 
-        {supported === false ? (
+        {isRecordingSupported === false ? (
           <div className="m-auto max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
             <MicOff className="mx-auto h-10 w-10 text-slate-400" />
             <h3 className="mt-4 text-xl font-semibold">
@@ -581,14 +581,14 @@ export function VoiceCall({
                 role="status"
                 aria-live="polite"
               >
-                {readableStatus(callState)}
+                {getCallStatusLabel(callState)}
               </p>
               <p
                 className="mt-3 min-h-14 max-w-md text-pretty text-slate-300"
                 lang={config.targetLanguage}
                 dir="auto"
               >
-                {interim || getListeningHint(callState === 'listening')}
+                {interimTranscript || getListeningHint(callState === 'listening')}
               </p>
               <p className="mt-2 max-w-xs text-xs leading-5 text-slate-400">
                 Audio is sent to Mistral. Your words appear after each turn, in either
@@ -679,7 +679,7 @@ export function VoiceCall({
                 className="flex-1 space-y-4 overflow-y-auto p-5"
                 aria-live="polite"
               >
-                {!sessionMessages.length && !interim && (
+                {!sessionMessages.length && !interimTranscript && (
                   <p className="py-12 text-center text-sm text-slate-500">
                     Your conversation will appear here.
                   </p>
@@ -745,7 +745,7 @@ export function VoiceCall({
                     </article>
                   );
                 })}
-                {interim && (
+                {interimTranscript && (
                   <article className="ml-auto max-w-[88%] opacity-70">
                     <p className="mb-1 text-xs text-slate-500">You’re saying</p>
                     <p
@@ -753,7 +753,7 @@ export function VoiceCall({
                       lang={config.targetLanguage}
                       dir="auto"
                     >
-                      {interim}
+                      {interimTranscript}
                     </p>
                   </article>
                 )}
