@@ -8,6 +8,7 @@
 - Do not modify dependencies, configuration, workflows, schemas, public signatures, prompts, markup, or styles. Existing changes to these files are included only in the recovery baseline commit.
 - Every implementation file selected below already has coverage in the baseline suite. Add focused characterization tests before cleanup to protect exact diff output, response parsing, conversation limits, review grouping, and voice callbacks.
 - Keep naming changes separate from function extractions. Each implementation step includes this plan's status update, so no step changes more than three files.
+- Final review found an async-helper extraction could change which error wins when cancellation is queued immediately after JSON decoding. Add steps 13–14 to retain the baseline's await boundaries throughout the API client, provider retries, body reader, and shared limits. Step 13 changes two implementation files and one test file; record its plan status in step 14 to keep the three-file limit.
 
 ## Baseline and verification
 
@@ -34,7 +35,9 @@
 9. **DONE — Extract page request preparation and completion application.** Files: `src/app/page.tsx`, `REFACTOR_PLAN.md`. Keep request guards, React updater timing, card ordering, and late-response handling.
 10. **DONE — Extract recorded-recognition setup and silence monitoring.** Files: `src/lib/voice/recognition.ts`, `REFACTOR_PLAN.md`. Keep resource ownership, generation checks, timer thresholds, and callback order.
 11. **DONE — Extract voice transcript aggregation and speech completion.** Files: `src/components/ui/voice/VoiceCall.tsx`, `REFACTOR_PLAN.md`. Keep live/final transcripts, ignored late callbacks, microphone controls, and speech-error messages.
-12. **PENDING — Name evaluation metrics precisely.** Files: `eval/metrics.ts`, `REFACTOR_PLAN.md`. Only rename internal values/functions; keep all output fields and percentile formulas.
+12. **DONE — Name evaluation metrics precisely.** Files: `eval/metrics.ts`, `REFACTOR_PLAN.md`. Only rename internal values/functions; keep all output fields and percentile formulas.
+13. **PENDING — Preserve API-client and provider await boundaries.** Files: `src/lib/api/request.ts`, `src/lib/server/mistral.ts`, `__tests__/unit/api-client.test.ts`. Keep awaited operations in their original caller and extract synchronous decisions; characterize queued cancellation against the original client before correcting the extraction.
+14. **PENDING — Preserve streaming and shared-limit await boundaries.** Files: `src/lib/server/http.ts`, `src/lib/server/limits.ts`, `REFACTOR_PLAN.md`. Keep stream/Redis awaited operations in their original caller and retain synchronous assembly/validation helpers.
 
 ## Completion
 

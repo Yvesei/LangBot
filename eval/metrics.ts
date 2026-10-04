@@ -8,47 +8,48 @@ export type ScoredCase = {
   consistent: boolean;
   latencyMs: number;
 };
-const rate = (n: number, d: number) => (d ? n / d : null);
+const calculateRate = (numerator: number, denominator: number) =>
+  (denominator ? numerator / denominator : null);
 
-export function summarize(rows: ScoredCase[]) {
-  const completed = rows.filter((row) => row.completed);
-  const valid = completed.filter((row) => !row.expectedChange);
-  const errors = completed.filter((row) => row.expectedChange);
-  const protectedRows = completed.filter((row) => row.protectedCheck);
-  const detected = errors.filter((row) => row.changed).length;
-  const falsePositives = valid.filter((row) => row.changed).length;
-  const latency = rows.map((row) => row.latencyMs).sort((a, b) => a - b);
+export function summarize(scoredCases: ScoredCase[]) {
+  const completedCases = scoredCases.filter((row) => row.completed);
+  const unchangedCases = completedCases.filter((row) => !row.expectedChange);
+  const errorCases = completedCases.filter((row) => row.expectedChange);
+  const protectedCases = completedCases.filter((row) => row.protectedCheck);
+  const detectedErrorCount = errorCases.filter((row) => row.changed).length;
+  const unnecessaryEditCount = unchangedCases.filter((row) => row.changed).length;
+  const sortedLatencies = scoredCases.map((row) => row.latencyMs).sort((firstLatency, secondLatency) => firstLatency - secondLatency);
   return {
-    cases: rows.length,
-    completed: completed.length,
-    completionRate: rate(completed.length, rows.length),
+    cases: scoredCases.length,
+    completed: completedCases.length,
+    completionRate: calculateRate(completedCases.length, scoredCases.length),
     // Conditional rates must be read together with completionRate.
-    unnecessaryEditRate: rate(falsePositives, valid.length),
-    errorDetectionRecall: rate(detected, errors.length),
-    errorDetectionPrecision: rate(detected, detected + falsePositives),
-    referenceMatchRate: rate(
-      completed.filter((row) => row.exactMatch).length,
-      completed.length,
+    unnecessaryEditRate: calculateRate(unnecessaryEditCount, unchangedCases.length),
+    errorDetectionRecall: calculateRate(detectedErrorCount, errorCases.length),
+    errorDetectionPrecision: calculateRate(detectedErrorCount, detectedErrorCount + unnecessaryEditCount),
+    referenceMatchRate: calculateRate(
+      completedCases.filter((row) => row.exactMatch).length,
+      completedCases.length,
     ),
-    correctionReferenceMatchRate: rate(
-      errors.filter((row) => row.exactMatch).length,
-      errors.length,
+    correctionReferenceMatchRate: calculateRate(
+      errorCases.filter((row) => row.exactMatch).length,
+      errorCases.length,
     ),
-    endToEndReferencePassRate: rate(
-      rows.filter(
+    endToEndReferencePassRate: calculateRate(
+      scoredCases.filter(
         (row) => row.completed && row.exactMatch && row.consistent && row.preserved,
       ).length,
-      rows.length,
+      scoredCases.length,
     ),
-    protectedTextPreservationRate: rate(
-      protectedRows.filter((row) => row.preserved).length,
-      protectedRows.length,
+    protectedTextPreservationRate: calculateRate(
+      protectedCases.filter((row) => row.preserved).length,
+      protectedCases.length,
     ),
-    consistencyRate: rate(
-      completed.filter((row) => row.consistent).length,
-      completed.length,
+    consistencyRate: calculateRate(
+      completedCases.filter((row) => row.consistent).length,
+      completedCases.length,
     ),
-    latencyP50Ms: latency[Math.max(0, Math.ceil(latency.length * 0.5) - 1)] ?? null,
-    latencyP95Ms: latency[Math.max(0, Math.ceil(latency.length * 0.95) - 1)] ?? null,
+    latencyP50Ms: sortedLatencies[Math.max(0, Math.ceil(sortedLatencies.length * 0.5) - 1)] ?? null,
+    latencyP95Ms: sortedLatencies[Math.max(0, Math.ceil(sortedLatencies.length * 0.95) - 1)] ?? null,
   };
 }
