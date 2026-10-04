@@ -3,6 +3,16 @@ import { getSupportedRecordingType, measureVolume } from './audio';
 import { transcribeAudio } from '../api/transcribe';
 import type { LanguageConfig } from '../schemas';
 
+const MAX_RECORDING_BYTES = 2 * 1024 * 1024;
+const AUDIO_BIT_RATE = 64000;
+const RECORDER_CHUNK_INTERVAL_MS = 250;
+const ANALYSER_WINDOW_SIZE = 2048;
+const MIN_SPEECH_VOLUME = 0.018;
+const SILENCE_STOP_DELAY_MS = 1400;
+const MAX_RECORDING_DURATION_MS = 30000;
+const VOLUME_CHECK_INTERVAL_MS = 100;
+const TRANSCRIPTION_TIMEOUT_MS = 35000;
+
 export type RecognitionEvent = {
   resultIndex: number;
   results: {
@@ -102,6 +112,99 @@ export class RecordedRecognition implements Recognition {
     this.onend?.();
   }
 
+  private configureRecorderCallbacks(recorder: MediaRecorder, generation: number) {
+    const chunks: Blob[] = [];
+    let bytes = 0;
+    recorder.ondataavailable = (event) => {
+      if (generation !== this.generation) {
+        return;
+      }
+      bytes += event.data.size;
+      if (bytes > MAX_RECORDING_BYTES) {
+        this.fail(
+          generation,
+          'size',
+          'That recording was too large. Try a shorter turn.',
+        );
+        return;
+      }
+      if (event.data.size) {
+        chunks.push(event.data);
+      }
+    };
+    recorder.onerror = () => this.fail(generation, 'audio-capture');
+    recorder.onstop = () => {
+      if (generation !== this.generation) {
+        return;
+      }
+      this.release();
+      this.recorder = null;
+      this.onprocessing?.();
+      void this.transcribe(new Blob(chunks, { type: recorder.mimeType }), generation);
+    };
+  }
+
+  private createVolumeAnalyser(stream: MediaStream): AnalyserNode | null {
+    let analyser: AnalyserNode | null = null;
+    try {
+      this.context = new AudioContext();
+      void this.context.resume().catch(() => undefined);
+      analyser = this.context.createAnalyser();
+      analyser.fftSize = ANALYSER_WINDOW_SIZE;
+      this.context.createMediaStreamSource(stream).connect(analyser);
+    } catch {
+      /* use explicit send or the 30-second turn limit */
+    }
+    return analyser;
+  }
+
+  private monitorSilence(stream: MediaStream, generation: number) {
+    // Stop after a short pause. The send-turn button also works when Web Audio
+    // is unavailable or suspended by autoplay settings.
+    const analyser = this.createVolumeAnalyser(stream);
+    const samples = new Uint8Array(ANALYSER_WINDOW_SIZE);
+    const started = Date.now();
+    let lastSound = started;
+    let heardSpeech = false;
+    this.timer = setInterval(() => {
+      if (analyser && this.context?.state === 'running') {
+        analyser.getByteTimeDomainData(samples);
+        const volume = measureVolume(samples);
+        if (volume > MIN_SPEECH_VOLUME) {
+          lastSound = Date.now();
+          heardSpeech = true;
+        }
+      }
+      this.stopExpiredRecording(generation, started, heardSpeech, lastSound);
+    }, VOLUME_CHECK_INTERVAL_MS);
+  }
+
+  private stopExpiredRecording(
+    generation: number,
+    started: number,
+    heardSpeech: boolean,
+    lastSound: number,
+  ) {
+    if (heardSpeech && Date.now() - lastSound > SILENCE_STOP_DELAY_MS) {
+      this.stop();
+      return;
+    }
+    const hasReachedTurnLimit = Date.now() - started > MAX_RECORDING_DURATION_MS;
+    if (!hasReachedTurnLimit) {
+      return;
+    }
+    // Avoid uploading a silent recording when silence detection is active.
+    if (!heardSpeech && this.context?.state === 'running') {
+      this.fail(
+        generation,
+        'silence',
+        'I didn’t hear anything. Try speaking closer to your microphone.',
+      );
+      return;
+    }
+    this.stop();
+  }
+
   private async record(generation: number) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -127,80 +230,13 @@ export class RecordedRecognition implements Recognition {
       }
       const recorder = new MediaRecorder(stream, {
         mimeType,
-        audioBitsPerSecond: 64000,
+        audioBitsPerSecond: AUDIO_BIT_RATE,
       });
       this.recorder = recorder;
-      const chunks: Blob[] = [];
-      let bytes = 0;
-      recorder.ondataavailable = (event) => {
-        if (generation !== this.generation) {
-          return;
-        }
-        bytes += event.data.size;
-        if (bytes > 2 * 1024 * 1024) {
-          this.fail(
-            generation,
-            'size',
-            'That recording was too large. Try a shorter turn.',
-          );
-          return;
-        }
-        if (event.data.size) {
-          chunks.push(event.data);
-        }
-      };
-      recorder.onerror = () => this.fail(generation, 'audio-capture');
-      recorder.onstop = () => {
-        if (generation !== this.generation) {
-          return;
-        }
-        this.release();
-        this.recorder = null;
-        this.onprocessing?.();
-        void this.transcribe(new Blob(chunks, { type: recorder.mimeType }), generation);
-      };
-      recorder.start(250);
+      this.configureRecorderCallbacks(recorder, generation);
+      recorder.start(RECORDER_CHUNK_INTERVAL_MS);
       this.onstart?.();
-      // Stop after a short pause. The send-turn button also works when Web Audio
-      // is unavailable or suspended by autoplay settings.
-      let analyser: AnalyserNode | null = null;
-      try {
-        this.context = new AudioContext();
-        void this.context.resume().catch(() => undefined);
-        analyser = this.context.createAnalyser();
-        analyser.fftSize = 2048;
-        this.context.createMediaStreamSource(stream).connect(analyser);
-      } catch {
-        /* use explicit send or the 30-second turn limit */
-      }
-      const samples = new Uint8Array(2048);
-      const started = Date.now();
-      let lastSound = started;
-      let heardSpeech = false;
-      this.timer = setInterval(() => {
-        if (analyser && this.context?.state === 'running') {
-          analyser.getByteTimeDomainData(samples);
-          const volume = measureVolume(samples);
-          if (volume > 0.018) {
-            lastSound = Date.now();
-            heardSpeech = true;
-          }
-        }
-        if (heardSpeech && Date.now() - lastSound > 1400) {
-          this.stop();
-        } else if (Date.now() - started > 30000) {
-          // Avoid uploading a silent recording when silence detection is active.
-          if (!heardSpeech && this.context?.state === 'running') {
-            this.fail(
-              generation,
-              'silence',
-              'I didn’t hear anything. Try speaking closer to your microphone.',
-            );
-          } else {
-            this.stop();
-          }
-        }
-      }, 100);
+      this.monitorSilence(stream, generation);
     } catch (error) {
       this.fail(
         generation,
@@ -214,7 +250,7 @@ export class RecordedRecognition implements Recognition {
   private async transcribe(audio: Blob, generation: number) {
     const controller = new AbortController();
     this.upload = controller;
-    const timer = setTimeout(() => controller.abort(), 35000);
+    const timer = setTimeout(() => controller.abort(), TRANSCRIPTION_TIMEOUT_MS);
     try {
       const text = await transcribeAudio(audio, this.config, controller.signal);
 
