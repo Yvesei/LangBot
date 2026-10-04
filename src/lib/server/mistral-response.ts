@@ -1,9 +1,12 @@
 import { z } from 'zod';
 import { ApiError } from './errors';
 
+const MAX_COMPLETION_CONTENT_LENGTH = 30000;
+const INVALID_COMPLETION_MESSAGE = 'The AI returned an invalid response. Please retry.';
+
 const completionChoiceSchema = z.object({
   finish_reason: z.literal('stop'),
-  message: z.object({ content: z.string().min(1).max(30000) }),
+  message: z.object({ content: z.string().min(1).max(MAX_COMPLETION_CONTENT_LENGTH) }),
 });
 
 const usageSchema = z.object({
@@ -17,31 +20,36 @@ const completionResponseSchema = z.object({
   usage: usageSchema.optional(),
 });
 
-export async function parseCompletionResponse<Schema extends z.ZodType>(
-  response: Response,
-  schema: Schema,
-) {
-  const responseBody = await response.json();
+function parseCompletionEnvelope(responseBody: unknown) {
   const parsedResponse = completionResponseSchema.safeParse(responseBody);
 
   if (!parsedResponse.success) {
     throw new ApiError(502, 'The AI response was incomplete. Please retry.');
   }
 
-  const completion = parsedResponse.data;
-  const content = completion.choices[0].message.content;
-  let completionPayload: unknown;
+  return parsedResponse.data;
+}
 
+function parseCompletionPayload(content: string): unknown {
   try {
-    completionPayload = JSON.parse(content);
+    return JSON.parse(content);
   } catch {
-    throw new ApiError(502, 'The AI returned an invalid response. Please retry.');
+    throw new ApiError(502, INVALID_COMPLETION_MESSAGE);
   }
+}
 
+export async function parseCompletionResponse<Schema extends z.ZodType>(
+  response: Response,
+  schema: Schema,
+) {
+  const responseBody = await response.json();
+  const completion = parseCompletionEnvelope(responseBody);
+  const content = completion.choices[0].message.content;
+  const completionPayload = parseCompletionPayload(content);
   const parsedPayload = schema.safeParse(completionPayload);
 
   if (!parsedPayload.success) {
-    throw new ApiError(502, 'The AI returned an invalid response. Please retry.');
+    throw new ApiError(502, INVALID_COMPLETION_MESSAGE);
   }
 
   return {

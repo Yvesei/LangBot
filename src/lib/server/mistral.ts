@@ -19,6 +19,44 @@ function getRateLimitError(response: Response): ApiError {
   );
 }
 
+async function retryProviderResponse(response: Response, signal: AbortSignal) {
+  const delay = getRetryDelay(response.headers.get('retry-after'));
+  await response.body?.cancel();
+
+  if (delay > MAX_RETRY_DELAY_MS) {
+    if (response.status === 429) {
+      throw getRateLimitError(response);
+    }
+    throw new ApiError(
+      503,
+      'The AI service is busy. Please try again shortly.',
+      Math.ceil(delay / 1000),
+    );
+  }
+  await waitForRetry(delay, signal);
+}
+
+async function rejectProviderResponse(response: Response): Promise<never> {
+  await response.body?.cancel();
+  if (response.status === 429) {
+    throw getRateLimitError(response);
+  }
+  throw new ApiError(
+    503,
+    'The AI service is temporarily unavailable. Please try again.',
+  );
+}
+
+function getProviderError(error: unknown, signal: AbortSignal): ApiError {
+  if (error instanceof ApiError) {
+    return error;
+  }
+  if (signal.aborted) {
+    return new ApiError(504, 'The request timed out or was cancelled. Please retry.');
+  }
+  return new ApiError(502, 'Could not reach the AI service. Please retry.');
+}
+
 export async function complete<Schema extends z.ZodType>(
   schema: Schema,
   name: string,
@@ -88,36 +126,12 @@ export async function completeWithMetrics<Schema extends z.ZodType>(
       const shouldRetry = canRetry && RETRYABLE_STATUSES.includes(response.status);
 
       if (shouldRetry) {
-        const delay = getRetryDelay(response.headers.get('retry-after'));
-        await response.body?.cancel();
-
-        if (delay > MAX_RETRY_DELAY_MS) {
-          if (response.status === 429) {
-            throw getRateLimitError(response);
-          }
-
-          throw new ApiError(
-            503,
-            'The AI service is busy. Please try again shortly.',
-            Math.ceil(delay / 1000),
-          );
-        }
-
-        await waitForRetry(delay, signal);
+        await retryProviderResponse(response, signal);
         continue;
       }
 
       if (!response.ok) {
-        await response.body?.cancel();
-
-        if (response.status === 429) {
-          throw getRateLimitError(response);
-        }
-
-        throw new ApiError(
-          503,
-          'The AI service is temporarily unavailable. Please try again.',
-        );
+        await rejectProviderResponse(response);
       }
 
       const completion = await parseCompletionResponse(response, schema);
@@ -144,14 +158,6 @@ export async function completeWithMetrics<Schema extends z.ZodType>(
 
     throw new ApiError(503, 'The AI service is busy.');
   } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
-
-    if (signal.aborted) {
-      throw new ApiError(504, 'The request timed out or was cancelled. Please retry.');
-    }
-
-    throw new ApiError(502, 'Could not reach the AI service. Please retry.');
+    throw getProviderError(error, signal);
   }
 }
