@@ -20,14 +20,6 @@ function getApiErrorMessage(responseBody: unknown): string {
   return 'The request failed. Please retry.';
 }
 
-async function readApiResponseBody(response: Response): Promise<unknown> {
-  try {
-    return await response.json();
-  } catch {
-    throw new Error('The service returned an unreadable response. Please retry.');
-  }
-}
-
 function parseApiResponse<S extends z.ZodType>(
   response: Response,
   responseBody: unknown,
@@ -58,7 +50,12 @@ export async function post<S extends z.ZodType>(
       body: JSON.stringify(body),
       signal: requestSignal,
     });
-    const responseBody = await readApiResponseBody(response);
+    let responseBody: unknown;
+    try {
+      responseBody = await response.json();
+    } catch {
+      throw new Error('The service returned an unreadable response. Please retry.');
+    }
     return parseApiResponse(response, responseBody, schema);
   } catch (error) {
     if (signal?.aborted) {

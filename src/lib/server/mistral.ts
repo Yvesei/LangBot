@@ -19,10 +19,7 @@ function getRateLimitError(response: Response): ApiError {
   );
 }
 
-async function retryProviderResponse(response: Response, signal: AbortSignal) {
-  const delay = getRetryDelay(response.headers.get('retry-after'));
-  await response.body?.cancel();
-
+function assertRetryDelayAllowed(response: Response, delay: number) {
   if (delay > MAX_RETRY_DELAY_MS) {
     if (response.status === 429) {
       throw getRateLimitError(response);
@@ -33,15 +30,13 @@ async function retryProviderResponse(response: Response, signal: AbortSignal) {
       Math.ceil(delay / 1000),
     );
   }
-  await waitForRetry(delay, signal);
 }
 
-async function rejectProviderResponse(response: Response): Promise<never> {
-  await response.body?.cancel();
+function getProviderResponseError(response: Response): ApiError {
   if (response.status === 429) {
-    throw getRateLimitError(response);
+    return getRateLimitError(response);
   }
-  throw new ApiError(
+  return new ApiError(
     503,
     'The AI service is temporarily unavailable. Please try again.',
   );
@@ -126,12 +121,16 @@ export async function completeWithMetrics<Schema extends z.ZodType>(
       const shouldRetry = canRetry && RETRYABLE_STATUSES.includes(response.status);
 
       if (shouldRetry) {
-        await retryProviderResponse(response, signal);
+        const delay = getRetryDelay(response.headers.get('retry-after'));
+        await response.body?.cancel();
+        assertRetryDelayAllowed(response, delay);
+        await waitForRetry(delay, signal);
         continue;
       }
 
       if (!response.ok) {
-        await rejectProviderResponse(response);
+        await response.body?.cancel();
+        throw getProviderResponseError(response);
       }
 
       const completion = await parseCompletionResponse(response, schema);
