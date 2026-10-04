@@ -24,7 +24,7 @@
 1. **DONE — Name diff and completion-parsing values precisely.** Files: `src/lib/diff.ts`, `src/lib/server/mistral-response.ts`, `REFACTOR_PLAN.md`. Only rename internal variables.
 2. **DONE — Name review and limit-store values precisely.** Files: `src/lib/review.ts`, `src/lib/server/limits.ts`, `REFACTOR_PLAN.md`. Only rename internal variables/functions; keep response property names.
 3. **DONE — Name page and voice-call values precisely.** Files: `src/app/page.tsx`, `src/components/ui/voice/VoiceCall.tsx`, `REFACTOR_PLAN.md`. Only rename internal values/functions; preserve props and state timing.
-4. **PENDING — Extract diff table construction and bounded fallback.** Files: `src/lib/diff.ts`, `REFACTOR_PLAN.md`. Retain tokenization, tie breaking, merged parts, and the memory threshold.
+4. **DONE — Extract diff table construction and bounded fallback.** Files: `src/lib/diff.ts`, `REFACTOR_PLAN.md`. Retain tokenization, tie breaking, merged parts, and the memory threshold.
 5. **PENDING — Extract completion parsing and provider retry/error decisions.** Files: `src/lib/server/mistral-response.ts`, `src/lib/server/mistral.ts`, `REFACTOR_PLAN.md`. Retain error messages, cancellation order, retry delays, logs, and metrics.
 6. **PENDING — Extract HTTP byte collection and limit-store operations.** Files: `src/lib/server/http.ts`, `src/lib/server/limits.ts`, `REFACTOR_PLAN.md`. Retain streaming limits, timer/resource cleanup, Redis validation, and in-memory expiry.
 7. **PENDING — Extract API response validation.** Files: `src/lib/api/request.ts`, `src/lib/api/transcribe.ts`, `REFACTOR_PLAN.md`. Retain JSON failures, schema transformations, error precedence, and trimming.
