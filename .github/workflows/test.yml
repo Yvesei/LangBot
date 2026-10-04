@@ -17,11 +17,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    # Set environment variables for all steps in this job
-    env:
-      MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-      TEST_MIN_INTERVAL_MS: ${{ secrets.TEST_MIN_INTERVAL_MS }}
-
     steps:
       # Checkout the repository code at the current commit
       - name: Checkout code
@@ -44,40 +39,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Run unit tests first
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Type check
+        run: pnpm run typecheck
+
       - name: Run unit tests
         run: pnpm run test:unit
+
+      - name: Run route integration tests with mocked provider
+        run: pnpm run test:integration
+
+      - name: Validate evaluation fixtures (no API calls)
+        run: pnpm eval
 
       # Build the Next.js application
       - name: Build Next.js app
         run: pnpm run build
 
-      # Start the server in the background for integration tests
-      - name: Start server
-        run: |
-          pnpm run start &
-          echo $! > server.pid
-
-      # Wait for the server to be fully ready before running tests
-      - name: Wait for server to be ready
-        run: |
-          echo "Waiting for server to start..."
-          timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
-          echo "Server is ready!"
-
-      # Run integration tests
-      - name: Run integration tests
-        run: pnpm run test:integration
-
-      # stop the server
-      - name: Stop server
-        if: always()
-        run: |
-          if [ -f server.pid ]; then
-            kill $(cat server.pid) || true
-            rm server.pid
-          fi
-          
   # JOB 2: DEPLOY PREVIEW     
   deploy-preview:
       if: github.event_name == 'pull_request'

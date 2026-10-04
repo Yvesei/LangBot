@@ -1,4 +1,4 @@
-import { Bot } from "lucide-react";
+import { Bot } from 'lucide-react';
 
 export function LoadingIndicator() {
   return (
@@ -10,8 +10,14 @@ export function LoadingIndicator() {
       </div>
       <div className="flex items-center gap-1">
         <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-        <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-        <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+        <div
+          className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"
+          style={{ animationDelay: '0.2s' }}
+        ></div>
+        <div
+          className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"
+          style={{ animationDelay: '0.4s' }}
+        ></div>
       </div>
     </div>
   );

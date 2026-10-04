@@ -1,47 +1,48 @@
-import { LanguageConfig } from '../types/language';
+import {
+  languageConfigSchema,
+  levelSchema,
+  type LanguageConfig,
+  type Level,
+} from '../schemas';
 
-/**
- * Get language configuration from localStorage
- * @returns Language configuration object or null if not set
- */
-export function getLanguageConfigFromStorage(): {
-  nativeLanguage: string;
-  targetLanguage: string;
-} | null {
+export function getLanguageConfigFromStorage(): LanguageConfig | null {
   if (typeof window === 'undefined') {
     return null;
   }
+  try {
+    const parsed = languageConfigSchema.safeParse({
+      nativeLanguage: localStorage.getItem('langbot-native'),
+      targetLanguage: localStorage.getItem('langbot-target'),
+    });
+    if (!parsed.success) {
+      return null;
+    }
 
-  const native = localStorage.getItem('langbot-native');
-  const target = localStorage.getItem('langbot-target');
-
-  if (!native || !target) {
+    return parsed.data;
+  } catch {
     return null;
   }
-  
-  console.log('Retrieved language configuration from storage:', { native, target });
-
-  return {
-    nativeLanguage: native,
-    targetLanguage: target
-  };
 }
 
-
-/**
- * Save language configuration to localStorage
- * @param config - Language configuration object
- */
-export function saveLanguageConfigToStorage(config: LanguageConfig): void {
-
-
-  if (config.nativeLanguage === config.targetLanguage) {
-    alert('Please select different languages for native and target.');
-    return;
+export function getLevelFromStorage(): Level {
+  try {
+    return levelSchema.parse(localStorage.getItem('langbot-level'));
+  } catch {
+    return 'beginner';
   }
-
-
-  localStorage.setItem('langbot-native', config.nativeLanguage);
-  localStorage.setItem('langbot-target', config.targetLanguage);
 }
 
+export function saveLanguageConfigToStorage(
+  config: LanguageConfig,
+  level: Level,
+): boolean {
+  const parsed = languageConfigSchema.parse(config);
+  try {
+    localStorage.setItem('langbot-native', parsed.nativeLanguage);
+    localStorage.setItem('langbot-target', parsed.targetLanguage);
+    localStorage.setItem('langbot-level', level);
+    return true;
+  } catch {
+    return false;
+  }
+}

@@ -1,4 +1,1 @@
-export interface LanguageConfig {
-  nativeLanguage: string;
-  targetLanguage: string;
-}
+export type { LanguageConfig } from '../schemas';

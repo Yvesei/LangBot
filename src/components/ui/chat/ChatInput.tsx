@@ -1,22 +1,15 @@
-import React, { useRef, useLayoutEffect } from "react";
-import { Mic, Plus } from "lucide-react";
-import DOMPurify from "dompurify";
+import { useRef, useLayoutEffect, type FormEvent, type KeyboardEvent } from 'react';
+import { ArrowUp, AudioLines, Square } from 'lucide-react';
+import { MAX_MESSAGE_LENGTH } from '@/lib/config/limits';
 
-/**
- * Hook: auto-resize a textarea ref to its content.
- * - maxPx matches your Tailwind max-h (200px).
- * - call it with the textarea ref and the current value (prompt).
- */
-function useAutoResizeTextarea(ref: React.RefObject<HTMLTextAreaElement | null>, value: string, maxPx = 200) {
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    // allow shrink
-    el.style.height = "auto";
-    // measure and cap
-    const next = Math.min(el.scrollHeight, maxPx);
-    el.style.height = `${next}px`;
-  }, [ref, value, maxPx]);
+interface ChatInputProps {
+  prompt: string;
+  setPrompt: (value: string) => void;
+  loading: boolean;
+  onSend: () => void;
+  onCancel: () => void;
+  onVoiceCall: () => void;
+  disabled: boolean;
 }
 
 export function ChatInput({
@@ -24,62 +17,105 @@ export function ChatInput({
   setPrompt,
   loading,
   onSend,
-  disabled
-}: {
-  prompt: string;
-  setPrompt: (value: string) => void;
-  loading: boolean;
-  onSend: () => void;
-  disabled: boolean;
-}) {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  useAutoResizeTextarea(textareaRef, prompt, 200);
+  onCancel,
+  onVoiceCall,
+  disabled,
+}: ChatInputProps) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    if (ref.current) {
+      ref.current.style.height = 'auto';
+      ref.current.style.height = Math.min(ref.current.scrollHeight, 180) + 'px';
+    }
+  }, [prompt]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      prompt = DOMPurify.sanitize(prompt);
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onSend();
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    const isComposing = event.nativeEvent.isComposing || event.keyCode === 229;
+    const shouldSend = event.key === 'Enter' && !event.shiftKey && !isComposing;
+
+    if (shouldSend) {
+      event.preventDefault();
       onSend();
     }
-  };
+  }
 
   return (
-    <div className="mb-4">
-      <div className="mx-auto max-w-3xl px-4 py-4">
-        <div className="relative bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
-          <div className="flex flex-col p-3">
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask me anything about language learning..."
-              className="w-full bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none focus:outline-none min-h-[40px] max-h-[200px] text-[15px] overflow-hidden"
-              disabled={loading || disabled}
-              maxLength={500}
-            />
-
-            <div className="flex items-center justify-between mt-2">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
-              </div>
-
+    <form
+      onSubmit={handleSubmit}
+      className="composer-wrap"
+    >
+      <div className="mx-auto max-w-3xl">
+        <label
+          htmlFor="chat-message"
+          className="sr-only"
+        >
+          Your message
+        </label>
+        <div className="composer">
+          <textarea
+            id="chat-message"
+            ref={ref}
+            value={prompt}
+            rows={1}
+            maxLength={MAX_MESSAGE_LENGTH}
+            onChange={(event) => setPrompt(event.target.value)}
+            disabled={disabled || loading}
+            onKeyDown={handleKeyDown}
+            placeholder="Say something. Make mistakes. Learn."
+            className="min-h-12 w-full resize-none bg-transparent px-2 py-3 text-[15px] outline-none placeholder:text-[var(--muted)]"
+          />
+          <div className="flex items-center justify-between px-1 pb-1 pt-2">
+            <span className="text-xs text-[var(--muted)]">
+              {prompt.length ? `${prompt.length}/2000` : 'A little practice, every day.'}
+            </span>
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-md transition-colors font-medium text-sm flex items-center gap-2"
+                onClick={onVoiceCall}
+                disabled={disabled || loading}
+                className="icon-button"
+                aria-label="Voice call"
+                title="Start a voice call"
               >
-                <Mic className="w-4 h-4" />
+                <AudioLines size={21} />
               </button>
+              {loading ? (
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="send-button"
+                  aria-label="Cancel reply"
+                  title="Stop reply"
+                >
+                  <Square
+                    size={16}
+                    fill="currentColor"
+                  />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={disabled || !prompt.trim()}
+                  className="send-button"
+                  aria-label="Send"
+                  title="Send message"
+                >
+                  <ArrowUp size={20} />
+                </button>
+              )}
             </div>
           </div>
         </div>
+        <p className="mt-3 text-center text-[11px] text-[var(--muted)]">
+          AI suggestions can make mistakes.{' '}
+          <span className="hidden sm:inline">Shift + Enter for a new line.</span>
+        </p>
       </div>
-    </div>
+    </form>
   );
 }

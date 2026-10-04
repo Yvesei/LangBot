@@ -1,34 +1,78 @@
-import { Plus, Github, Languages } from "lucide-react";
+import { Bot, Github, Plus, Languages } from 'lucide-react';
+import { LANGUAGES, type LanguageConfig, type Level } from '@/lib/schemas';
 
 interface ChatHeaderProps {
-  onChangeLanguages?: () => void;
+  config: LanguageConfig | null;
+  level: Level;
+  onLevelChange: (level: Level) => void;
+  onChangeLanguages: () => void;
+  onNewChat: () => void;
 }
 
-export function ChatHeader({ onChangeLanguages }: ChatHeaderProps) {
-return (
-<div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 dark:border-gray-800">
-<div className="flex items-center gap-3">
-<button className="flex items-center justify-center gap-1.5 px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-<Plus className="w-4 h-4" />
- New
-</button>
-</div>
-
-<div className="flex items-center gap-2">
-  
-  <button 
-    onClick={onChangeLanguages}
-    className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-    title="Change Languages"
-  >
-    <Languages className="w-4 h-4" />
-  </button>
-
-  <button onClick={() => window.open('https://github.com/Yvesei/LangBot', '_blank')} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors">
-  <Github className="w-4 h-4 bg-gray" />
-  </button>
-
-</div>
-</div>
- );
+export function ChatHeader({
+  config,
+  level,
+  onLevelChange,
+  onChangeLanguages,
+  onNewChat,
+}: ChatHeaderProps) {
+  return (
+    <header className="chat-header">
+      <div className="flex items-center gap-3">
+        <span className="brand-mark">
+          <Bot
+            size={20}
+            strokeWidth={1.7}
+          />
+        </span>
+        <h1 className="text-base font-semibold tracking-tight">
+          LangBot
+          <span className="ml-2 hidden text-xs font-normal text-[var(--muted)] sm:inline">
+            / {config ? LANGUAGES[config.targetLanguage] : 'Language companion'}
+          </span>
+        </h1>
+      </div>
+      <div className="flex items-center gap-1 sm:gap-2">
+        <label className="mr-1 text-xs">
+          <span className="sr-only">Level</span>
+          <select
+            value={level}
+            onChange={(e) => onLevelChange(e.target.value as Level)}
+            className="level-select"
+            title="Practice level"
+          >
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </label>
+        <button
+          onClick={onNewChat}
+          className="icon-button"
+          aria-label="New chat"
+          title="New chat"
+        >
+          <Plus size={19} />
+        </button>
+        <button
+          onClick={onChangeLanguages}
+          className="icon-button"
+          aria-label="Languages"
+          title="Change languages"
+        >
+          <Languages size={19} />
+        </button>
+        <a
+          href="https://github.com/Yvesei/LangBot"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="icon-button hidden sm:inline-flex"
+          aria-label="GitHub repository"
+          title="GitHub"
+        >
+          <Github size={18} />
+        </a>
+      </div>
+    </header>
+  );
 }

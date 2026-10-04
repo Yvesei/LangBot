@@ -1,8 +1,16 @@
-import { BookOpen } from "lucide-react";
+import { BookOpen } from 'lucide-react';
 
-export function TopicsPanel({ topics, onClearChat }: { topics: string[]; onClearChat: () => void }) {
-  if (topics.length === 0) return null;
-  
+export function TopicsPanel({
+  topics,
+  onClearChat,
+}: {
+  topics: string[];
+  onClearChat: () => void;
+}) {
+  if (topics.length === 0) {
+    return null;
+  }
+
   return (
     <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
       <div className="flex items-center justify-between mb-3">
@@ -12,7 +20,7 @@ export function TopicsPanel({ topics, onClearChat }: { topics: string[]; onClear
             Topics discussed
           </span>
         </div>
-        <button 
+        <button
           onClick={onClearChat}
           className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
         >
@@ -21,7 +29,7 @@ export function TopicsPanel({ topics, onClearChat }: { topics: string[]; onClear
       </div>
       <div className="flex flex-wrap gap-2">
         {topics.slice(0, 5).map((topic, index) => (
-          <span 
+          <span
             key={index}
             className="px-3 py-1 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-full"
           >
