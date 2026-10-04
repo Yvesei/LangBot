@@ -4,6 +4,13 @@ import { ApiError } from './errors';
 import { enforceLimits } from './limits';
 import { MAX_REQUEST_BYTES } from '../config/limits';
 
+const REQUEST_BODY_TIMEOUT_MS = 5000;
+
+interface RequestChunks {
+  chunks: Uint8Array[];
+  bytes: number;
+}
+
 async function readBody(request: Request): Promise<unknown> {
   if (
     request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !==
@@ -19,6 +26,43 @@ async function readBody(request: Request): Promise<unknown> {
   }
 }
 
+async function readRequestChunks(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  maxBytes: number,
+  hasTimedOut: () => boolean,
+): Promise<RequestChunks> {
+  const chunks: Uint8Array[] = [];
+  let bytes = 0;
+  while (true) {
+    const { value, done } = await reader.read();
+    if (hasTimedOut()) {
+      throw new ApiError(408, 'Request body timed out.');
+    }
+    if (done) {
+      return {
+        chunks,
+        bytes,
+      };
+    }
+    bytes += value.byteLength;
+    if (bytes > maxBytes) {
+      await reader.cancel();
+      throw new ApiError(413, 'Request is too large.');
+    }
+    chunks.push(value);
+  }
+}
+
+function combineRequestChunks({ chunks, bytes }: RequestChunks) {
+  const combined = new Uint8Array(bytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return combined;
+}
+
 export async function readBytes(request: Request, maxBytes: number) {
   if (Number(request.headers.get('content-length')) > maxBytes) {
     throw new ApiError(413, 'Request is too large.');
@@ -27,40 +71,19 @@ export async function readBytes(request: Request, maxBytes: number) {
   if (!reader) {
     throw new ApiError(400, 'A request body is required.');
   }
-  const chunks: Uint8Array[] = [];
-  let bytes = 0;
   let timedOut = false;
   const timer = setTimeout(() => {
     timedOut = true;
     void reader.cancel().catch(() => undefined);
-  }, 5000);
+  }, REQUEST_BODY_TIMEOUT_MS);
+  let requestChunks: RequestChunks;
   try {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (timedOut) {
-        throw new ApiError(408, 'Request body timed out.');
-      }
-      if (done) {
-        break;
-      }
-      bytes += value.byteLength;
-      if (bytes > maxBytes) {
-        await reader.cancel();
-        throw new ApiError(413, 'Request is too large.');
-      }
-      chunks.push(value);
-    }
+    requestChunks = await readRequestChunks(reader, maxBytes, () => timedOut);
   } finally {
     clearTimeout(timer);
     reader.releaseLock();
   }
-  const combined = new Uint8Array(bytes);
-  let offset = 0;
-  for (const chunk of chunks) {
-    combined.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return combined;
+  return combineRequestChunks(requestChunks);
 }
 
 export function route<S extends z.ZodType>(

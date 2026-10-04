@@ -12,50 +12,46 @@ function parsePositiveInteger(value: string | undefined, fallback: number) {
   return Number.isSafeInteger(parsedInteger) && parsedInteger > 0 ? parsedInteger : fallback;
 }
 
-async function incrementLimitCount(key: string, seconds: number): Promise<number> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (url && token) {
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(['EVAL', incrementScript, '1', `langbot:${key}`, String(seconds)]),
-        signal: AbortSignal.timeout(3000),
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        throw new Error('Limit store unavailable');
-      }
-      const storeResponse: unknown = await response.json();
-      if (
-        !storeResponse ||
-        typeof storeResponse !== 'object' ||
-        !('result' in storeResponse) ||
-        typeof storeResponse.result !== 'number' ||
-        !Number.isSafeInteger(storeResponse.result) ||
-        storeResponse.result < 1
-      ) {
-        throw new Error('Invalid limit store response');
-      }
-      return storeResponse.result;
-    } catch {
-      throw new ApiError(
-        503,
-        'Usage protection is temporarily unavailable. Please try again.',
-      );
-    }
-  }
-  // A per-process fallback cannot protect a multi-instance deployment.
+function parseLimitStoreCount(storeResponse: unknown): number {
   if (
-    process.env.NODE_ENV === 'production' &&
-    process.env.ALLOW_IN_MEMORY_LIMITS !== 'true'
+    !storeResponse ||
+    typeof storeResponse !== 'object' ||
+    !('result' in storeResponse) ||
+    typeof storeResponse.result !== 'number' ||
+    !Number.isSafeInteger(storeResponse.result) ||
+    storeResponse.result < 1
   ) {
-    throw new ApiError(503, 'Usage protection is not configured.');
+    throw new Error('Invalid limit store response');
   }
+  return storeResponse.result;
+}
+
+async function incrementSharedLimit(key: string, seconds: number, url: string, token: string) {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(['EVAL', incrementScript, '1', `langbot:${key}`, String(seconds)]),
+      signal: AbortSignal.timeout(3000),
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      throw new Error('Limit store unavailable');
+    }
+    const storeResponse: unknown = await response.json();
+    return parseLimitStoreCount(storeResponse);
+  } catch {
+    throw new ApiError(
+      503,
+      'Usage protection is temporarily unavailable. Please try again.',
+    );
+  }
+}
+
+function incrementLocalLimit(key: string, seconds: number): number {
   const now = Date.now();
   for (const [id, bucket] of buckets) {
     if (bucket.expires <= now) {
@@ -69,6 +65,22 @@ async function incrementLimitCount(key: string, seconds: number): Promise<number
   bucket.count++;
   buckets.set(key, bucket);
   return bucket.count;
+}
+
+async function incrementLimitCount(key: string, seconds: number): Promise<number> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (url && token) {
+    return incrementSharedLimit(key, seconds, url, token);
+  }
+  // A per-process fallback cannot protect a multi-instance deployment.
+  if (
+    process.env.NODE_ENV === 'production' &&
+    process.env.ALLOW_IN_MEMORY_LIMITS !== 'true'
+  ) {
+    throw new ApiError(503, 'Usage protection is not configured.');
+  }
+  return incrementLocalLimit(key, seconds);
 }
 
 export async function enforceLimits(request: Request) {
