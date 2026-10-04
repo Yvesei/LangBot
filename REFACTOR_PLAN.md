@@ -33,7 +33,7 @@
 8. **DONE — Extract review edit keys and occurrence aggregation.** Files: `src/lib/review.ts`, `REFACTOR_PLAN.md`. Retain ordering, mutation of internal groups, newest representative cards, and source-message deduplication.
 9. **DONE — Extract page request preparation and completion application.** Files: `src/app/page.tsx`, `REFACTOR_PLAN.md`. Keep request guards, React updater timing, card ordering, and late-response handling.
 10. **DONE — Extract recorded-recognition setup and silence monitoring.** Files: `src/lib/voice/recognition.ts`, `REFACTOR_PLAN.md`. Keep resource ownership, generation checks, timer thresholds, and callback order.
-11. **PENDING — Extract voice transcript aggregation and speech completion.** Files: `src/components/ui/voice/VoiceCall.tsx`, `REFACTOR_PLAN.md`. Keep live/final transcripts, ignored late callbacks, microphone controls, and speech-error messages.
+11. **DONE — Extract voice transcript aggregation and speech completion.** Files: `src/components/ui/voice/VoiceCall.tsx`, `REFACTOR_PLAN.md`. Keep live/final transcripts, ignored late callbacks, microphone controls, and speech-error messages.
 12. **PENDING — Name evaluation metrics precisely.** Files: `eval/metrics.ts`, `REFACTOR_PLAN.md`. Only rename internal values/functions; keep all output fields and percentile formulas.
 
 ## Completion

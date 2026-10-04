@@ -19,7 +19,11 @@ import {
   canRecord,
   RecordedRecognition,
   type Recognition,
+  type RecognitionEvent,
 } from '@/lib/voice/recognition';
+
+const MAX_VOICE_MESSAGE_LENGTH = 2000;
+const RECOGNITION_RESTART_DELAY_MS = 250;
 
 type VoiceMessage = ChatMessage & { replyTo?: string };
 type CallState =
@@ -73,6 +77,23 @@ function getSpeechText(text: string) {
     .replace(/[`*_#>]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function appendTranscriptSegments(
+  event: RecognitionEvent,
+  finalTranscript: { current: string },
+): string {
+  let interimText = '';
+  for (let index = event.resultIndex; index < event.results.length; index++) {
+    const recognitionResult = event.results[index];
+    const text = recognitionResult[0]?.transcript ?? '';
+    if (recognitionResult.isFinal) {
+      finalTranscript.current = `${finalTranscript.current} ${text}`.trim();
+    } else {
+      interimText += text;
+    }
+  }
+  return interimText;
 }
 
 function getUnavailableReason(isSecureConnection: boolean): string {
@@ -187,6 +208,19 @@ export function VoiceCall({
     }
   }, [setState]);
 
+  function submitVoiceTranscript(text: string) {
+    if (text.length > MAX_VOICE_MESSAGE_LENGTH) {
+      shouldListen.current = false;
+      setMicEnabled(false);
+      setState('error');
+      setVoiceError('That was too long to send. Please speak in shorter turns.');
+      return;
+    }
+    setState('thinking');
+    isRequestBusy.current = true;
+    onSendRef.current(text);
+  }
+
   useEffect(() => {
     isRequestBusy.current = loading;
   }, [loading]);
@@ -254,16 +288,7 @@ export function VoiceCall({
       if (!isOpen.current || !shouldListen.current || !recognitionActive.current) {
         return;
       }
-      let interimText = '';
-      for (let index = event.resultIndex; index < event.results.length; index++) {
-        const recognitionResult = event.results[index];
-        const text = recognitionResult[0]?.transcript ?? '';
-        if (recognitionResult.isFinal) {
-          finalTranscript.current = `${finalTranscript.current} ${text}`.trim();
-        } else {
-          interimText += text;
-        }
-      }
+      const interimText = appendTranscriptSegments(event, finalTranscript);
       setInterimTranscript(`${finalTranscript.current} ${interimText}`.trim());
     };
     recordedRecognition.onerror = (event) => {
@@ -286,16 +311,7 @@ export function VoiceCall({
       finalTranscript.current = '';
       setInterimTranscript('');
       if (text) {
-        if (text.length > 2000) {
-          shouldListen.current = false;
-          setMicEnabled(false);
-          setState('error');
-          setVoiceError('That was too long to send. Please speak in shorter turns.');
-          return;
-        }
-        setState('thinking');
-        isRequestBusy.current = true;
-        onSendRef.current(text);
+        submitVoiceTranscript(text);
         return;
       }
       if (
@@ -304,7 +320,7 @@ export function VoiceCall({
         !isRequestBusy.current &&
         callStateRef.current !== 'speaking'
       ) {
-        restartTimer.current = setTimeout(startListening, 250);
+        restartTimer.current = setTimeout(startListening, RECOGNITION_RESTART_DELAY_MS);
       }
     };
     recognition.current = recordedRecognition;
@@ -371,24 +387,23 @@ export function VoiceCall({
         setState('speaking');
       }
     };
-    utterance.onend = () => {
+    function finishSpeaking(): boolean {
       if (!isOpen.current || activeSpeech.current !== utterance) {
-        return;
+        return false;
       }
       activeSpeech.current = null;
       setState(shouldListen.current ? 'starting' : 'paused');
       if (shouldListen.current) {
         startListening();
       }
+      return true;
+    }
+    utterance.onend = () => {
+      finishSpeaking();
     };
     utterance.onerror = () => {
-      if (!isOpen.current || activeSpeech.current !== utterance) {
+      if (!finishSpeaking()) {
         return;
-      }
-      activeSpeech.current = null;
-      setState(shouldListen.current ? 'starting' : 'paused');
-      if (shouldListen.current) {
-        startListening();
       }
       setVoiceError('The spoken reply could not be played. You can still read it below.');
     };
@@ -472,16 +487,16 @@ export function VoiceCall({
       if (callStateRef.current !== 'speaking') {
         setState(loading ? 'thinking' : 'paused');
       }
-    } else {
-      onClearError();
-      setVoiceError('');
-      if (callStateRef.current === 'speaking') {
-        return;
-      }
-      setState(loading ? 'thinking' : 'starting');
-      if (!loading) {
-        startListening();
-      }
+      return;
+    }
+    onClearError();
+    setVoiceError('');
+    if (callStateRef.current === 'speaking') {
+      return;
+    }
+    setState(loading ? 'thinking' : 'starting');
+    if (!loading) {
+      startListening();
     }
   }
 
