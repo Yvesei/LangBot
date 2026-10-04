@@ -15,16 +15,16 @@ function tokenize(text: string, locale: string): string[] {
 }
 
 export function wordDiff(original: string, corrected: string, locale = 'en'): DiffPart[] {
-  const a = tokenize(original, locale);
-  const b = tokenize(corrected, locale);
+  const originalTokens = tokenize(original, locale);
+  const correctedTokens = tokenize(corrected, locale);
   const parts: DiffPart[] = [];
-  function append(type: DiffPart['type'], text: string) {
+  function appendPart(type: DiffPart['type'], text: string) {
     if (!text) {
       return;
     }
-    const last = parts[parts.length - 1];
-    if (last?.type === type) {
-      last.text += text;
+    const previousPart = parts[parts.length - 1];
+    if (previousPart?.type === type) {
+      previousPart.text += text;
     } else {
       parts.push({
         type,
@@ -33,49 +33,49 @@ export function wordDiff(original: string, corrected: string, locale = 'en'): Di
     }
   }
   // Bound memory for pathological input; preserve identical prefix/suffix.
-  if (a.length * b.length > 1000000) {
-    let start = 0;
-    let endA = a.length;
-    let endB = b.length;
-    while (start < endA && start < endB && a[start] === b[start]) {
-      start++;
+  if (originalTokens.length * correctedTokens.length > 1000000) {
+    let commonPrefixLength = 0;
+    let originalEnd = originalTokens.length;
+    let correctedEnd = correctedTokens.length;
+    while (commonPrefixLength < originalEnd && commonPrefixLength < correctedEnd && originalTokens[commonPrefixLength] === correctedTokens[commonPrefixLength]) {
+      commonPrefixLength++;
     }
-    while (endA > start && endB > start && a[endA - 1] === b[endB - 1]) {
-      endA--;
-      endB--;
+    while (originalEnd > commonPrefixLength && correctedEnd > commonPrefixLength && originalTokens[originalEnd - 1] === correctedTokens[correctedEnd - 1]) {
+      originalEnd--;
+      correctedEnd--;
     }
-    append('equal', a.slice(0, start).join(''));
-    append('removed', a.slice(start, endA).join(''));
-    append('added', b.slice(start, endB).join(''));
-    append('equal', a.slice(endA).join(''));
+    appendPart('equal', originalTokens.slice(0, commonPrefixLength).join(''));
+    appendPart('removed', originalTokens.slice(commonPrefixLength, originalEnd).join(''));
+    appendPart('added', correctedTokens.slice(commonPrefixLength, correctedEnd).join(''));
+    appendPart('equal', originalTokens.slice(originalEnd).join(''));
     return parts;
   }
-  const width = b.length + 1;
-  const table = new Uint16Array((a.length + 1) * width);
-  for (let i = a.length - 1; i >= 0; i--) {
-    for (let j = b.length - 1; j >= 0; j--) {
-      table[i * width + j] =
-        a[i] === b[j]
-          ? 1 + table[(i + 1) * width + j + 1]
-          : Math.max(table[(i + 1) * width + j], table[i * width + j + 1]);
+  const tableWidth = correctedTokens.length + 1;
+  const subsequenceLengths = new Uint16Array((originalTokens.length + 1) * tableWidth);
+  for (let originalIndex = originalTokens.length - 1; originalIndex >= 0; originalIndex--) {
+    for (let correctedIndex = correctedTokens.length - 1; correctedIndex >= 0; correctedIndex--) {
+      subsequenceLengths[originalIndex * tableWidth + correctedIndex] =
+        originalTokens[originalIndex] === correctedTokens[correctedIndex]
+          ? 1 + subsequenceLengths[(originalIndex + 1) * tableWidth + correctedIndex + 1]
+          : Math.max(subsequenceLengths[(originalIndex + 1) * tableWidth + correctedIndex], subsequenceLengths[originalIndex * tableWidth + correctedIndex + 1]);
     }
   }
-  let i = 0;
-  let j = 0;
-  while (i < a.length || j < b.length) {
-    if (i < a.length && j < b.length && a[i] === b[j]) {
-      append('equal', a[i]);
-      i++;
-      j++;
+  let originalIndex = 0;
+  let correctedIndex = 0;
+  while (originalIndex < originalTokens.length || correctedIndex < correctedTokens.length) {
+    if (originalIndex < originalTokens.length && correctedIndex < correctedTokens.length && originalTokens[originalIndex] === correctedTokens[correctedIndex]) {
+      appendPart('equal', originalTokens[originalIndex]);
+      originalIndex++;
+      correctedIndex++;
     } else if (
-      i < a.length &&
-      (j === b.length || table[(i + 1) * width + j] >= table[i * width + j + 1])
+      originalIndex < originalTokens.length &&
+      (correctedIndex === correctedTokens.length || subsequenceLengths[(originalIndex + 1) * tableWidth + correctedIndex] >= subsequenceLengths[originalIndex * tableWidth + correctedIndex + 1])
     ) {
-      append('removed', a[i]);
-      i++;
+      appendPart('removed', originalTokens[originalIndex]);
+      originalIndex++;
     } else {
-      append('added', b[j]);
-      j++;
+      appendPart('added', correctedTokens[correctedIndex]);
+      correctedIndex++;
     }
   }
   return parts;

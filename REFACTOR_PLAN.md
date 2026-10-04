@@ -21,7 +21,7 @@
 
 ## Ordered steps
 
-1. **PENDING — Name diff and completion-parsing values precisely.** Files: `src/lib/diff.ts`, `src/lib/server/mistral-response.ts`, `REFACTOR_PLAN.md`. Only rename internal variables.
+1. **DONE — Name diff and completion-parsing values precisely.** Files: `src/lib/diff.ts`, `src/lib/server/mistral-response.ts`, `REFACTOR_PLAN.md`. Only rename internal variables.
 2. **PENDING — Name review and limit-store values precisely.** Files: `src/lib/review.ts`, `src/lib/server/limits.ts`, `REFACTOR_PLAN.md`. Only rename internal variables/functions; keep response property names.
 3. **PENDING — Name page and voice-call values precisely.** Files: `src/app/page.tsx`, `src/components/ui/voice/VoiceCall.tsx`, `REFACTOR_PLAN.md`. Only rename internal values/functions; preserve props and state timing.
 4. **PENDING — Extract diff table construction and bounded fallback.** Files: `src/lib/diff.ts`, `REFACTOR_PLAN.md`. Retain tokenization, tie breaking, merged parts, and the memory threshold.

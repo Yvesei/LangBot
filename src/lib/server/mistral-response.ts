@@ -21,8 +21,8 @@ export async function parseCompletionResponse<Schema extends z.ZodType>(
   response: Response,
   schema: Schema,
 ) {
-  const body = await response.json();
-  const parsedResponse = completionResponseSchema.safeParse(body);
+  const responseBody = await response.json();
+  const parsedResponse = completionResponseSchema.safeParse(responseBody);
 
   if (!parsedResponse.success) {
     throw new ApiError(502, 'The AI response was incomplete. Please retry.');
@@ -30,22 +30,22 @@ export async function parseCompletionResponse<Schema extends z.ZodType>(
 
   const completion = parsedResponse.data;
   const content = completion.choices[0].message.content;
-  let result: unknown;
+  let completionPayload: unknown;
 
   try {
-    result = JSON.parse(content);
+    completionPayload = JSON.parse(content);
   } catch {
     throw new ApiError(502, 'The AI returned an invalid response. Please retry.');
   }
 
-  const parsedResult = schema.safeParse(result);
+  const parsedPayload = schema.safeParse(completionPayload);
 
-  if (!parsedResult.success) {
+  if (!parsedPayload.success) {
     throw new ApiError(502, 'The AI returned an invalid response. Please retry.');
   }
 
   return {
-    data: parsedResult.data,
+    data: parsedPayload.data,
     model: completion.model,
     usage: completion.usage ?? null,
   };
