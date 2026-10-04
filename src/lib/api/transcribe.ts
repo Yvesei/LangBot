@@ -22,19 +22,19 @@ export async function transcribeAudio(
     },
   });
 
-  const body: unknown = await response.json();
+  const responseBody: unknown = await response.json();
 
   if (!response.ok) {
-    const error = errorSchema.safeParse(body);
+    const parsedError = errorSchema.safeParse(responseBody);
 
-    if (error.success) {
-      throw new Error(error.data.error);
+    if (parsedError.success) {
+      throw new Error(parsedError.data.error);
     }
 
     throw new Error('Transcription failed. Please try again.');
   }
 
-  const transcript = transcriptSchema.safeParse(body);
+  const transcript = transcriptSchema.safeParse(responseBody);
 
   if (!transcript.success) {
     throw new Error('Transcription returned an invalid response. Please try again.');

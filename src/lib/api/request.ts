@@ -8,11 +8,11 @@ function getRequestSignal(signal: AbortSignal | undefined, timeout: AbortSignal)
   return timeout;
 }
 
-function getApiErrorMessage(data: unknown): string {
-  const parsed = z.object({ error: z.string().max(300) }).safeParse(data);
+function getApiErrorMessage(responseBody: unknown): string {
+  const parsedResponse = z.object({ error: z.string().max(300) }).safeParse(responseBody);
 
-  if (parsed.success) {
-    return parsed.data.error;
+  if (parsedResponse.success) {
+    return parsedResponse.data.error;
   }
 
   return 'The request failed. Please retry.';
@@ -33,20 +33,20 @@ export async function post<S extends z.ZodType>(
       body: JSON.stringify(body),
       signal: requestSignal,
     });
-    let data: unknown;
+    let responseBody: unknown;
     try {
-      data = await response.json();
+      responseBody = await response.json();
     } catch {
       throw new Error('The service returned an unreadable response. Please retry.');
     }
     if (!response.ok) {
-      throw new Error(getApiErrorMessage(data));
+      throw new Error(getApiErrorMessage(responseBody));
     }
-    const parsed = schema.safeParse(data);
-    if (!parsed.success) {
+    const parsedResponse = schema.safeParse(responseBody);
+    if (!parsedResponse.success) {
       throw new Error('The service returned an invalid response. Please retry.');
     }
-    return parsed.data;
+    return parsedResponse.data;
   } catch (error) {
     if (signal?.aborted) {
       throw new Error('Request cancelled.');
