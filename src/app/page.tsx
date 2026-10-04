@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { send } from '@/lib/api';
-import type { LanguageConfig, Level } from '@/lib/schemas';
+import type { ChatResult, LanguageConfig, Level } from '@/lib/schemas';
 import {
   addAssistantReply,
   buildChatRequest,
@@ -32,6 +32,8 @@ import { PracticePanel } from '@/components/ui/panels/PracticePanel';
 import { VoiceCall } from '@/components/ui/voice/VoiceCall';
 import { ReviewDialog } from '@/components/ui/panels/ReviewDialog';
 import { createVocabularyCards, groupReviewCards } from '@/lib/review';
+
+const MAX_SAVED_CARDS = 100;
 
 interface ActiveChatRequest {
   controller: AbortController;
@@ -243,6 +245,84 @@ export default function Page() {
     void sendMessage(message);
   }
 
+  function startMessageRequest(messageId: string): AbortController {
+    const controller = new AbortController();
+
+    activeChatRequest.current = {
+      controller,
+      messageId,
+    };
+    setLoading(true);
+    setError('');
+
+    return controller;
+  }
+
+  function prepareUserMessage(
+    messageId: string,
+    content: string,
+    retryMessage?: ConversationMessage,
+    spokenContent?: string,
+  ) {
+    if (retryMessage) {
+      setMessages((current) => updateMessageStatus(current, messageId, 'pending'));
+      return;
+    }
+    if (spokenContent === undefined) {
+      setPrompt('');
+    }
+
+    const userMessage: ConversationMessage = {
+      id: messageId,
+      role: 'user',
+      content,
+      timestamp: new Date(),
+      status: 'pending',
+    };
+
+    setMessages((current) => [...current, userMessage]);
+  }
+
+  function finishMessageRequest(controller: AbortController) {
+    if (activeChatRequest.current?.controller === controller) {
+      activeChatRequest.current = null;
+      setLoading(false);
+    }
+  }
+
+  function applyTutorResponse(
+    messageId: string,
+    content: string,
+    tutorResponse: ChatResult,
+    languageConfig: LanguageConfig,
+  ) {
+    setMessages((current) => addAssistantReply(current, messageId, tutorResponse));
+
+    const correctionCard = createCard(
+      messageId,
+      tutorResponse.correction,
+      languageConfig,
+      Date.now(),
+      content,
+    );
+    const generatedCards = createVocabularyCards(
+      messageId,
+      content,
+      tutorResponse.vocabulary ?? [],
+      languageConfig,
+    );
+    if (correctionCard) {
+      generatedCards.push(correctionCard);
+    }
+
+    if (generatedCards.length > 0) {
+      setCards((current) => {
+        const retainedCards = current.filter((card) => card.sourceMessageId !== messageId);
+        return [...retainedCards, ...generatedCards].slice(-MAX_SAVED_CARDS);
+      });
+    }
+  }
+
   async function sendMessage(retryMessage?: ConversationMessage, spokenContent?: string) {
     if (!config || activeChatRequest.current || isSelectingLanguages) {
       return;
@@ -255,32 +335,9 @@ export default function Page() {
     }
 
     const messageId = retryMessage?.id ?? crypto.randomUUID();
-    const controller = new AbortController();
+    const controller = startMessageRequest(messageId);
 
-    activeChatRequest.current = {
-      controller,
-      messageId,
-    };
-    setLoading(true);
-    setError('');
-
-    if (retryMessage) {
-      setMessages((current) => updateMessageStatus(current, messageId, 'pending'));
-    } else {
-      if (spokenContent === undefined) {
-        setPrompt('');
-      }
-
-      const userMessage: ConversationMessage = {
-        id: messageId,
-        role: 'user',
-        content,
-        timestamp: new Date(),
-        status: 'pending',
-      };
-
-      setMessages((current) => [...current, userMessage]);
-    }
+    prepareUserMessage(messageId, content, retryMessage, spokenContent);
 
     function isCurrentRequest() {
       return (
@@ -304,31 +361,7 @@ export default function Page() {
         return;
       }
 
-      setMessages((current) => addAssistantReply(current, messageId, tutorResponse));
-
-      const correctionCard = createCard(
-        messageId,
-        tutorResponse.correction,
-        config,
-        Date.now(),
-        content,
-      );
-      const generatedCards = createVocabularyCards(
-        messageId,
-        content,
-        tutorResponse.vocabulary ?? [],
-        config,
-      );
-      if (correctionCard) {
-        generatedCards.push(correctionCard);
-      }
-
-      if (generatedCards.length > 0) {
-        setCards((current) => {
-          const retainedCards = current.filter((card) => card.sourceMessageId !== messageId);
-          return [...retainedCards, ...generatedCards].slice(-100);
-        });
-      }
+      applyTutorResponse(messageId, content, tutorResponse, config);
     } catch (error) {
       if (!isCurrentRequest()) {
         return;
@@ -341,10 +374,7 @@ export default function Page() {
           : 'Could not send the message. Please retry.',
       );
     } finally {
-      if (activeChatRequest.current?.controller === controller) {
-        activeChatRequest.current = null;
-        setLoading(false);
-      }
+      finishMessageRequest(controller);
     }
   }
 
