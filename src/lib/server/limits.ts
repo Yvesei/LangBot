@@ -26,31 +26,6 @@ function parseLimitStoreCount(storeResponse: unknown): number {
   return storeResponse.result;
 }
 
-async function incrementSharedLimit(key: string, seconds: number, url: string, token: string) {
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(['EVAL', incrementScript, '1', `langbot:${key}`, String(seconds)]),
-      signal: AbortSignal.timeout(3000),
-      cache: 'no-store',
-    });
-    if (!response.ok) {
-      throw new Error('Limit store unavailable');
-    }
-    const storeResponse: unknown = await response.json();
-    return parseLimitStoreCount(storeResponse);
-  } catch {
-    throw new ApiError(
-      503,
-      'Usage protection is temporarily unavailable. Please try again.',
-    );
-  }
-}
-
 function incrementLocalLimit(key: string, seconds: number): number {
   const now = Date.now();
   for (const [id, bucket] of buckets) {
@@ -71,7 +46,28 @@ async function incrementLimitCount(key: string, seconds: number): Promise<number
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (url && token) {
-    return incrementSharedLimit(key, seconds, url, token);
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(['EVAL', incrementScript, '1', `langbot:${key}`, String(seconds)]),
+        signal: AbortSignal.timeout(3000),
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        throw new Error('Limit store unavailable');
+      }
+      const storeResponse: unknown = await response.json();
+      return parseLimitStoreCount(storeResponse);
+    } catch {
+      throw new ApiError(
+        503,
+        'Usage protection is temporarily unavailable. Please try again.',
+      );
+    }
   }
   // A per-process fallback cannot protect a multi-instance deployment.
   if (

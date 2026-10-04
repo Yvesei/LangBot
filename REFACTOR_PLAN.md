@@ -36,8 +36,8 @@
 10. **DONE — Extract recorded-recognition setup and silence monitoring.** Files: `src/lib/voice/recognition.ts`, `REFACTOR_PLAN.md`. Keep resource ownership, generation checks, timer thresholds, and callback order.
 11. **DONE — Extract voice transcript aggregation and speech completion.** Files: `src/components/ui/voice/VoiceCall.tsx`, `REFACTOR_PLAN.md`. Keep live/final transcripts, ignored late callbacks, microphone controls, and speech-error messages.
 12. **DONE — Name evaluation metrics precisely.** Files: `eval/metrics.ts`, `REFACTOR_PLAN.md`. Only rename internal values/functions; keep all output fields and percentile formulas.
-13. **PENDING — Preserve API-client and provider await boundaries.** Files: `src/lib/api/request.ts`, `src/lib/server/mistral.ts`, `__tests__/unit/api-client.test.ts`. Keep awaited operations in their original caller and extract synchronous decisions; characterize queued cancellation against the original client before correcting the extraction.
-14. **PENDING — Preserve streaming and shared-limit await boundaries.** Files: `src/lib/server/http.ts`, `src/lib/server/limits.ts`, `REFACTOR_PLAN.md`. Keep stream/Redis awaited operations in their original caller and retain synchronous assembly/validation helpers.
+13. **DONE — Preserve API-client and provider await boundaries.** Files: `src/lib/api/request.ts`, `src/lib/server/mistral.ts`, `__tests__/unit/api-client.test.ts`. Keep awaited operations in their original caller and extract synchronous decisions; characterize queued cancellation against the original client before correcting the extraction.
+14. **DONE — Preserve streaming and shared-limit await boundaries.** Files: `src/lib/server/http.ts`, `src/lib/server/limits.ts`, `REFACTOR_PLAN.md`. Keep stream/Redis awaited operations in their original caller and retain synchronous assembly/validation helpers.
 
 ## Completion
 

@@ -26,33 +26,6 @@ async function readBody(request: Request): Promise<unknown> {
   }
 }
 
-async function readRequestChunks(
-  reader: ReadableStreamDefaultReader<Uint8Array>,
-  maxBytes: number,
-  hasTimedOut: () => boolean,
-): Promise<RequestChunks> {
-  const chunks: Uint8Array[] = [];
-  let bytes = 0;
-  while (true) {
-    const { value, done } = await reader.read();
-    if (hasTimedOut()) {
-      throw new ApiError(408, 'Request body timed out.');
-    }
-    if (done) {
-      return {
-        chunks,
-        bytes,
-      };
-    }
-    bytes += value.byteLength;
-    if (bytes > maxBytes) {
-      await reader.cancel();
-      throw new ApiError(413, 'Request is too large.');
-    }
-    chunks.push(value);
-  }
-}
-
 function combineRequestChunks({ chunks, bytes }: RequestChunks) {
   const combined = new Uint8Array(bytes);
   let offset = 0;
@@ -71,19 +44,37 @@ export async function readBytes(request: Request, maxBytes: number) {
   if (!reader) {
     throw new ApiError(400, 'A request body is required.');
   }
+  const chunks: Uint8Array[] = [];
+  let bytes = 0;
   let timedOut = false;
   const timer = setTimeout(() => {
     timedOut = true;
     void reader.cancel().catch(() => undefined);
   }, REQUEST_BODY_TIMEOUT_MS);
-  let requestChunks: RequestChunks;
   try {
-    requestChunks = await readRequestChunks(reader, maxBytes, () => timedOut);
+    while (true) {
+      const { value, done } = await reader.read();
+      if (timedOut) {
+        throw new ApiError(408, 'Request body timed out.');
+      }
+      if (done) {
+        break;
+      }
+      bytes += value.byteLength;
+      if (bytes > maxBytes) {
+        await reader.cancel();
+        throw new ApiError(413, 'Request is too large.');
+      }
+      chunks.push(value);
+    }
   } finally {
     clearTimeout(timer);
     reader.releaseLock();
   }
-  return combineRequestChunks(requestChunks);
+  return combineRequestChunks({
+    chunks,
+    bytes,
+  });
 }
 
 export function route<S extends z.ZodType>(
