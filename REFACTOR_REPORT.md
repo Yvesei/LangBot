@@ -10,6 +10,13 @@ The test suite uses explicit bounded allowances of 400 lines per file and 100 li
 
 Final follow-up checks: `pnpm lint` passed with no warnings, Prettier verification passed, TypeScript passed, all 18 suites and 160 tests passed, and the production build passed. A characterization test caught an initial `AbortSignal.timeout()` extraction that did not cooperate with Jest fake timers; the explicit timer implementation was restored before final verification.
 
+Follow-up commits:
+
+- `2b2c9a7` refactor(lint): satisfy maintainability rules
+- `80fb337` chore: remove generated conflict copy
+
+Additional judgment calls: the public five-argument helper types remain unchanged, and their original runtime `Function.length` values are preserved through typed implementations with optional arguments read after the declared parameters. The iCloud workspace created a stale `LINT_REPORT 2.md` during the pre-commit hook; it was removed in a separate cleanup commit. The live evaluation was not run because it would make paid provider requests; `pnpm eval` validated all 28 fixtures without network calls.
+
 ## 1. Improvements
 
 Refactored 12 implementation files while preserving the behavior of the original working tree, saved in `249714a`. Changes relative to that snapshot consist of targeted internal naming and function extraction, characterization tests, and the requested documents.
