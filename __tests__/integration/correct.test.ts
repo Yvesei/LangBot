@@ -1,302 +1,76 @@
-/**
- * @jest-environment node
- */
+import { POST } from '@/app/api/correct/route';
+import {
+  corrected,
+  languageConfig,
+  providerResponse,
+  request,
+} from '../../tests/fixtures';
+jest.mock('@/lib/server/limits', () => ({
+  enforceLimits: jest.fn().mockResolvedValue(undefined),
+}));
+beforeEach(() => {
+  jest.replaceProperty(process, 'env', { ...process.env, MISTRAL_API_KEY: 'test-key' });
+  jest.spyOn(global, 'fetch').mockResolvedValue(providerResponse(corrected));
+});
+afterEach(() => jest.restoreAllMocks());
 
-
-const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
-const CORRECT_ENDPOINT = `${BASE_URL}/api/correct`;
-
-describe('POST /api/correct - Integration Tests', () => {
-
-  describe('Successful Corrections', () => {
-    test('should correct spelling mistakes', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'I want to recieve the packege'
-          }),
-        })
-      );
-
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      
-      expect(data.success).toBe(true);
-      expect(data.correctedContent).toBeDefined();
-      expect(typeof data.correctedContent).toBe('string');
-      // Should correct 'recieve' to 'receive' and 'packege' to 'package'
-      expect(data.correctedContent.toLowerCase()).toContain('receive');
-      expect(data.correctedContent.toLowerCase()).toContain('package');
-    }, 30000);
-
-    test('should correct grammar mistakes', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'She go to school everyday'
-          }),
-        })
-      );
-
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      
-      expect(data.success).toBe(true);
-      expect(data.correctedContent).toBeDefined();
-      // Should correct 'go' to 'goes'
-      expect(data.correctedContent.toLowerCase()).toContain('goes');
-    }, 30000);
-
-    test('should return [CORRECT] for correct text', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'This is a perfectly correct sentence'
-          }),
-        })
-      );
-
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      
-      expect(data.success).toBe(true);
-      expect(data.correctedContent).toBe('[CORRECT]');
-    }, 30000);
-
-    test('should handle multiple sentences', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'I love programing. It is intresting and fun.'
-          }),
-        })
-      );
-
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      
-      expect(data.success).toBe(true);
-      expect(data.correctedContent).toBeDefined();
-      // Should correct 'programin' to 'programming' and 'intresting' to 'interesting'
-      expect(data.correctedContent.toLowerCase()).toContain('programming');
-      expect(data.correctedContent.toLowerCase()).toContain('interesting');
-    }, 30000);
-
-    test('should preserve correct punctuation', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'Hello! How are you? I am fine, thank you.'
-          }),
-        })
-      );
-
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      
-      expect(data.success).toBe(true);
-      // Should preserve punctuation
-      if (data.correctedContent !== '[CORRECT]') {
-        expect(data.correctedContent).toMatch(/[.!?]/);
-      }
-    }, 30000);
-  });
-
-  describe('Validation Errors', () => {
-    test('should return 400 for missing content', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({}),
-        })
-      );
-
-      expect(response.status).toBe(400);
-      const data = await response.json();
-      
-      expect(data.success).toBe(false);
-      expect(data.error).toBe('content is required');
-    });
-
-    test('should return 400 for empty content', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: '   '
-          }),
-        })
-      );
-
-      expect(response.status).toBe(400);
-      const data = await response.json();
-      
-      expect(data.success).toBe(false);
-      expect(data.error).toBe('content is required');
-    });
-
-    test('should return 400 for invalid JSON', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: 'invalid json',
-        })
-      );
-
-      expect(response.status).toBe(400);
-    });
-  });
-
-  describe('HTTP Methods', () => {
-    test('should return 405 for GET requests', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'GET',
-        })
-      );
-
-      expect(response.status).toBe(405);
-      const data = await response.json();
-      expect(data.error).toBe('Method not allowed');
-    });
-
-    test('should return 405 for PUT requests', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: 'test' }),
-        })
-      );
-
-      expect(response.status).toBe(405);
-    });
-
-    test('should return 405 for DELETE requests', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'DELETE',
-        })
-      );
-
-      expect(response.status).toBe(405);
-    });
-  });
-
-  describe('Edge Cases', () => {
-    test('should handle very long text', async () => {
-      const longText = 'This is a sentence with a mistake. '.repeat(50) + 'I love programing.';
-      
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: longText
-          }),
-        })
-      );
-
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      expect(data.success).toBe(true);
-    }, 30000);
-
-    test('should handle special characters', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'The price is $100.00 (including tax)'
-          }),
-        })
-      );
-
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      expect(data.success).toBe(true);
-    }, 30000);
-
-    test('should handle text with numbers', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'I have 3 apples and 2 oranges in my basket'
-          }),
-        })
-      );
-
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      expect(data.success).toBe(true);
-    }, 30000);
-
-    test('should handle text with line breaks', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'Line 1\nLine 2\nLine 3'
-          }),
-        })
-      );
-
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      expect(data.success).toBe(true);
-    }, 30000);
-
-    test('should handle single word', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'proggraming'
-          }),
-        })
-      );
-      
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      expect(data.success).toBe(true);
-      expect(data.correctedContent.toLowerCase()).toContain('programming');
-    }, 30000);
-
-    test('should handle text with emojis', async () => {
-      const response = await global.rateCall(() =>
-        fetch(CORRECT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'I love programing! 🎉 It is so much fun 😊'
-          }),
-        })
-      );
-
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      expect(data.success).toBe(true);
-    }, 30000);
-  });
-
+test('returns minimal corrections and an exercise instead of a magic sentinel', async () => {
+  const response = await POST(
+    request(
+      { content: 'I has a apple.', languageConfig, userLevel: 'beginner' },
+      'correct',
+    ),
+  );
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ success: true, correction: corrected });
+});
+test('returns unchanged text explicitly when no errors are found', async () => {
+  const correction = { correctedText: 'Hello.', issues: [], exercise: null };
+  jest.mocked(fetch).mockResolvedValue(providerResponse(correction));
+  const response = await POST(
+    request({ content: 'Hello.', languageConfig, userLevel: 'beginner' }, 'correct'),
+  );
+  expect(response.status).toBe(200);
+  expect((await response.json()).correction).toEqual(correction);
+});
+test('rejects non-string content rather than throwing a 500', async () => {
+  expect(
+    (
+      await POST(
+        request({ content: 23, languageConfig, userLevel: 'beginner' }, 'correct'),
+      )
+    ).status,
+  ).toBe(400);
+  expect(fetch).not.toHaveBeenCalled();
 });
 
-export {};
+test.each([
+  {
+    correction: { ...corrected, correctedText: 'I has a apple.' },
+    expected: { correctedText: 'I has a apple.', issues: [], exercise: null },
+  },
+  {
+    correction: { ...corrected, exercise: null },
+    expected: { ...corrected, exercise: null },
+  },
+  {
+    correction: { ...corrected, issues: [] },
+    expected: null,
+  },
+])('handles inconsistent correction metadata without a gateway error', async (item) => {
+  jest.mocked(fetch).mockResolvedValue(providerResponse(item.correction));
+
+  const response = await POST(
+    request(
+      { content: 'I has a apple.', languageConfig, userLevel: 'beginner' },
+      'correct',
+    ),
+  );
+
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({
+    success: true,
+    correction: item.expected,
+  });
+  expect(fetch).toHaveBeenCalledTimes(1);
+});

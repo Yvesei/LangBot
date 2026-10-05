@@ -1,34 +1,42 @@
-import { Plus, Github, Languages } from "lucide-react";
+import { Bot } from 'lucide-react';
+import { LANGUAGES, type LanguageConfig, type Level } from '@/lib/schemas';
+import { ChatHeaderActions } from './ChatHeaderActions';
 
 interface ChatHeaderProps {
-  onChangeLanguages?: () => void;
+  config: LanguageConfig | null;
+  level: Level;
+  onLevelChange: (level: Level) => void;
+  onChangeLanguages: () => void;
+  onNewChat: () => void;
 }
 
-export function ChatHeader({ onChangeLanguages }: ChatHeaderProps) {
-return (
-<div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 dark:border-gray-800">
-<div className="flex items-center gap-3">
-<button className="flex items-center justify-center gap-1.5 px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-<Plus className="w-4 h-4" />
- New
-</button>
-</div>
+export function ChatHeader(props: ChatHeaderProps) {
+  const languageName = props.config
+    ? LANGUAGES[props.config.targetLanguage]
+    : 'Language companion';
 
-<div className="flex items-center gap-2">
-  
-  <button 
-    onClick={onChangeLanguages}
-    className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-    title="Change Languages"
-  >
-    <Languages className="w-4 h-4" />
-  </button>
-
-  <button onClick={() => window.open('https://github.com/Yvesei/LangBot', '_blank')} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors">
-  <Github className="w-4 h-4 bg-gray" />
-  </button>
-
-</div>
-</div>
- );
+  return (
+    <header className="chat-header">
+      <div className="flex items-center gap-3">
+        <span className="brand-mark">
+          <Bot
+            size={20}
+            strokeWidth={1.7}
+          />
+        </span>
+        <h1 className="text-base font-semibold tracking-tight">
+          LangBot
+          <span className="ml-2 hidden text-xs font-normal text-[var(--muted)] sm:inline">
+            / {languageName}
+          </span>
+        </h1>
+      </div>
+      <ChatHeaderActions
+        level={props.level}
+        onLevelChange={props.onLevelChange}
+        onChangeLanguages={props.onChangeLanguages}
+        onNewChat={props.onNewChat}
+      />
+    </header>
+  );
 }

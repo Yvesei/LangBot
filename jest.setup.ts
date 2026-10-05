@@ -9,8 +9,3 @@ delete process.env.UPSTASH_REDIS_REST_URL;
 globalThis.fetch = jest.fn(async () => {
   throw new Error('Live network calls are disabled in tests.');
 });
-
-// Temporary type bridge for legacy live suites, replaced with mocked tests in the text-chat PR.
-declare global {
-  var rateCall: <T>(fn: () => Promise<T>) => Promise<T>;
-}
