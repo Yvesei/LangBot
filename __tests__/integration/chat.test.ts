@@ -267,3 +267,5 @@ describe('POST /api/chat - Integration Tests', () => {
   });
 
 });
+
+export {};

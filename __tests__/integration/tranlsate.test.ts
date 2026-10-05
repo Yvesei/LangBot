@@ -419,3 +419,5 @@ describe('POST /api/translate - Integration Tests', () => {
   });
 
 });
+
+export {};

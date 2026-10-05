@@ -298,3 +298,5 @@ describe('POST /api/correct - Integration Tests', () => {
   });
 
 });
+
+export {};

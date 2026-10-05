@@ -7,11 +7,12 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest --passWithNoTests",
+    "test": "jest --runInBand",
     "test:watch": "jest --watch",
-    "test:unit": "jest __tests__/unit/*",
-    "test:integration": "jest __tests__/integration/* --runInBand",
-    "test:coverage": "jest --coverage"
+    "test:unit": "jest --testPathPatterns=__tests__/unit --runInBand",
+    "test:integration": "jest --testPathPatterns=__tests__/integration --runInBand",
+    "test:coverage": "jest --coverage --runInBand",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@fortawesome/free-solid-svg-icons": "^7.0.1",
