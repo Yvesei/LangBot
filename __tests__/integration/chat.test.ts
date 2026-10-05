@@ -30,6 +30,86 @@ test('returns a reply and structured correction from one provider request', asyn
   expect(JSON.parse(sent.messages[1].content).learnerMessage).toBe(chatBody.prompt);
 });
 
+test('keeps mixed-language text intact and returns vocabulary separately', async () => {
+  const prompt = 'I need une cuillère.';
+  const vocabulary = [
+    {
+      original: 'cuillère',
+      translation: 'spoon',
+      example: 'I need a spoon.',
+      explanation: 'Une cuillère se dit spoon.',
+    },
+  ];
+  const result = {
+    ...tutorResult,
+    correction: { correctedText: prompt, issues: [], exercise: null },
+    vocabulary,
+  };
+  jest.mocked(fetch).mockResolvedValue(providerResponse(result));
+  const response = await POST(request({ ...chatBody, prompt }));
+  expect(await response.json()).toEqual({ success: true, ...result });
+  const sent = JSON.parse(jest.mocked(fetch).mock.calls[0][1]!.body as string);
+  expect(sent.messages[0].content).toContain(
+    'switching languages is not a grammar error',
+  );
+});
+
+test('does not display vocabulary translation as a spelling correction', async () => {
+  const vocabulary = [
+    {
+      original: 'une cuillère',
+      translation: 'a spoon',
+      example: 'I need a spoon.',
+      explanation: 'Une cuillère se dit a spoon.',
+    },
+  ];
+  jest.mocked(fetch).mockResolvedValue(
+    providerResponse({
+      ...tutorResult,
+      correction: { ...tutorResult.correction, correctedText: 'I need a spoon.' },
+      vocabulary,
+    }),
+  );
+  const response = await POST(request({ ...chatBody, prompt: 'I need une cuillère.' }));
+  expect(await response.json()).toMatchObject({
+    success: true,
+    correction: { correctedText: 'I need une cuillère.', issues: [], exercise: null },
+    vocabulary,
+  });
+});
+
+test.each([
+  ['She needs une cuillère.', true],
+  ['She needs a spoon.', false],
+])(
+  'applies grammar edits only when native phrases survive: %s',
+  async (correctedText, accepted) => {
+    const correction = { ...tutorResult.correction, correctedText };
+    jest.mocked(fetch).mockResolvedValue(
+      providerResponse({
+        ...tutorResult,
+        correction,
+        vocabulary: [
+          {
+            original: 'une cuillère',
+            translation: 'a spoon',
+            example: 'She needs a spoon.',
+            explanation: 'Une cuillère se dit a spoon.',
+          },
+        ],
+      }),
+    );
+    const response = await POST(
+      request({ ...chatBody, prompt: 'She need une cuillère.' }),
+    );
+    expect(await response.json()).toMatchObject({
+      success: true,
+      reply: tutorResult.reply,
+      correction: accepted ? correction : null,
+    });
+  },
+);
+
 test.each([
   null,
   { ...chatBody, prompt: 42 },

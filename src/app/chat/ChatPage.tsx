@@ -3,6 +3,7 @@
 import { ChatHeader } from '@/components/ui/chat/ChatHeader';
 import { ChatInput } from '@/components/ui/chat/ChatInput';
 import { ChatConversation } from './ChatConversation';
+import { ChatOverlays } from './ChatOverlays';
 import { useChatActions } from './useChatActions';
 import { useChatState } from './useChatState';
 
@@ -68,6 +69,10 @@ export default function ChatPage() {
         onSend={actions.send}
         onCancel={actions.cancel}
         disabled={!state.isReady || !state.config || state.isSelectingLanguages}
+      />
+      <ChatOverlays
+        state={state}
+        actions={actions}
       />
     </div>
   );

@@ -1,31 +1,27 @@
 import { z } from 'zod';
-import { parseCompletionResponse } from '@/lib/server/mistral-response';
-import { getRetryDelay, waitForRetry } from '@/lib/server/retry';
-import { readBytes } from '@/lib/server/http';
-import {
-  providerResponse,
-  corrected,
-  languageConfig,
-  tutorResult,
-} from '../../tests/fixtures';
 import { wordDiff } from '@/lib/diff';
 import {
   addAssistantReply,
   buildChatRequest,
   getConversationTopics,
 } from '@/lib/chat/conversation';
+import { parseCompletionResponse } from '@/lib/server/mistral-response';
+import { getRetryDelay, waitForRetry } from '@/lib/server/retry';
+import { readBytes } from '@/lib/server/http';
 import { MAX_REQUEST_BYTES } from '@/lib/config/limits';
+import { createCard } from '@/lib/learning';
+import { groupReviewCards } from '@/lib/review';
+import {
+  languageConfig,
+  corrected,
+  providerResponse,
+  tutorResult,
+} from '../../tests/fixtures';
 
 afterEach(() => {
   jest.restoreAllMocks();
   jest.useRealTimers();
 });
-
-const outputSchema = z.object({ translation: z.string().trim().min(1) });
-
-function conversationMessage(id: string, content: string, topics?: string[]) {
-  return { id, content, role: 'user' as const, timestamp: new Date(0), topics };
-}
 
 test('diff ties prefer removing the original tokens and merge adjacent parts', () => {
   expect(wordDiff('a b', 'b a')).toEqual([
@@ -59,6 +55,8 @@ test('fallback tokenization preserves punctuation, whitespace, and combining mar
     Object.defineProperty(Intl, 'Segmenter', segmenterDescriptor);
   }
 });
+
+const outputSchema = z.object({ translation: z.string().trim().min(1) });
 
 test('completion parsing retains schema transformations and optional metadata defaults', async () => {
   const response = new Response(
@@ -175,6 +173,10 @@ test('stalled stream reads preserve timeout errors and release the reader', asyn
   expect(jest.getTimerCount()).toBe(0);
 });
 
+function conversationMessage(id: string, content: string, topics?: string[]) {
+  return { id, content, role: 'user' as const, timestamp: new Date(0), topics };
+}
+
 test('chat history drops pending/failed turns and stops at the first oversized recent turn', () => {
   const messages = [
     conversationMessage('old', 'Old'),
@@ -227,4 +229,17 @@ test('reply insertion preserves unrelated message identities and keeps topics in
   expect(replies[2]).toBe(unrelated);
   expect(original).not.toHaveProperty('correction');
   expect(getConversationTopics([original, unrelated])).toEqual(['B', 'C', 'D', 'E', 'F']);
+});
+
+test('review groups count unique source messages, retain all IDs, and choose the last card', () => {
+  const first = createCard('one', corrected, languageConfig, 200, 'I has a apple.')!;
+  const duplicate = { ...first, id: 'duplicate', dueAt: 100 };
+  const last = { ...first, id: 'last', sourceMessageId: 'two', dueAt: 300 };
+  expect(groupReviewCards([first, duplicate, last])[0]).toMatchObject({
+    ids: ['one', 'duplicate', 'last'],
+    sourceMessageIds: ['one', 'two'],
+    occurrences: 2,
+    dueAt: 100,
+  });
+  expect(groupReviewCards([first, duplicate, last])[0].card).toBe(last);
 });

@@ -5,6 +5,7 @@ import {
   MAX_MESSAGE_LENGTH,
 } from '../config/limits';
 import { correctionSchema } from './correction';
+import { vocabularySchema } from './vocabulary';
 import { languageConfigSchema, levelSchema } from './language';
 
 const historyMessageSchema = z
@@ -45,6 +46,7 @@ export const tutorOutputSchema = z
     reply: z.string().min(1).max(4000),
     correction: correctionSchema,
     topics: z.array(z.string().min(1).max(60)).max(5),
+    vocabulary: z.array(vocabularySchema).max(3).default([]),
   })
   .strict();
 

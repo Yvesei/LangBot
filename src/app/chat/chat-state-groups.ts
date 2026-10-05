@@ -55,3 +55,15 @@ export function useStudyState() {
     setStorageWarning,
   };
 }
+
+export function useOverlayState() {
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewRequested, setReviewRequested] = useState(false);
+
+  return {
+    reviewOpen,
+    setReviewOpen,
+    reviewRequested,
+    setReviewRequested,
+  };
+}

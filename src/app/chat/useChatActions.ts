@@ -10,7 +10,9 @@ import {
 import {
   forgetAllCards as applyForgetAll,
   forgetCard as applyForgetCard,
+  forgetReview as applyForgetReview,
   gradePractice as applyPracticeGrade,
+  gradeReview as applyReviewGrade,
 } from './chat-study-actions';
 import type { ChatState } from './useChatState';
 import { useMessageRequest } from './useMessageRequest';
@@ -51,6 +53,8 @@ export function useChatActions(state: ChatState) {
     gradePractice: applyPracticeGrade.bind(null, state),
     forgetCard: applyForgetCard.bind(null, state),
     forgetAllCards: applyForgetAll.bind(null, state),
+    gradeReview: applyReviewGrade.bind(null, state),
+    forgetReview: applyForgetReview.bind(null, state),
     clearError: state.setError.bind(null, ''),
     send: request.sendMessage.bind(null, undefined, undefined),
     sendSpoken,

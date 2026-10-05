@@ -22,6 +22,7 @@ export const tutorResult = {
   reply: 'What fruit do you like?',
   correction: corrected,
   topics: ['Nourriture'],
+  vocabulary: [],
 };
 export const chatBody: ChatRequest = {
   prompt: 'I has a apple.',

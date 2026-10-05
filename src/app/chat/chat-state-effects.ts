@@ -7,7 +7,7 @@ import {
 } from 'react';
 import type { LanguageConfig, Level } from '@/lib/schemas';
 import { getLanguageConfigFromStorage, getLevelFromStorage } from '@/lib/config/language';
-import { loadCards, saveCards, type StudyCard } from '@/lib/learning';
+import { loadCards, sameLanguages, saveCards, type StudyCard } from '@/lib/learning';
 import type { ActiveRequestRef } from './chat-types';
 
 interface StoredPreferencesOptions {
@@ -16,6 +16,7 @@ interface StoredPreferencesOptions {
   setIsReady: Dispatch<SetStateAction<boolean>>;
   activeChatRequest: ActiveRequestRef;
   setCards: Dispatch<SetStateAction<StudyCard[]>>;
+  setReviewOpen: Dispatch<SetStateAction<boolean>>;
 }
 
 export function useStoredPreferences(options: StoredPreferencesOptions) {
@@ -26,7 +27,15 @@ export function useStoredPreferences(options: StoredPreferencesOptions) {
     initialOptions.setLevel(getLevelFromStorage());
     const savedCards = loadCards();
     initialOptions.setCards(savedCards);
-
+    initialOptions.setReviewOpen(
+      Boolean(
+        savedConfig &&
+        savedCards.some(
+          (card) =>
+            sameLanguages(card.languageConfig, savedConfig) && card.dueAt <= Date.now(),
+        ),
+      ),
+    );
     initialOptions.setIsReady(true);
     return () => initialOptions.activeChatRequest.current?.controller.abort();
   }, [initialOptions]);
@@ -38,10 +47,24 @@ interface ChatEffectsOptions {
   cards: StudyCard[];
   isReady: boolean;
   setStorageWarning: Dispatch<SetStateAction<string>>;
+  reviewRequested: boolean;
+  loading: boolean;
+  setReviewOpen: Dispatch<SetStateAction<boolean>>;
+  setReviewRequested: Dispatch<SetStateAction<boolean>>;
 }
 
 export function useChatEffects(options: ChatEffectsOptions) {
-  const { messagesChanged, messagesEndRef, cards, isReady, setStorageWarning } = options;
+  const {
+    messagesChanged,
+    messagesEndRef,
+    cards,
+    isReady,
+    setStorageWarning,
+    reviewRequested,
+    loading,
+    setReviewOpen,
+    setReviewRequested,
+  } = options;
   useEffect(() => {
     if (isReady && !saveCards(cards)) {
       setStorageWarning(
@@ -52,4 +75,10 @@ export function useChatEffects(options: ChatEffectsOptions) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messagesChanged, messagesEndRef]);
+  useEffect(() => {
+    if (reviewRequested && !loading) {
+      setReviewOpen(true);
+      setReviewRequested(false);
+    }
+  }, [loading, reviewRequested, setReviewOpen, setReviewRequested]);
 }

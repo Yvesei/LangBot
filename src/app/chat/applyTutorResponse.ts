@@ -1,5 +1,6 @@
 import { addAssistantReply } from '@/lib/chat/conversation';
 import { createCard } from '@/lib/learning';
+import { createVocabularyCards } from '@/lib/review';
 import type { ChatResult, LanguageConfig } from '@/lib/schemas';
 import type { ChatState } from './useChatState';
 
@@ -23,7 +24,15 @@ export function applyTutorResponse(options: TutorResponseOptions) {
     Date.now(),
     content,
   );
-  const generatedCards = correctionCard ? [correctionCard] : [];
+  const generatedCards = createVocabularyCards(
+    messageId,
+    content,
+    tutorResponse.vocabulary ?? [],
+    config,
+  );
+  if (correctionCard) {
+    generatedCards.push(correctionCard);
+  }
   if (generatedCards.length === 0) {
     return;
   }

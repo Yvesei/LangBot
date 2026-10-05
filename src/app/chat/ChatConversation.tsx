@@ -10,6 +10,29 @@ interface ChatConversationProps {
   actions: ChatActions;
 }
 
+function SessionToolbar({ state, actions }: ChatConversationProps) {
+  return (
+    <div className="mb-5 flex items-center justify-between gap-3 text-xs">
+      <button
+        type="button"
+        className="subtle-button"
+        onClick={() => state.setReviewOpen(true)}
+      >
+        Review cards · {state.reviewGroups.length}
+      </button>
+      {state.messages.length > 0 && (
+        <button
+          type="button"
+          className="text-[var(--muted)]"
+          onClick={actions.newChat}
+        >
+          End session & review
+        </button>
+      )}
+    </div>
+  );
+}
+
 function Messages({ state, actions }: ChatConversationProps) {
   return (
     <>
@@ -52,6 +75,10 @@ export function ChatConversation({ state, actions }: ChatConversationProps) {
 
   return (
     <>
+      <SessionToolbar
+        state={state}
+        actions={actions}
+      />
       <PracticePanel
         key={state.config.nativeLanguage + state.config.targetLanguage}
         cards={state.visibleCards.filter((card) => card.exercise !== null)}

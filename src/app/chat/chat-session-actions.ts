@@ -3,6 +3,9 @@ import type { LanguageConfig, Level } from '@/lib/schemas';
 import type { ChatState } from './useChatState';
 
 export function startNewChat(state: ChatState, cancel: () => void) {
+  if (state.messages.length > 0 && state.visibleCards.length > 0) {
+    state.setReviewRequested(true);
+  }
   cancel();
   state.setMessages([]);
   state.setPrompt('');
@@ -15,6 +18,8 @@ export function selectLanguages(
   config: LanguageConfig,
 ) {
   newChat();
+  state.setReviewOpen(false);
+  state.setReviewRequested(false);
   state.setConfig(config);
   state.setIsSelectingLanguages(false);
   if (!saveLanguageConfigToStorage(config, state.level)) {
@@ -44,5 +49,7 @@ export function deleteMessage(state: ChatState, cancel: () => void, messageId: s
 
 export function changeLanguages(state: ChatState, cancel: () => void) {
   cancel();
+  state.setReviewOpen(false);
+  state.setReviewRequested(false);
   state.setIsSelectingLanguages(true);
 }
