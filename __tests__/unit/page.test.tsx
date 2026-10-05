@@ -2,12 +2,14 @@
 import '@testing-library/jest-dom';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import Page from '@/app/page';
-import { send } from '@/lib/api';
+import { checkPractice, send } from '@/lib/api';
+import { STUDY_KEY } from '@/lib/learning';
 import { tutorResult } from '../../tests/fixtures';
 
 jest.mock('@/lib/api', () => ({
   send: jest.fn(),
   translateMessage: jest.fn(),
+  checkPractice: jest.fn(),
 }));
 beforeEach(() => {
   HTMLDialogElement.prototype.showModal = function () {
@@ -23,6 +25,7 @@ beforeEach(() => {
   window.HTMLElement.prototype.scrollIntoView = jest.fn();
   jest.mocked(send).mockReset();
   jest.mocked(send).mockResolvedValue({ success: true, ...tutorResult });
+  jest.mocked(checkPractice).mockReset();
 });
 
 function submit(text: string) {
@@ -31,7 +34,7 @@ function submit(text: string) {
   });
   fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 }
-test('Send produces a visible correction diff', async () => {
+test('Send produces a visible correction diff and saves an exercise', async () => {
   const { container } = render(<Page />);
   submit('I has a apple.');
   await screen.findByText(tutorResult.reply);
@@ -40,6 +43,7 @@ test('Send produces a visible correction diff', async () => {
   expect(userMessage?.querySelector('ins')).toBeInTheDocument();
   expect(screen.queryByText('I has a apple.')).not.toBeInTheDocument();
   expect(screen.queryByText('Corrected sentence')).not.toBeInTheDocument();
+  expect(await screen.findByText('Practice · 1 ready')).toBeInTheDocument();
   expect(send).toHaveBeenCalledWith(
     expect.objectContaining({
       languageConfig: { nativeLanguage: 'fr', targetLanguage: 'en' },
@@ -66,6 +70,7 @@ test('keeps the original and reply when a correction is unavailable', async () =
   ).toBeInTheDocument();
   expect(container.querySelector('del')).not.toBeInTheDocument();
   expect(container.querySelector('ins')).not.toBeInTheDocument();
+  expect(screen.getByText('Practice · 0 ready')).toBeInTheDocument();
 });
 
 test('language and level selections reach the tutor', async () => {
@@ -93,6 +98,7 @@ test('deleting a user turn removes it and its reply from future history and remo
   await screen.findByText(tutorResult.reply);
   fireEvent.click(screen.getByRole('button', { name: 'Delete turn' }));
   expect(screen.queryByText(tutorResult.reply)).not.toBeInTheDocument();
+  expect(screen.getByText('Practice · 0 ready')).toBeInTheDocument();
   submit('Hello again.');
   await waitFor(() =>
     expect(send).toHaveBeenLastCalledWith(
@@ -119,6 +125,7 @@ test('New chat cancels outstanding work and ignores a late result', async () => 
     resolve({ success: true, ...tutorResult });
   });
   expect(screen.queryByText(tutorResult.reply)).not.toBeInTheDocument();
+  expect(screen.getByText('Practice · 0 ready')).toBeInTheDocument();
 });
 
 test('a failed send is visible and can be retried without duplicating the user turn', async () => {
@@ -148,4 +155,28 @@ test('IME Enter does not submit a partially composed word', () => {
   fireEvent.change(input, { target: { value: '日本語' } });
   fireEvent.keyDown(input, { key: 'Enter', isComposing: true, keyCode: 229 });
   expect(send).not.toHaveBeenCalled();
+});
+
+test('practice feedback schedules a review and persists it across a reload', async () => {
+  jest
+    .mocked(checkPractice)
+    .mockResolvedValue({ success: true, correct: true, feedback: 'Bien joué !' });
+  const view = render(<Page />);
+  submit('I has a apple.');
+  fireEvent.click(await screen.findByRole('button', { name: 'Practise now' }));
+  fireEvent.change(screen.getByRole('textbox', { name: 'Your answer' }), {
+    target: { value: 'have' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Check answer' }));
+  await screen.findByText('Bien joué !');
+  await waitFor(() => {
+    const saved = JSON.parse(localStorage.getItem(STUDY_KEY)!);
+    expect(saved[0].attempts).toBe(1);
+    expect(saved[0].dueAt).toBeGreaterThan(Date.now());
+  });
+  view.unmount();
+  render(<Page />);
+  expect(screen.getByText('Practice · 0 ready')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Practice · 0 ready' }));
+  expect(screen.getByText(/1 saved exercises/)).toBeVisible();
 });

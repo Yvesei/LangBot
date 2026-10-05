@@ -64,7 +64,7 @@ export async function requestMessage(state: ChatState, options: SendMessageOptio
       buildChatRequest({
         content,
         messages: state.messages,
-        cards: [],
+        cards: state.visibleCards,
         config,
         level: state.level,
         retryMessageId: options.retryMessage?.id,

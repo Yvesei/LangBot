@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ConversationMessage } from '@/lib/chat/conversation';
+import type { StudyCard } from '@/lib/learning';
 import type { LanguageConfig, Level } from '@/lib/schemas';
 import type { ActiveChatRequest } from './chat-types';
 
@@ -44,9 +45,12 @@ export function useConversationState() {
 }
 
 export function useStudyState() {
+  const [cards, setCards] = useState<StudyCard[]>([]);
   const [storageWarning, setStorageWarning] = useState('');
 
   return {
+    cards,
+    setCards,
     storageWarning,
     setStorageWarning,
   };

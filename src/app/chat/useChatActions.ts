@@ -7,6 +7,11 @@ import {
   selectLanguages as applyLanguageSelection,
   startNewChat,
 } from './chat-session-actions';
+import {
+  forgetAllCards as applyForgetAll,
+  forgetCard as applyForgetCard,
+  gradePractice as applyPracticeGrade,
+} from './chat-study-actions';
 import type { ChatState } from './useChatState';
 import { useMessageRequest } from './useMessageRequest';
 
@@ -43,6 +48,9 @@ export function useChatActions(state: ChatState) {
     selectLanguages,
     changeLevel,
     deleteMessage,
+    gradePractice: applyPracticeGrade.bind(null, state),
+    forgetCard: applyForgetCard.bind(null, state),
+    forgetAllCards: applyForgetAll.bind(null, state),
     clearError: state.setError.bind(null, ''),
     send: request.sendMessage.bind(null, undefined, undefined),
     sendSpoken,
