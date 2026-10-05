@@ -57,10 +57,13 @@ export function useStudyState() {
 }
 
 export function useOverlayState() {
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewRequested, setReviewRequested] = useState(false);
 
   return {
+    voiceOpen,
+    setVoiceOpen,
     reviewOpen,
     setReviewOpen,
     reviewRequested,

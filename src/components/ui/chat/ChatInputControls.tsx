@@ -1,10 +1,11 @@
-import { ArrowUp, Square } from 'lucide-react';
+import { ArrowUp, AudioLines, Square } from 'lucide-react';
 
 interface ChatInputControlsProps {
   prompt: string;
   loading: boolean;
   disabled: boolean;
   onCancel: () => void;
+  onVoiceCall: () => void;
 }
 
 function SendButton(
@@ -49,6 +50,16 @@ export function ChatInputControls(props: ChatInputControlsProps) {
     <div className="flex items-center justify-between px-1 pb-1 pt-2">
       <span className="text-xs text-[var(--muted)]">{promptStatus}</span>
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={props.onVoiceCall}
+          disabled={props.disabled || props.loading}
+          className="icon-button"
+          aria-label="Voice call"
+          title="Start a voice call"
+        >
+          <AudioLines size={21} />
+        </button>
         <SendButton
           prompt={props.prompt}
           loading={props.loading}

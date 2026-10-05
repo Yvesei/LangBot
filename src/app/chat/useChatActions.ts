@@ -3,6 +3,7 @@ import type { LanguageConfig, Level } from '@/lib/schemas';
 import {
   changeLanguages as applyLanguageChange,
   changeLevel as applyLevelChange,
+  closeVoiceCall as applyVoiceClose,
   deleteMessage as applyMessageDeletion,
   selectLanguages as applyLanguageSelection,
   startNewChat,
@@ -36,6 +37,11 @@ export function useChatActions(state: ChatState) {
     applyMessageDeletion(state, request.cancel, messageId);
   }
 
+  function openVoiceCall() {
+    state.setError('');
+    state.setVoiceOpen(true);
+  }
+
   function sendSpoken(content: string) {
     void request.sendMessage(undefined, content);
   }
@@ -53,6 +59,8 @@ export function useChatActions(state: ChatState) {
     gradePractice: applyPracticeGrade.bind(null, state),
     forgetCard: applyForgetCard.bind(null, state),
     forgetAllCards: applyForgetAll.bind(null, state),
+    openVoiceCall,
+    closeVoiceCall: applyVoiceClose.bind(null, state),
     gradeReview: applyReviewGrade.bind(null, state),
     forgetReview: applyForgetReview.bind(null, state),
     clearError: state.setError.bind(null, ''),

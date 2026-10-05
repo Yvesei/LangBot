@@ -277,3 +277,117 @@ button:disabled {
     padding-left: 0;
   }
 }
+
+.voice-dialog {
+  background: #121713;
+  color: #eff2eb;
+}
+.voice-dialog :focus-visible {
+  outline-color: #c9e5ce;
+}
+.voice-orb {
+  position: relative;
+  isolation: isolate;
+  width: clamp(9rem, 24vw, 14rem);
+  aspect-ratio: 1;
+  border-radius: 46% 54% 62% 38% / 45% 42% 58% 55%;
+  background: radial-gradient(
+    circle at 32% 28%,
+    #f3f9e6 0,
+    #c9e5ce 22%,
+    #719885 58%,
+    #2e5141 100%
+  );
+  box-shadow:
+    0 0 5rem rgb(139 184 143 / 20%),
+    inset 0 0 2.5rem rgb(255 255 255 / 25%);
+  animation:
+    voice-orb-morph 7s ease-in-out infinite,
+    voice-orb-float 4s ease-in-out infinite;
+}
+
+.voice-orb::before,
+.voice-orb::after,
+.voice-orb > div {
+  content: '';
+  position: absolute;
+  inset: 12%;
+  border-radius: inherit;
+  background: radial-gradient(circle at 65% 70%, rgb(255 255 255 / 45%), transparent 42%);
+  filter: blur(0.4rem);
+}
+
+.voice-orb::after {
+  inset: -9%;
+  z-index: -1;
+  background: #8bb88f;
+  opacity: 0.2;
+  filter: blur(1.5rem);
+}
+
+.voice-orb[data-state='listening'] {
+  animation-duration: 4s, 2.4s;
+  box-shadow:
+    0 0 7rem rgb(139 184 143 / 25%),
+    inset 0 0 2.5rem rgb(255 255 255 / 30%);
+}
+
+.voice-orb[data-state='thinking'] {
+  filter: saturate(0.75);
+  animation-duration: 10s, 3s;
+}
+
+.voice-orb[data-state='speaking'] {
+  animation:
+    voice-orb-morph 2.8s ease-in-out infinite,
+    voice-orb-speak 0.9s ease-in-out infinite alternate;
+}
+
+.voice-orb[data-state='paused'],
+.voice-orb[data-state='error'] {
+  filter: grayscale(0.75) brightness(0.7);
+  animation-play-state: paused;
+}
+
+@keyframes voice-orb-morph {
+  0%,
+  100% {
+    border-radius: 46% 54% 62% 38% / 45% 42% 58% 55%;
+    transform: rotate(-2deg);
+  }
+  33% {
+    border-radius: 58% 42% 40% 60% / 58% 54% 46% 42%;
+    transform: rotate(2deg);
+  }
+  66% {
+    border-radius: 42% 58% 55% 45% / 38% 60% 40% 62%;
+    transform: rotate(-1deg);
+  }
+}
+
+@keyframes voice-orb-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -0.5rem;
+  }
+}
+
+@keyframes voice-orb-speak {
+  from {
+    scale: 0.96;
+    filter: hue-rotate(-8deg) brightness(0.95);
+  }
+  to {
+    scale: 1.04;
+    filter: hue-rotate(8deg) brightness(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-orb {
+    animation: none !important;
+  }
+}

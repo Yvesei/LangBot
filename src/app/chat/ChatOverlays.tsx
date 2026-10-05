@@ -1,4 +1,5 @@
 import { ReviewDialog } from '@/components/ui/panels/ReviewDialog';
+import { VoiceCall } from '@/components/ui/voice/VoiceCall';
 import type { ChatActions } from './useChatActions';
 import type { ChatState } from './useChatState';
 
@@ -14,7 +15,20 @@ export function ChatOverlays({ state, actions }: ChatOverlaysProps) {
 
   return (
     <>
-      {state.reviewOpen && (
+      {state.voiceOpen && (
+        <VoiceCall
+          open
+          config={state.config}
+          messages={state.messages}
+          loading={state.loading}
+          error={state.error}
+          onSend={actions.sendSpoken}
+          onRetry={actions.retry}
+          onClearError={actions.clearError}
+          onClose={actions.closeVoiceCall}
+        />
+      )}
+      {state.reviewOpen && !state.voiceOpen && (
         <ReviewDialog
           cards={state.visibleCards}
           config={state.config}

@@ -68,6 +68,7 @@ export default function ChatPage() {
         loading={state.loading}
         onSend={actions.send}
         onCancel={actions.cancel}
+        onVoiceCall={actions.openVoiceCall}
         disabled={!state.isReady || !state.config || state.isSelectingLanguages}
       />
       <ChatOverlays
