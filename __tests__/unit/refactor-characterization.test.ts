@@ -1,13 +1,22 @@
 import { z } from 'zod';
 import { wordDiff } from '@/lib/diff';
-import { addAssistantReply, buildChatRequest, getConversationTopics } from '@/lib/chat/conversation';
+import {
+  addAssistantReply,
+  buildChatRequest,
+  getConversationTopics,
+} from '@/lib/chat/conversation';
 import { parseCompletionResponse } from '@/lib/server/mistral-response';
 import { getRetryDelay, waitForRetry } from '@/lib/server/retry';
 import { readBytes } from '@/lib/server/http';
 import { MAX_REQUEST_BYTES } from '@/lib/config/limits';
 import { createCard } from '@/lib/learning';
 import { groupReviewCards } from '@/lib/review';
-import { languageConfig, corrected, providerResponse, tutorResult } from '../../tests/fixtures';
+import {
+  languageConfig,
+  corrected,
+  providerResponse,
+  tutorResult,
+} from '../../tests/fixtures';
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -50,12 +59,17 @@ test('fallback tokenization preserves punctuation, whitespace, and combining mar
 const outputSchema = z.object({ translation: z.string().trim().min(1) });
 
 test('completion parsing retains schema transformations and optional metadata defaults', async () => {
-  const response = new Response(JSON.stringify({
-    choices: [
-      { finish_reason: 'stop', message: { content: '{"translation":" Bonjour ","extra":true}' } },
-      { finish_reason: 'stop', message: { content: '{"translation":"Ignored"}' } },
-    ],
-  }));
+  const response = new Response(
+    JSON.stringify({
+      choices: [
+        {
+          finish_reason: 'stop',
+          message: { content: '{"translation":" Bonjour ","extra":true}' },
+        },
+        { finish_reason: 'stop', message: { content: '{"translation":"Ignored"}' } },
+      ],
+    }),
+  );
   expect(await parseCompletionResponse(response, outputSchema)).toEqual({
     data: { translation: 'Bonjour' },
     model: undefined,
@@ -65,26 +79,41 @@ test('completion parsing retains schema transformations and optional metadata de
 
 test.each([
   [{ choices: [] }, 'The AI response was incomplete. Please retry.'],
-  [{ choices: [{ finish_reason: 'length', message: { content: '{}' } }] }, 'The AI response was incomplete. Please retry.'],
-  [{ choices: [{ finish_reason: 'stop', message: { content: 'not JSON' } }] }, 'The AI returned an invalid response. Please retry.'],
-  [{ choices: [{ finish_reason: 'stop', message: { content: '{"translation":42}' } }] }, 'The AI returned an invalid response. Please retry.'],
+  [
+    { choices: [{ finish_reason: 'length', message: { content: '{}' } }] },
+    'The AI response was incomplete. Please retry.',
+  ],
+  [
+    { choices: [{ finish_reason: 'stop', message: { content: 'not JSON' } }] },
+    'The AI returned an invalid response. Please retry.',
+  ],
+  [
+    { choices: [{ finish_reason: 'stop', message: { content: '{"translation":42}' } }] },
+    'The AI returned an invalid response. Please retry.',
+  ],
 ])('completion parsing preserves each validation error', async (body, message) => {
-  await expect(parseCompletionResponse(new Response(JSON.stringify(body)), outputSchema))
-    .rejects.toMatchObject({ status: 502, message });
+  await expect(
+    parseCompletionResponse(new Response(JSON.stringify(body)), outputSchema),
+  ).rejects.toMatchObject({ status: 502, message });
 });
 
 test('malformed provider envelopes retain their JSON decoding exception', async () => {
-  await expect(parseCompletionResponse(new Response('not JSON'), outputSchema))
-    .rejects.toMatchObject({ name: 'SyntaxError' });
+  await expect(
+    parseCompletionResponse(new Response('not JSON'), outputSchema),
+  ).rejects.toMatchObject({ name: 'SyntaxError' });
 });
 
 test('completion parsing returns reported model and usage unchanged', async () => {
-  expect(await parseCompletionResponse(providerResponse({ translation: 'Bonjour' }), outputSchema))
-    .toEqual({
-      data: { translation: 'Bonjour' },
-      model: 'test-model',
-      usage: { prompt_tokens: 100, completion_tokens: 50 },
-    });
+  expect(
+    await parseCompletionResponse(
+      providerResponse({ translation: 'Bonjour' }),
+      outputSchema,
+    ),
+  ).toEqual({
+    data: { translation: 'Bonjour' },
+    model: 'test-model',
+    usage: { prompt_tokens: 100, completion_tokens: 50 },
+  });
 });
 
 test('retry delays preserve numeric, past-date, future-date, and jitter behavior', () => {
@@ -118,7 +147,9 @@ test('stream byte reads combine chunks in arrival order', async () => {
     },
   });
   const request = new Request('http://localhost/api/chat', {
-    method: 'POST', body, duplex: 'half',
+    method: 'POST',
+    body,
+    duplex: 'half',
   } as RequestInit);
   expect(await readBytes(request, 3)).toEqual(new Uint8Array([1, 2, 3]));
   expect(request.body?.locked).toBe(false);
@@ -127,11 +158,14 @@ test('stream byte reads combine chunks in arrival order', async () => {
 test('stalled stream reads preserve timeout errors and release the reader', async () => {
   jest.useFakeTimers();
   const request = new Request('http://localhost/api/chat', {
-    method: 'POST', body: new ReadableStream(), duplex: 'half',
+    method: 'POST',
+    body: new ReadableStream(),
+    duplex: 'half',
   } as RequestInit);
   const reading = readBytes(request, 3);
   const rejection = expect(reading).rejects.toMatchObject({
-    status: 408, message: 'Request body timed out.',
+    status: 408,
+    message: 'Request body timed out.',
   });
   await jest.advanceTimersByTimeAsync(5000);
   await rejection;
@@ -152,7 +186,11 @@ test('chat history drops pending/failed turns and stops at the first oversized r
     { ...conversationMessage('failed', 'Failed'), status: 'failed' as const },
   ];
   const request = buildChatRequest({
-    content: 'Hello', messages, cards: [], config: languageConfig, level: 'beginner',
+    content: 'Hello',
+    messages,
+    cards: [],
+    config: languageConfig,
+    level: 'beginner',
   });
   expect(request.history).toEqual([{ role: 'user', content: 'Recent' }]);
 });
@@ -161,12 +199,21 @@ test('chat history respects UTF-8 request size and retry cutoffs', () => {
   const messages = Array.from({ length: 12 }, (_, index) =>
     conversationMessage(String(index), '語'.repeat(1000)),
   );
-  const options = { content: 'Hello', messages, cards: [], config: languageConfig, level: 'beginner' as const };
+  const options = {
+    content: 'Hello',
+    messages,
+    cards: [],
+    config: languageConfig,
+    level: 'beginner' as const,
+  };
   const request = buildChatRequest(options);
-  expect(new TextEncoder().encode(JSON.stringify(request)).byteLength).toBeLessThanOrEqual(MAX_REQUEST_BYTES);
+  expect(
+    new TextEncoder().encode(JSON.stringify(request)).byteLength,
+  ).toBeLessThanOrEqual(MAX_REQUEST_BYTES);
   expect(request.history.length).toBeLessThan(messages.length);
-  expect(buildChatRequest({ ...options, retryMessageId: '1' }).history)
-    .toEqual([{ role: 'user', content: messages[0].content }]);
+  expect(buildChatRequest({ ...options, retryMessageId: '1' }).history).toEqual([
+    { role: 'user', content: messages[0].content },
+  ]);
 });
 
 test('reply insertion preserves unrelated message identities and keeps topics in first-seen order', () => {
@@ -174,7 +221,11 @@ test('reply insertion preserves unrelated message identities and keeps topics in
   const unrelated = conversationMessage('two', 'Other', ['A', 'C', 'D', 'E', 'F']);
   const replies = addAssistantReply([original, unrelated], original.id, tutorResult);
   expect(replies[0]).toEqual({ ...original, correction: corrected, status: 'complete' });
-  expect(replies[1]).toMatchObject({ role: 'assistant', replyTo: 'one', content: tutorResult.reply });
+  expect(replies[1]).toMatchObject({
+    role: 'assistant',
+    replyTo: 'one',
+    content: tutorResult.reply,
+  });
   expect(replies[2]).toBe(unrelated);
   expect(original).not.toHaveProperty('correction');
   expect(getConversationTopics([original, unrelated])).toEqual(['B', 'C', 'D', 'E', 'F']);
@@ -185,8 +236,10 @@ test('review groups count unique source messages, retain all IDs, and choose the
   const duplicate = { ...first, id: 'duplicate', dueAt: 100 };
   const last = { ...first, id: 'last', sourceMessageId: 'two', dueAt: 300 };
   expect(groupReviewCards([first, duplicate, last])[0]).toMatchObject({
-    ids: ['one', 'duplicate', 'last'], sourceMessageIds: ['one', 'two'],
-    occurrences: 2, dueAt: 100,
+    ids: ['one', 'duplicate', 'last'],
+    sourceMessageIds: ['one', 'two'],
+    occurrences: 2,
+    dueAt: 100,
   });
   expect(groupReviewCards([first, duplicate, last])[0].card).toBe(last);
 });

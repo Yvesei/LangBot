@@ -50,9 +50,9 @@ export const tutorOutputSchema = z
   })
   .strict();
 
-export const chatResultSchema = tutorOutputSchema.extend(
-  { correction: correctionSchema.nullable() },
-);
+export const chatResultSchema = tutorOutputSchema.extend({
+  correction: correctionSchema.nullable(),
+});
 
 export const translationRequestSchema = z
   .object({

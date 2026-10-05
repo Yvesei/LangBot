@@ -6,4 +6,6 @@ Object.assign(globalThis, { TextDecoder, TextEncoder });
 delete process.env.MISTRAL_API_KEY;
 delete process.env.UPSTASH_REDIS_REST_TOKEN;
 delete process.env.UPSTASH_REDIS_REST_URL;
-globalThis.fetch = jest.fn(async () => { throw new Error('Live network calls are disabled in tests.'); });
+globalThis.fetch = jest.fn(async () => {
+  throw new Error('Live network calls are disabled in tests.');
+});

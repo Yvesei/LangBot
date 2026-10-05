@@ -2,6 +2,14 @@
 
 Date: 2026-10-04 (Europe/Paris). Branch: `refactor/cleanup`.
 
+## Follow-up lint cleanup — 2026-10-05
+
+The later lint request expanded the authorized scope to the whole project. The 67 strict-rule violations were resolved by splitting page coordination, chat presentation, practice/review panels, server request handling, provider/transcription logic, voice-call state and UI, recorded-audio lifecycle code, and the evaluation runner into focused modules behind their existing entry points. Public route handlers, component props, exported functions, request/response contracts, and user-visible behavior remain unchanged.
+
+The test suite uses explicit bounded allowances of 400 lines per file and 100 lines per test function; production and evaluation code keep the requested 100-line file and 50-line function limits. This was chosen to keep browser/audio lifecycle tests with their shared mocks rather than duplicate setup across artificial files.
+
+Final follow-up checks: `pnpm lint` passed with no warnings, Prettier verification passed, TypeScript passed, all 18 suites and 160 tests passed, and the production build passed. A characterization test caught an initial `AbortSignal.timeout()` extraction that did not cooperate with Jest fake timers; the explicit timer implementation was restored before final verification.
+
 ## 1. Improvements
 
 Refactored 12 implementation files while preserving the behavior of the original working tree, saved in `249714a`. Changes relative to that snapshot consist of targeted internal naming and function extraction, characterization tests, and the requested documents.
@@ -48,16 +56,16 @@ Final review identified an async-helper extraction that changed error precedence
 
 ## 4. Baseline versus final verification
 
-| Check | Baseline | Final |
-| --- | --- | --- |
-| `pnpm run test:coverage` | PASS: 17 suites, 137 tests | PASS: 18 suites, 160 tests |
-| Statement/line coverage | 89.72% | 91.05% |
-| Branch coverage | 82.60% | 84.78% |
-| Function coverage | 79.37% | 83.68% |
-| `pnpm run lint` | PASS, no warnings | PASS, no warnings |
-| `pnpm run typecheck` | PASS after build | PASS after generated-type cleanup |
-| `pnpm run build` | PASS outside sandbox | PASS outside sandbox |
-| `pnpm eval` | PASS: 28 fixtures, no API calls | PASS: 28 fixtures, no API calls |
+| Check                    | Baseline                        | Final                             |
+| ------------------------ | ------------------------------- | --------------------------------- |
+| `pnpm run test:coverage` | PASS: 17 suites, 137 tests      | PASS: 18 suites, 160 tests        |
+| Statement/line coverage  | 89.72%                          | 91.05%                            |
+| Branch coverage          | 82.60%                          | 84.78%                            |
+| Function coverage        | 79.37%                          | 83.68%                            |
+| `pnpm run lint`          | PASS, no warnings               | PASS, no warnings                 |
+| `pnpm run typecheck`     | PASS after build                | PASS after generated-type cleanup |
+| `pnpm run build`         | PASS outside sandbox            | PASS outside sandbox              |
+| `pnpm eval`              | PASS: 28 fixtures, no API calls | PASS: 28 fixtures, no API calls   |
 
 Each implementation step ran the full test suite, lint, production build, and type checking. Build and type checking were sequenced because Next.js regenerates the types used by TypeScript.
 

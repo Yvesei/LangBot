@@ -25,6 +25,34 @@ const CONVERSATION_STARTERS = [
   },
 ];
 
+function ConversationStarters({
+  loading,
+  onStartConversation,
+}: Pick<ConversationWelcomeProps, 'loading' | 'onStartConversation'>) {
+  return (
+    <div className="mt-8 grid w-full gap-2 text-left sm:grid-cols-3">
+      {CONVERSATION_STARTERS.map(({ icon: Icon, title, prompt }) => (
+        <button
+          key={title}
+          className="starter"
+          onClick={() => onStartConversation(prompt)}
+          disabled={loading}
+        >
+          <Icon
+            size={17}
+            strokeWidth={1.6}
+          />
+          <span>{title}</span>
+          <ArrowUpRight
+            size={14}
+            className="ml-auto opacity-40"
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function ConversationWelcome({
   config,
   loading,
@@ -51,26 +79,10 @@ export function ConversationWelcome({
         <br />
         Build confidence, one message at a time.
       </p>
-      <div className="mt-8 grid w-full gap-2 text-left sm:grid-cols-3">
-        {CONVERSATION_STARTERS.map(({ icon: Icon, title, prompt }) => (
-          <button
-            key={title}
-            className="starter"
-            onClick={() => onStartConversation(prompt)}
-            disabled={loading}
-          >
-            <Icon
-              size={17}
-              strokeWidth={1.6}
-            />
-            <span>{title}</span>
-            <ArrowUpRight
-              size={14}
-              className="ml-auto opacity-40"
-            />
-          </button>
-        ))}
-      </div>
+      <ConversationStarters
+        loading={loading}
+        onStartConversation={onStartConversation}
+      />
       <p className="mt-6 text-[11px] text-[var(--muted)]">
         Chats last this visit. Saved practice stays with you.
       </p>

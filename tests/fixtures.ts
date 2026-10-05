@@ -31,6 +31,7 @@ export const chatBody: ChatRequest = {
   history: [],
   learningFocus: [],
 };
+
 export function request(body: unknown, path = 'chat') {
   return new Request('http://localhost:3000/api/' + path, {
     method: 'POST',
@@ -38,6 +39,7 @@ export function request(body: unknown, path = 'chat') {
     body: JSON.stringify(body),
   });
 }
+
 export function providerResponse(output: unknown, finishReason = 'stop') {
   return new Response(
     JSON.stringify({

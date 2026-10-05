@@ -15,6 +15,7 @@ beforeEach(() => {
   HTMLDialogElement.prototype.showModal = function () {
     this.setAttribute('open', '');
   };
+
   HTMLDialogElement.prototype.close = function () {
     this.removeAttribute('open');
   };
@@ -26,6 +27,7 @@ beforeEach(() => {
   jest.mocked(send).mockResolvedValue({ success: true, ...tutorResult });
   jest.mocked(checkPractice).mockReset();
 });
+
 function submit(text: string) {
   fireEvent.change(screen.getByRole('textbox', { name: 'Your message' }), {
     target: { value: text },

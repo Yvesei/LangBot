@@ -1,29 +1,9 @@
-import { z } from 'zod';
-import {
-  exerciseSchema,
-  languageConfigSchema,
-  type Correction,
-  type LanguageConfig,
-} from './schemas';
+import type { Correction, LanguageConfig } from './schemas';
+import type { StudyCard } from './learning/schema';
 
-export const studyCardSchema = z.object({
-  id: z.string().max(100),
-  sourceMessageId: z.string().max(100),
-  languageConfig: languageConfigSchema,
-  exercise: exerciseSchema.nullable(),
-  kind: z.enum(['correction', 'vocabulary']).default('correction'),
-  originalText: z.string().max(2000).default(''),
-  correctedText: z.string().max(4000).default(''),
-  example: z.string().max(500).default(''),
-  focus: z.string().max(500),
-  dueAt: z.number().finite().nonnegative(),
-  streak: z.number().int().min(0).max(1000),
-  attempts: z.number().int().min(0).max(100000),
-  successes: z.number().int().min(0).max(100000),
-});
-export type StudyCard = z.infer<typeof studyCardSchema>;
-export const STUDY_KEY = 'langbot-study-v1';
-const MAX_CARDS = 100;
+export { loadCards, saveCards } from './learning/storage';
+export { STUDY_KEY, studyCardSchema, type StudyCard } from './learning/schema';
+
 const REVIEW_INTERVALS_DAYS = [1, 3, 7, 14, 30];
 const MILLISECONDS_PER_DAY = 86400000;
 const FAILED_REVIEW_DELAY_MS = 600000;
@@ -33,23 +13,35 @@ function getNextReviewDate(streak: number, correct: boolean, now: number): numbe
     return now + FAILED_REVIEW_DELAY_MS;
   }
 
-  const lastIntervalIndex = REVIEW_INTERVALS_DAYS.length - 1;
-  const intervalIndex = Math.min(streak - 1, lastIntervalIndex);
-  const daysUntilReview = REVIEW_INTERVALS_DAYS[intervalIndex];
-
-  return now + daysUntilReview * MILLISECONDS_PER_DAY;
+  const intervalIndex = Math.min(streak - 1, REVIEW_INTERVALS_DAYS.length - 1);
+  return now + REVIEW_INTERVALS_DAYS[intervalIndex] * MILLISECONDS_PER_DAY;
 }
 
-export function createCard(
-  id: string,
-  correction: Correction | null,
-  languageConfig: LanguageConfig,
-  now = Date.now(),
-  originalText = '',
-): StudyCard | null {
+type CreateCard = (
+  ...parameters: [
+    id: string,
+    correction: Correction | null,
+    languageConfig: LanguageConfig,
+    now?: number,
+    originalText?: string,
+  ]
+) => StudyCard | null;
+
+export const createCard: CreateCard = function createCard(
+  id,
+  correction,
+  languageConfig,
+) {
+  // Preserve the original three-argument runtime arity while accepting optional values.
+  // eslint-disable-next-line prefer-rest-params
+  const now = arguments[3] === undefined ? Date.now() : (arguments[3] as number);
+  // eslint-disable-next-line prefer-rest-params
+  const originalText = arguments[4] === undefined ? '' : (arguments[4] as string);
+
   if (!correction || !correction.issues.length) {
     return null;
   }
+
   return {
     id,
     sourceMessageId: id,
@@ -65,7 +57,7 @@ export function createCard(
     attempts: 0,
     successes: 0,
   };
-}
+};
 
 export function recordPractice(
   card: StudyCard,
@@ -73,6 +65,7 @@ export function recordPractice(
   now = Date.now(),
 ): StudyCard {
   const streak = correct ? Math.min(1000, card.streak + 1) : 0;
+
   return {
     ...card,
     streak,
@@ -85,30 +78,5 @@ export function recordPractice(
 export function sameLanguages(first: LanguageConfig, second: LanguageConfig) {
   const sameNativeLanguage = first.nativeLanguage === second.nativeLanguage;
   const sameTargetLanguage = first.targetLanguage === second.targetLanguage;
-
   return sameNativeLanguage && sameTargetLanguage;
-}
-
-export function loadCards(): StudyCard[] {
-  try {
-    const raw = localStorage.getItem(STUDY_KEY);
-    if (!raw || raw.length > 500000) {
-      return [];
-    }
-    const storedCards: unknown = JSON.parse(raw);
-    const cardsSchema = z.array(studyCardSchema).max(MAX_CARDS);
-
-    return cardsSchema.parse(storedCards);
-  } catch {
-    return [];
-  }
-}
-
-export function saveCards(cards: StudyCard[]): boolean {
-  try {
-    localStorage.setItem(STUDY_KEY, JSON.stringify(cards.slice(-MAX_CARDS)));
-    return true;
-  } catch {
-    return false;
-  }
 }

@@ -42,15 +42,15 @@ Open http://localhost:3000. Local development uses per-process request counters 
 
 Configuration:
 
-| Variable | Purpose |
-| --- | --- |
-| `MISTRAL_API_KEY` | Server-only provider credential |
-| `MISTRAL_MODEL` | Defaults to `ministral-8b-latest`; use a supported pinned model for reproducible evaluations |
-| `MISTRAL_BILINGUAL_MODEL` | Defaults to `voxtral-small-latest` for transcription with both selected languages |
-| `REQUESTS_PER_MINUTE` | Request allowance per trusted client identity; default 20, shared across endpoints |
-| `DAILY_REQUEST_LIMIT` | Application-wide daily request allowance; default 1000 |
-| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Shared Redis counters required in production |
-| `ALLOW_IN_MEMORY_LIMITS` | Explicit `true` permits local, single-process production previews; unsuitable for multi-instance hosting |
+| Variable                                             | Purpose                                                                                                  |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `MISTRAL_API_KEY`                                    | Server-only provider credential                                                                          |
+| `MISTRAL_MODEL`                                      | Defaults to `ministral-8b-latest`; use a supported pinned model for reproducible evaluations             |
+| `MISTRAL_BILINGUAL_MODEL`                            | Defaults to `voxtral-small-latest` for transcription with both selected languages                        |
+| `REQUESTS_PER_MINUTE`                                | Request allowance per trusted client identity; default 20, shared across endpoints                       |
+| `DAILY_REQUEST_LIMIT`                                | Application-wide daily request allowance; default 1000                                                   |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Shared Redis counters required in production                                                             |
+| `ALLOW_IN_MEMORY_LIMITS`                             | Explicit `true` permits local, single-process production previews; unsuitable for multi-instance hosting |
 
 Mistral Free mode provides limited API usage. A model's listed API price does not mean Free mode has been removed; whether requests are billed depends on your account configuration. Check your Mistral usage and limits. Switching models does not guarantee unlimited free access.
 
@@ -62,13 +62,13 @@ Vercel's platform-supplied client IP header determines the minute bucket there. 
 
 Text endpoints accept JSON POSTs. The transcription endpoint accepts a raw audio POST with its recording MIME type and `X-Native-Language` and `X-Target-Language` headers. All endpoints return `{ success: true, ... }` or `{ success: false, error }`. Languages use supported codes (`en`, `fr`, `es`, `de`, `it`, `pt`, `ru`, `ja`, `ko`, `zh`, `ar`, `hi`).
 
-| Endpoint | Request fields | Success fields |
-| --- | --- | --- |
-| `/api/chat` | `prompt`, `history`, `languageConfig`, `userLevel`, `learningFocus` | `reply`, `correction`, `topics`, `vocabulary` |
-| `/api/correct` | `content`, `languageConfig`, `userLevel` | `correction` |
-| `/api/translate` | `content`, `languageConfig` | `translation` |
-| `/api/practice` | `exercise`, `answer`, `languageConfig` | `correct`, `feedback` |
-| `/api/transcribe` | Raw Ogg/WebM/MP4 audio, `X-Native-Language` and `X-Target-Language` headers | `text` |
+| Endpoint          | Request fields                                                              | Success fields                                |
+| ----------------- | --------------------------------------------------------------------------- | --------------------------------------------- |
+| `/api/chat`       | `prompt`, `history`, `languageConfig`, `userLevel`, `learningFocus`         | `reply`, `correction`, `topics`, `vocabulary` |
+| `/api/correct`    | `content`, `languageConfig`, `userLevel`                                    | `correction`                                  |
+| `/api/translate`  | `content`, `languageConfig`                                                 | `translation`                                 |
+| `/api/practice`   | `exercise`, `answer`, `languageConfig`                                      | `correct`, `feedback`                         |
+| `/api/transcribe` | Raw Ogg/WebM/MP4 audio, `X-Native-Language` and `X-Target-Language` headers | `text`                                        |
 
 Example chat request:
 
@@ -129,6 +129,24 @@ Unit tests cover diff reconstruction, correction consistency, request bounds, sc
 Run `pnpm test:coverage` for a local coverage report. Passing mocked tests does not verify microphone hardware, speech quality, live Mistral access, or production capacity. No live benchmark or load-test results are claimed.
 
 Code uses named handlers, explicit control-flow blocks, and separate helpers for request preparation and validation. Keep one statement per line and avoid nested ternaries. ESLint enforces these rules in `src`; `.prettierrc.json` defines the formatting used by the editor.
+
+ESLint also requires a blank line before function definitions across the project, including named arrow functions and methods. Documentation comments stay attached to their functions. Apply spacing fixes with `pnpm exec eslint . --fix` and format the project with `pnpm exec prettier --write .`.
+
+Maintainability rules apply to all linted JavaScript and TypeScript files. The thresholds are project choices; blank lines and comment-only lines are excluded from line limits. Tests keep the same structural rules with bounded allowances of 400 lines per file and 100 lines per test function so browser and audio lifecycle scenarios can share their setup.
+
+| Rule                                                                                  | Limit or requirement                                         |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| [max-lines](https://eslint.org/docs/latest/rules/max-lines)                           | 100 code lines per file                                      |
+| [max-params](https://eslint.org/docs/latest/rules/max-params)                         | 4 parameters per function (under 5)                          |
+| [max-lines-per-function](https://eslint.org/docs/latest/rules/max-lines-per-function) | 50 code lines per function                                   |
+| [max-depth](https://eslint.org/docs/latest/rules/max-depth)                           | 2 levels of nested control-flow blocks                       |
+| [complexity](https://eslint.org/docs/latest/rules/complexity)                         | Cyclomatic complexity at most 10                             |
+| [max-nested-callbacks](https://eslint.org/docs/latest/rules/max-nested-callbacks)     | 3 levels of nested callbacks                                 |
+| [no-else-return](https://eslint.org/docs/latest/rules/no-else-return)                 | Use guard clauses instead of `else` after a returning branch |
+
+These rules report errors and block affected commits. The application and evaluation code currently pass every maintainability rule. Run `pnpm lint` to verify the project.
+
+`pnpm install` enables the Husky pre-commit hook. Each commit runs ESLint fixes and Prettier on staged JavaScript and TypeScript files, then checks ESLint again to verify the formatted code. Other supported staged files are formatted with Prettier; generated files and the dependency lockfile are excluded. lint-staged stages the fixes and preserves unstaged edits. Remaining lint errors block the commit. Run `pnpm lint:staged` to run the same checks manually.
 
 `pnpm eval` validates the authored fixtures without API calls. `pnpm eval --live` explicitly runs paid baseline/production-prompt comparisons and records outputs, reference matches, unnecessary edits, consistency, latency, tokens, and optional cost estimates. Read [the evaluation guide](eval/README.md) before interpreting or publishing results.
 

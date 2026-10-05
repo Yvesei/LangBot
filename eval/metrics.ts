@@ -8,8 +8,9 @@ export type ScoredCase = {
   consistent: boolean;
   latencyMs: number;
 };
+
 const calculateRate = (numerator: number, denominator: number) =>
-  (denominator ? numerator / denominator : null);
+  denominator ? numerator / denominator : null;
 
 export function summarize(scoredCases: ScoredCase[]) {
   const completedCases = scoredCases.filter((row) => row.completed);
@@ -18,7 +19,9 @@ export function summarize(scoredCases: ScoredCase[]) {
   const protectedCases = completedCases.filter((row) => row.protectedCheck);
   const detectedErrorCount = errorCases.filter((row) => row.changed).length;
   const unnecessaryEditCount = unchangedCases.filter((row) => row.changed).length;
-  const sortedLatencies = scoredCases.map((row) => row.latencyMs).sort((firstLatency, secondLatency) => firstLatency - secondLatency);
+  const sortedLatencies = scoredCases
+    .map((row) => row.latencyMs)
+    .sort((firstLatency, secondLatency) => firstLatency - secondLatency);
   return {
     cases: scoredCases.length,
     completed: completedCases.length,
@@ -26,7 +29,10 @@ export function summarize(scoredCases: ScoredCase[]) {
     // Conditional rates must be read together with completionRate.
     unnecessaryEditRate: calculateRate(unnecessaryEditCount, unchangedCases.length),
     errorDetectionRecall: calculateRate(detectedErrorCount, errorCases.length),
-    errorDetectionPrecision: calculateRate(detectedErrorCount, detectedErrorCount + unnecessaryEditCount),
+    errorDetectionPrecision: calculateRate(
+      detectedErrorCount,
+      detectedErrorCount + unnecessaryEditCount,
+    ),
     referenceMatchRate: calculateRate(
       completedCases.filter((row) => row.exactMatch).length,
       completedCases.length,
@@ -49,7 +55,9 @@ export function summarize(scoredCases: ScoredCase[]) {
       completedCases.filter((row) => row.consistent).length,
       completedCases.length,
     ),
-    latencyP50Ms: sortedLatencies[Math.max(0, Math.ceil(sortedLatencies.length * 0.5) - 1)] ?? null,
-    latencyP95Ms: sortedLatencies[Math.max(0, Math.ceil(sortedLatencies.length * 0.95) - 1)] ?? null,
+    latencyP50Ms:
+      sortedLatencies[Math.max(0, Math.ceil(sortedLatencies.length * 0.5) - 1)] ?? null,
+    latencyP95Ms:
+      sortedLatencies[Math.max(0, Math.ceil(sortedLatencies.length * 0.95) - 1)] ?? null,
   };
 }

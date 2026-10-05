@@ -28,6 +28,7 @@ class FakeRecognition {
   start = jest.fn(() => this.onstart?.());
   stop = jest.fn();
   abort = jest.fn();
+
   constructor(public config: LanguageConfig) {
     FakeRecognition.latest = this;
   }
@@ -39,6 +40,7 @@ class FakeUtterance {
   onstart: (() => void) | null = null;
   onend: (() => void) | null = null;
   onerror: (() => void) | null = null;
+
   constructor(public text: string) {}
 }
 
@@ -66,6 +68,7 @@ beforeEach(() => {
     value: {
       speak,
       cancel,
+
       getVoices: () => [],
     },
   });
@@ -256,27 +259,41 @@ test('muting and unmuting the mic while the AI speaks does not record its reply'
 
 test('aggregates final and interim transcript segments before submitting a turn', () => {
   const onSend = jest.fn();
-  render(<VoiceCall {...baseProps} onSend={onSend} />);
-  act(() => FakeRecognition.latest.onresult?.({
-    resultIndex: 1,
-    results: {
-      length: 3,
-      0: { 0: { transcript: 'Ignored' }, isFinal: true, length: 1 },
-      1: { 0: { transcript: 'Hello' }, isFinal: true, length: 1 },
-      2: { 0: { transcript: ' world' }, isFinal: false, length: 1 },
-    },
-  } as never));
+  render(
+    <VoiceCall
+      {...baseProps}
+      onSend={onSend}
+    />,
+  );
+  act(() =>
+    FakeRecognition.latest.onresult?.({
+      resultIndex: 1,
+      results: {
+        length: 3,
+        0: { 0: { transcript: 'Ignored' }, isFinal: true, length: 1 },
+        1: { 0: { transcript: 'Hello' }, isFinal: true, length: 1 },
+        2: { 0: { transcript: ' world' }, isFinal: false, length: 1 },
+      },
+    } as never),
+  );
   const transcriptDisplays = screen.getAllByText('Hello world');
   expect(transcriptDisplays).toHaveLength(2);
-  expect(transcriptDisplays.map((display) => display.textContent))
-    .toEqual(['Hello  world', 'Hello  world']);
+  expect(transcriptDisplays.map((display) => display.textContent)).toEqual([
+    'Hello  world',
+    'Hello  world',
+  ]);
   act(() => FakeRecognition.latest.onend?.());
   expect(onSend).toHaveBeenCalledWith('Hello');
 });
 
 test('oversized final transcripts pause the microphone without sending', () => {
   const onSend = jest.fn();
-  render(<VoiceCall {...baseProps} onSend={onSend} />);
+  render(
+    <VoiceCall
+      {...baseProps}
+      onSend={onSend}
+    />,
+  );
   act(() => {
     FakeRecognition.latest.onresult?.({
       resultIndex: 0,
@@ -296,9 +313,19 @@ test.each(['onend', 'onerror'] as const)(
   'speech %s resumes listening only once and ignores repeated callbacks',
   (callback) => {
     const view = render(<VoiceCall {...baseProps} />);
-    view.rerender(<VoiceCall {...baseProps} messages={[
-      { id: 'reply', role: 'assistant', content: '**Hello**\n world', timestamp: new Date() },
-    ]} />);
+    view.rerender(
+      <VoiceCall
+        {...baseProps}
+        messages={[
+          {
+            id: 'reply',
+            role: 'assistant',
+            content: '**Hello**\n world',
+            timestamp: new Date(),
+          },
+        ]}
+      />,
+    );
     const utterance = speak.mock.calls[0][0] as FakeUtterance;
     expect(utterance.text).toBe('Hello world');
     act(() => utterance[callback]?.());
@@ -306,7 +333,9 @@ test.each(['onend', 'onerror'] as const)(
     act(() => utterance[callback]?.());
     expect(FakeRecognition.latest.start).toHaveBeenCalledTimes(2);
     if (callback === 'onerror') {
-      expect(screen.getByRole('alert')).toHaveTextContent('The spoken reply could not be played.');
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'The spoken reply could not be played.',
+      );
     }
   },
 );

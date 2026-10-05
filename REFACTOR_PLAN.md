@@ -1,5 +1,9 @@
 # Refactor plan
 
+## Follow-up lint cleanup — COMPLETE
+
+The later whole-project lint request superseded the original narrow scope for formatting, lint configuration, and structural cleanup. All 67 reported violations were resolved. Application/evaluation files retain the requested 100-line file and 50-line function limits; lifecycle-heavy test suites use bounded 400-line/100-line limits. Final lint, formatting, types, 18 suites / 160 tests, and the production build pass.
+
 ## Scope and decisions
 
 - Treat the unstaged changes and untracked application/test/evaluation files present at the start as the requested scope; the template's paths, stack, layering, and reference examples were not filled in.
@@ -29,15 +33,15 @@
 4. **DONE — Extract diff table construction and bounded fallback.** Files: `src/lib/diff.ts`, `REFACTOR_PLAN.md`. Retain tokenization, tie breaking, merged parts, and the memory threshold.
 5. **DONE — Extract completion parsing and provider retry/error decisions.** Files: `src/lib/server/mistral-response.ts`, `src/lib/server/mistral.ts`, `REFACTOR_PLAN.md`. Retain error messages, cancellation order, retry delays, logs, and metrics.
 6. **DONE — Extract HTTP byte collection and limit-store operations.** Files: `src/lib/server/http.ts`, `src/lib/server/limits.ts`, `REFACTOR_PLAN.md`. Retain streaming limits, timer/resource cleanup, Redis validation, and in-memory expiry.
-7a. **DONE — Name API response payloads precisely.** Files: `src/lib/api/request.ts`, `src/lib/api/transcribe.ts`, `REFACTOR_PLAN.md`. Naming-only prerequisite added during the audit to keep renames separate from extraction.
-7b. **DONE — Extract API response validation.** Files: `src/lib/api/request.ts`, `src/lib/api/transcribe.ts`, `REFACTOR_PLAN.md`. Retain JSON failures, schema transformations, error precedence, and trimming.
-8. **DONE — Extract review edit keys and occurrence aggregation.** Files: `src/lib/review.ts`, `REFACTOR_PLAN.md`. Retain ordering, mutation of internal groups, newest representative cards, and source-message deduplication.
-9. **DONE — Extract page request preparation and completion application.** Files: `src/app/page.tsx`, `REFACTOR_PLAN.md`. Keep request guards, React updater timing, card ordering, and late-response handling.
-10. **DONE — Extract recorded-recognition setup and silence monitoring.** Files: `src/lib/voice/recognition.ts`, `REFACTOR_PLAN.md`. Keep resource ownership, generation checks, timer thresholds, and callback order.
-11. **DONE — Extract voice transcript aggregation and speech completion.** Files: `src/components/ui/voice/VoiceCall.tsx`, `REFACTOR_PLAN.md`. Keep live/final transcripts, ignored late callbacks, microphone controls, and speech-error messages.
-12. **DONE — Name evaluation metrics precisely.** Files: `eval/metrics.ts`, `REFACTOR_PLAN.md`. Only rename internal values/functions; keep all output fields and percentile formulas.
-13. **DONE — Preserve API-client and provider await boundaries.** Files: `src/lib/api/request.ts`, `src/lib/server/mistral.ts`, `__tests__/unit/api-client.test.ts`. Keep awaited operations in their original caller and extract synchronous decisions; characterize queued cancellation against the original client before correcting the extraction.
-14. **DONE — Preserve streaming and shared-limit await boundaries.** Files: `src/lib/server/http.ts`, `src/lib/server/limits.ts`, `REFACTOR_PLAN.md`. Keep stream/Redis awaited operations in their original caller and retain synchronous assembly/validation helpers.
+   7a. **DONE — Name API response payloads precisely.** Files: `src/lib/api/request.ts`, `src/lib/api/transcribe.ts`, `REFACTOR_PLAN.md`. Naming-only prerequisite added during the audit to keep renames separate from extraction.
+   7b. **DONE — Extract API response validation.** Files: `src/lib/api/request.ts`, `src/lib/api/transcribe.ts`, `REFACTOR_PLAN.md`. Retain JSON failures, schema transformations, error precedence, and trimming.
+7. **DONE — Extract review edit keys and occurrence aggregation.** Files: `src/lib/review.ts`, `REFACTOR_PLAN.md`. Retain ordering, mutation of internal groups, newest representative cards, and source-message deduplication.
+8. **DONE — Extract page request preparation and completion application.** Files: `src/app/page.tsx`, `REFACTOR_PLAN.md`. Keep request guards, React updater timing, card ordering, and late-response handling.
+9. **DONE — Extract recorded-recognition setup and silence monitoring.** Files: `src/lib/voice/recognition.ts`, `REFACTOR_PLAN.md`. Keep resource ownership, generation checks, timer thresholds, and callback order.
+10. **DONE — Extract voice transcript aggregation and speech completion.** Files: `src/components/ui/voice/VoiceCall.tsx`, `REFACTOR_PLAN.md`. Keep live/final transcripts, ignored late callbacks, microphone controls, and speech-error messages.
+11. **DONE — Name evaluation metrics precisely.** Files: `eval/metrics.ts`, `REFACTOR_PLAN.md`. Only rename internal values/functions; keep all output fields and percentile formulas.
+12. **DONE — Preserve API-client and provider await boundaries.** Files: `src/lib/api/request.ts`, `src/lib/server/mistral.ts`, `__tests__/unit/api-client.test.ts`. Keep awaited operations in their original caller and extract synchronous decisions; characterize queued cancellation against the original client before correcting the extraction.
+13. **DONE — Preserve streaming and shared-limit await boundaries.** Files: `src/lib/server/http.ts`, `src/lib/server/limits.ts`, `REFACTOR_PLAN.md`. Keep stream/Redis awaited operations in their original caller and retain synchronous assembly/validation helpers.
 
 ## Completion
 

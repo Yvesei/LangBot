@@ -1,7 +1,4 @@
-import {
-  correctionRequestSchema,
-  correctionSchema,
-} from '@/lib/schemas';
+import { correctionRequestSchema, correctionSchema } from '@/lib/schemas';
 import { route, methodNotAllowed } from '@/lib/server/http';
 import { complete } from '@/lib/server/mistral';
 import { CORRECTION_RULES, learnerPrompt } from '@/lib/server/prompts';

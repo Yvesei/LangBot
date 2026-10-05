@@ -4,26 +4,31 @@ import { languageConfig } from '../../tests/fixtures';
 
 class FakeRecorder {
   static latest: FakeRecorder;
+
   static isTypeSupported = (type: string) => type.startsWith('audio/ogg');
   state = 'inactive';
   mimeType = 'audio/ogg;codecs=opus';
   ondataavailable: ((event: { data: Blob }) => void) | null = null;
   onstop: (() => void) | null = null;
   onerror: (() => void) | null = null;
+
   start() {
     this.state = 'recording';
   }
+
   stop() {
     this.state = 'inactive';
     this.ondataavailable?.({ data: new Blob(['test-audio']) });
     this.onstop?.();
   }
+
   constructor() {
     FakeRecorder.latest = this;
   }
 }
 const stopTrack = jest.fn();
 const stream = { getTracks: () => [{ stop: stopTrack }] };
+
 const flush = async () => {
   for (let i = 0; i < 8; i++) await Promise.resolve();
 };
@@ -48,6 +53,7 @@ afterEach(() => {
 test('records a turn, releases the mic, and emits the server transcript', async () => {
   jest.mocked(global.fetch).mockResolvedValue({
     ok: true,
+
     json: async () => ({ text: 'I need une cuillère.' }),
   } as Response);
   const recognition = new RecordedRecognition(languageConfig);
@@ -98,7 +104,11 @@ test('cancels a pending upload and ignores its late response', async () => {
   recognition.stop();
   const signal = jest.mocked(global.fetch).mock.calls[0][1]!.signal!;
   recognition.abort();
-  resolve({ ok: true, json: async () => ({ text: 'Late reply' }) } as Response);
+  resolve({
+    ok: true,
+
+    json: async () => ({ text: 'Late reply' }),
+  } as Response);
   await flush();
   expect(signal.aborted).toBe(true);
   expect(recognition.onresult).not.toHaveBeenCalled();
@@ -156,12 +166,37 @@ test('permission denial and unavailable formats release resources and report err
 
 test.each([
   [
-    { ok: false, json: async () => ({ error: 'Usage limit reached.' }) },
+    {
+      ok: false,
+
+      json: async () => ({ error: 'Usage limit reached.' }),
+    },
     'Usage limit reached.',
   ],
-  [{ ok: true, json: async () => ({ text: '' }) }, 'didn’t catch that'],
-  [{ ok: true, json: async () => ({ text: 42 }) }, 'invalid response'],
-  [{ ok: true, json: async () => ({ text: 'x'.repeat(2001) }) }, 'invalid response'],
+  [
+    {
+      ok: true,
+
+      json: async () => ({ text: '' }),
+    },
+    'didn’t catch that',
+  ],
+  [
+    {
+      ok: true,
+
+      json: async () => ({ text: 42 }),
+    },
+    'invalid response',
+  ],
+  [
+    {
+      ok: true,
+
+      json: async () => ({ text: 'x'.repeat(2001) }),
+    },
+    'invalid response',
+  ],
 ])(
   'reports transcription failures and allows another turn',
   async (response, message) => {
@@ -226,9 +261,12 @@ function mockAudioContext(sample: () => number) {
       state = 'running';
       resume = jest.fn().mockResolvedValue(undefined);
       close = close;
+
       createMediaStreamSource = () => ({ connect: jest.fn() });
+
       createAnalyser = () => ({
         fftSize: 2048,
+
         getByteTimeDomainData: (data: Uint8Array) => data.fill(sample()),
       });
     },
@@ -239,9 +277,11 @@ function mockAudioContext(sample: () => number) {
 test('a pause after speech sends exactly one turn and releases audio resources', async () => {
   let sample = 145;
   const close = mockAudioContext(() => sample);
-  jest
-    .mocked(fetch)
-    .mockResolvedValue({ ok: true, json: async () => ({ text: 'Hello' }) } as Response);
+  jest.mocked(fetch).mockResolvedValue({
+    ok: true,
+
+    json: async () => ({ text: 'Hello' }),
+  } as Response);
   const recognition = new RecordedRecognition(languageConfig);
   recognition.start();
   await flush();
@@ -266,9 +306,11 @@ test('silence is not uploaded and continuous speech has a bounded turn duration'
     expect.objectContaining({ error: 'silence' }),
   );
   mockAudioContext(() => 145);
-  jest
-    .mocked(fetch)
-    .mockResolvedValue({ ok: true, json: async () => ({ text: 'Hello' }) } as Response);
+  jest.mocked(fetch).mockResolvedValue({
+    ok: true,
+
+    json: async () => ({ text: 'Hello' }),
+  } as Response);
   recognition.start();
   await flush();
   await jest.advanceTimersByTimeAsync(30100);
