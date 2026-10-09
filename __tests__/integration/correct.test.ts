@@ -2,9 +2,9 @@
  * @jest-environment node
  */
 
+import { apiUrl } from '../helpers/api';
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
-const CORRECT_ENDPOINT = `${BASE_URL}/api/correct`;
+const CORRECT_ENDPOINT = apiUrl('/api/correct');
 
 describe('POST /api/correct - Integration Tests', () => {
 
@@ -298,3 +298,5 @@ describe('POST /api/correct - Integration Tests', () => {
   });
 
 });
+
+export {};

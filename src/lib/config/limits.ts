@@ -1,0 +1,4 @@
+export const MAX_MESSAGE_LENGTH = 2000;
+export const MAX_HISTORY_MESSAGES = 12;
+export const MAX_CONVERSATION_LENGTH = 20000;
+export const MAX_REQUEST_BYTES = 32768;

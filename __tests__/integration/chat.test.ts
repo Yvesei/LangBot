@@ -2,9 +2,9 @@
  * @jest-environment node
  */
 
+import { apiUrl } from '../helpers/api';
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
-const CHAT_ENDPOINT = `${BASE_URL}/api/chat`;
+const CHAT_ENDPOINT = apiUrl('/api/chat');
 
 describe('POST /api/chat - Integration Tests', () => {
   
@@ -267,3 +267,5 @@ describe('POST /api/chat - Integration Tests', () => {
   });
 
 });
+
+export {};
