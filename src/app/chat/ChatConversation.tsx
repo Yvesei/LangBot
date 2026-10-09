@@ -1,6 +1,6 @@
-import { ConversationWelcome } from '@/components/ui/chat/ConversationWelcome';
-import { Message } from '@/components/ui/chat/Message';
-import { EmptyState } from '@/components/ui/states/EmptyState';
+import { ConversationWelcome } from '@/components/ui/chat/welcome/ConversationWelcome';
+import { Message } from '@/components/ui/chat/message/Message';
+import { EmptyState } from '@/components/ui/setup/EmptyState';
 import type { ChatActions } from './useChatActions';
 import type { ChatState } from './useChatState';
 
