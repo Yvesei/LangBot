@@ -68,7 +68,7 @@ export function useChatEffects(options: ChatEffectsOptions) {
   useEffect(() => {
     if (isReady && !saveCards(cards)) {
       setStorageWarning(
-        'Browser storage is unavailable. Practice progress will last only for this visit.',
+        'Browser storage is unavailable. Review progress will last only for this visit.',
       );
     }
   }, [cards, isReady, setStorageWarning]);
