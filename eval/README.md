@@ -21,14 +21,13 @@ Read completion rate alongside conditional quality metrics. The end-to-end refer
 
 Before publishing numbers, review every output against this rubric:
 
-| Criterion            | 0                                    | 1                      | 2                                          |
-| -------------------- | ------------------------------------ | ---------------------- | ------------------------------------------ |
-| Meaning preservation | Changes facts, negation, or intent   | Unnecessary rephrasing | Minimal edit, same meaning                 |
-| Explanation          | Wrong or absent                      | Partly useful          | Correct and clear in native language       |
-| Exercise             | Wrong/unrelated or gives answer away | Related but unclear    | New, solvable practice of the actual error |
-| Reply language       | Wrong language                       | Unnecessary mixing     | Target language                            |
-| Level fit            | Clearly unsuitable                   | Partly suitable        | Appropriate vocabulary and complexity      |
+| Criterion            | 0                                  | 1                      | 2                                     |
+| -------------------- | ---------------------------------- | ---------------------- | ------------------------------------- |
+| Meaning preservation | Changes facts, negation, or intent | Unnecessary rephrasing | Minimal edit, same meaning            |
+| Explanation          | Wrong or absent                    | Partly useful          | Correct and clear in native language  |
+| Reply language       | Wrong language                     | Unnecessary mixing     | Target language                       |
+| Level fit            | Clearly unsuitable                 | Partly suitable        | Appropriate vocabulary and complexity |
 
 Use a proficient reviewer for each language. Record disagreements and add acceptable variants without tuning against a held-out final set. Repeated runs describe output variability; they do not increase the number of independent examples.
 
-Before a hiring demo, add human-reviewed held-out examples, multi-turn conversations, translation and practice-grading evaluations, and real learner feedback. Do not present this small suite as evidence of learning outcomes.
+Before a hiring demo, add human-reviewed held-out examples, multi-turn conversations, translation evaluations, and real learner feedback. Do not present this small suite as evidence of learning outcomes.

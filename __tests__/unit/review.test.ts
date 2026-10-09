@@ -38,17 +38,16 @@ test('keeps language pairs separate even when corrections match', () => {
   expect(groupReviewCards([first, second])).toHaveLength(2);
 });
 
-test('saves a correction without requiring a generated exercise', () => {
+test('saves a correction as a review card', () => {
   const card = createCard(
     'one',
-    { ...corrected, exercise: null },
+    { ...corrected },
     languageConfig,
     100,
     'I has a apple.',
   )!;
   expect(card.originalText).toBe('I has a apple.');
   expect(card.correctedText).toBe('I have an apple.');
-  expect(card.exercise).toBeNull();
   expect(saveCards([card])).toBe(true);
   expect(loadCards()).toEqual([card]);
 });
@@ -61,7 +60,6 @@ test('loads existing cards with defaults for the new review fields', () => {
         id: 'legacy',
         sourceMessageId: 'legacy',
         languageConfig,
-        exercise: corrected.exercise,
         focus: 'Use have with I.',
         dueAt: 100,
         streak: 0,
@@ -77,7 +75,7 @@ test('loads existing cards with defaults for the new review fields', () => {
     originalText: '',
     correctedText: '',
   });
-  expect(groupReviewCards(cards)[0].card.exercise?.answer).toBe('have');
+  expect(groupReviewCards(cards)[0].card.focus).toBe('Use have with I.');
 });
 
 test('saves only vocabulary found in the message, without duplicate cards', () => {
@@ -100,7 +98,6 @@ test('saves only vocabulary found in the message, without duplicate cards', () =
     originalText: 'cuillère',
     correctedText: 'spoon',
     sourceMessageId: 'spoken-turn',
-    exercise: null,
   });
   saveCards(cards);
   expect(loadCards()).toEqual(cards);
