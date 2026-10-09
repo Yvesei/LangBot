@@ -9,15 +9,14 @@ A language-practice app built with Next.js 15, React 19, TypeScript, and Mistral
 3. Read the tutor's reply in your target language. The text inside your original message updates in place: **green additions** and **red struck-through deletions**, without background highlights or a separate correction box.
 4. Expand **Why these changes?** for explanations in your native language. Use **Copy corrected** to copy the clean sentence.
 5. Open **Review cards** for saved mistakes and vocabulary. Reveal an answer, then choose **I remembered** or **Practise again**. Repeated edits are grouped and shown first. Cards open at the end of a session or voice call, and when you return with reviews due.
-6. Generated exercises remain available in **Practice**. Both exercise grading and card self-review schedule successful reviews after 1, 3, 7, 14, then 30 days; mistakes return after 10 minutes.
 
-Corrections are limited to grammar, spelling, and necessary punctuation. Valid sentences, slang, profanity, and anatomical vocabulary should stay unchanged; the tutor must not replace the learner's intended meaning or simplify their words to match their level. Model-generated corrections, exercises, topic labels, and feedback are suggestions, not guaranteed linguistic judgments.
+Corrections are limited to grammar, spelling, and necessary punctuation. Valid sentences, slang, profanity, and anatomical vocabulary should stay unchanged; the tutor must not replace the learner's intended meaning or simplify their words to match their level. Model-generated corrections, topic labels, and vocabulary are suggestions, not guaranteed linguistic judgments.
 
-Translation has visible loading/error states and can be toggled back to the original. Failed messages can be retried. Stop cancels pending work, and late replies are ignored after a reset. Deleting a user turn removes the original, its direct reply, and its saved exercise from app state. Remaining messages may still refer to earlier conversation; deleting does not retract text already sent to the provider.
+Translation has visible loading/error states and can be toggled back to the original. Failed messages can be retried. Stop cancels pending work, and late replies are ignored after a reset. Deleting a user turn removes the original, its direct reply, and its saved review cards from app state. Remaining messages may still refer to earlier conversation; deleting does not retract text already sent to the provider.
 
 ## Voice calls
 
-Open a voice call with the waveform icon beside Send. The call screen shows an animated orb, recognized user turns, readable AI replies, and correction diffs. Each completed turn appears after transcription. You can mix the two languages selected in settings within one sentence. Microphone and spoken replies can be muted independently. Ending the call returns to the same text conversation, so its transcript and saved exercises remain available. Ending a call does not cancel an AI reply already in progress; it will appear in the text chat when ready and can be cancelled there with **Stop**.
+Open a voice call with the waveform icon beside Send. The call screen shows an animated orb, recognized user turns, readable AI replies, and correction diffs. Each completed turn appears after transcription. You can mix the two languages selected in settings within one sentence. Microphone and spoken replies can be muted independently. Ending the call returns to the same text conversation, so its transcript and review cards remain available. Ending a call does not cancel an AI reply already in progress; it will appear in the text chat when ready and can be cancelled there with **Stop**.
 
 All supported browsers, including Firefox, use `getUserMedia` + `MediaRecorder`, sending audio through `/api/transcribe` to Mistral Voxtral with the existing server-side `MISTRAL_API_KEY`. `MISTRAL_BILINGUAL_MODEL` defaults to `voxtral-small-latest`; the key must have access to that audio-capable model. Its audio chat endpoint receives both language settings and instructions to preserve code-switching verbatim. If the model reports speech in an unselected language, the app asks you to use the selected pair. Recognition can still mishear words or language switches; these instructions are not an accuracy guarantee. Recorded turns end after a pause, after 30 seconds, or with **Send turn**. This mode shows the transcript after each turn rather than word by word. Audio is held in memory, not saved by LangBot, and uploads stop when you mute or close the call. Mistral processes the uploaded audio under its service policies. Transcription requests share the app's usage limits and have a 2 MiB body limit and 25-second provider timeout.
 
@@ -25,7 +24,7 @@ Use **http://localhost:3000** on the development computer or **HTTPS** when acce
 
 For example, a French speaker learning English can say “I need une cuillère.” The transcript keeps those words. The tutor can explain “spoon” and save a vocabulary card without treating French words as grammar errors. Vocabulary is returned in the same tutor response, without a separate vocabulary API call.
 
-**End session & review** and **New chat** clear the conversation while preserving review cards. Language changes start a new chat. Cards are separated by native/target language pair, capped at the latest 100 saved occurrences, and stored locally in this browser. Identical edits across sentences are grouped, with a count of distinct source messages. Cards can be forgotten, and clearing practice for a language pair clears its saved cards too. Existing saved exercises remain compatible. Corrections without exercises and vocabulary gaps can also become review cards. Conversation history is in memory and clears on refresh. There are no accounts or cross-device sync.
+**End session & review** and **New chat** clear the conversation while preserving review cards. Language changes start a new chat. Cards are separated by native/target language pair, capped at the latest 100 saved occurrences, and stored locally in this browser. Identical edits across sentences are grouped, with a count of distinct source messages. Cards can be forgotten. Corrections and vocabulary gaps can become review cards. Conversation history is in memory and clears on refresh. There are no accounts or cross-device sync.
 
 ## Local setup
 
@@ -67,7 +66,6 @@ Text endpoints accept JSON POSTs. The transcription endpoint accepts a raw audio
 | `/api/chat`       | `prompt`, `history`, `languageConfig`, `userLevel`, `learningFocus`         | `reply`, `correction`, `topics`, `vocabulary` |
 | `/api/correct`    | `content`, `languageConfig`, `userLevel`                                    | `correction`                                  |
 | `/api/translate`  | `content`, `languageConfig`                                                 | `translation`                                 |
-| `/api/practice`   | `exercise`, `answer`, `languageConfig`                                      | `correct`, `feedback`                         |
 | `/api/transcribe` | Raw Ogg/WebM/MP4 audio, `X-Native-Language` and `X-Target-Language` headers | `text`                                        |
 
 Example chat request:
@@ -84,7 +82,7 @@ Example chat request:
 
 Vocabulary is an array of up to three items with `original`, `translation`, `example`, and `explanation`. Only phrases present in the latest user message are saved as vocabulary cards. The server discards a correction that only substitutes these vocabulary translations, keeping the original sentence. If a larger rewrite also removes a reported native phrase, it leaves the original visible with correction unavailable while keeping the reply and vocabulary. This guard depends on the model reporting the vocabulary phrase; it is not a general semantic-equivalence check.
 
-Correction data contains `correctedText`, an array of `issues` (`category` and `explanation`), and an optional `exercise` (`instruction`, `sentence`, `answer`) or null. For unchanged text, the server clears stray issues and exercises. Explained corrections do not require an exercise. If the model changes text without explaining any error, the API returns `correction: null`: the original stays visible with a correction-unavailable notice, no exercise is saved, and the chat reply is kept. The old `[CORRECT]` sentinel and `message` response field are no longer used.
+Correction data contains `correctedText` and an array of `issues` (`category` and `explanation`). For unchanged text, the server clears stray issues. If the model changes text without explaining an error, the API returns `correction: null`: the original stays visible with a correction-unavailable notice and the chat reply is kept.
 
 - Zod validates field types, language/level allowlists, roles, lengths, and output structure at runtime.
 - Request bodies are bounded to 32 KiB and have a five-second read deadline. Chat input is limited to 2,000 characters, history to 12 messages and 20,000 total prompt/history characters. The client also trims history against the UTF-8 byte budget.
@@ -98,7 +96,7 @@ Correction data contains `correctedText`, an array of `issues` (`category` and `
 
 ## Code map
 
-- `src/app/page.tsx`: conversation state, cancellation, language/level selection, deletion, retry, and saved practice.
+- `src/app/page.tsx`: conversation state, cancellation, language/level selection, deletion, retry, and review cards.
 - `src/components/ui/voice/VoiceCall.tsx`: recorded speech input, spoken replies, animated call state, and the readable call transcript.
 - `src/lib/voice/recognition.ts`: browser audio recording, pause detection, and microphone/upload cleanup.
 - `src/app/api/transcribe/route.ts`: bounded audio uploads to Mistral Voxtral using the shared request protections.
@@ -107,7 +105,7 @@ Correction data contains `correctedText`, an array of `issues` (`category` and `
 - `src/lib/review.ts`: vocabulary cards and grouping repeated edits across messages.
 - `src/components/ui/panels/ReviewDialog.tsx`: accessible review popup and self-grading.
 - `src/lib/server/transcription.ts`: bilingual audio instructions, provider call, and transcript validation.
-- `src/lib/schemas/`: language, correction, chat, and practice contracts. `schemas.ts` re-exports them for existing callers.
+- `src/lib/schemas/`: language, correction, chat, and vocabulary contracts. `schemas.ts` re-exports them for existing callers.
 - `src/lib/chat/conversation.ts`: conversation history limits, request preparation, and message updates.
 - `src/lib/api/transcribe.ts`: recorded-audio upload and transcript validation.
 - `src/lib/server/`: prompts, provider handling, HTTP boundaries, and shared usage controls.
@@ -152,4 +150,4 @@ These rules report errors and block affected commits. The application and evalua
 
 ## Current limits
 
-The learner selects their level; the app does not claim to infer CEFR proficiency or prove learning gains. Review scheduling is a simple fixed schedule, not a validated adaptive curriculum. Voice recognition depends on Mistral’s audio model and recording quality; spoken reply pronunciation depends on installed system voices. No attachments or inactive controls are exposed. The evaluation set needs proficient human review and broader coverage, including multi-turn and voice-transcription behavior and exercise grading, before making quality claims.
+The learner selects their level; the app does not claim to infer CEFR proficiency or prove learning gains. Review scheduling is a simple fixed schedule, not a validated adaptive curriculum. Voice recognition depends on Mistral’s audio model and recording quality; spoken reply pronunciation depends on installed system voices. No attachments or inactive controls are exposed. The evaluation set needs proficient human review and broader coverage, including multi-turn and voice-transcription behavior and vocabulary review, before making quality claims.

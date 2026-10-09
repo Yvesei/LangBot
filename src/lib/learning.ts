@@ -46,7 +46,6 @@ export const createCard: CreateCard = function createCard(
     id,
     sourceMessageId: id,
     languageConfig,
-    exercise: correction.exercise,
     kind: 'correction',
     originalText,
     correctedText: correction.correctedText,
@@ -59,7 +58,7 @@ export const createCard: CreateCard = function createCard(
   };
 };
 
-export function recordPractice(
+export function recordReview(
   card: StudyCard,
   correct: boolean,
   now = Date.now(),

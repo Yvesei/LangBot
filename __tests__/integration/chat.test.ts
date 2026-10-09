@@ -42,7 +42,7 @@ test('keeps mixed-language text intact and returns vocabulary separately', async
   ];
   const result = {
     ...tutorResult,
-    correction: { correctedText: prompt, issues: [], exercise: null },
+    correction: { correctedText: prompt, issues: [] },
     vocabulary,
   };
   jest.mocked(fetch).mockResolvedValue(providerResponse(result));
@@ -73,7 +73,7 @@ test('does not display vocabulary translation as a spelling correction', async (
   const response = await POST(request({ ...chatBody, prompt: 'I need une cuillère.' }));
   expect(await response.json()).toMatchObject({
     success: true,
-    correction: { correctedText: 'I need une cuillère.', issues: [], exercise: null },
+    correction: { correctedText: 'I need une cuillère.', issues: [] },
     vocabulary,
   });
 });
@@ -171,11 +171,7 @@ test.each([
 test.each([
   {
     correction: { ...tutorResult.correction, correctedText: chatBody.prompt },
-    expected: { correctedText: chatBody.prompt, issues: [], exercise: null },
-  },
-  {
-    correction: { ...tutorResult.correction, exercise: null },
-    expected: { ...tutorResult.correction, exercise: null },
+    expected: { correctedText: chatBody.prompt, issues: [] },
   },
   {
     correction: { ...tutorResult.correction, issues: [] },
