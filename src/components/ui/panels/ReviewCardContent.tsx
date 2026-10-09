@@ -11,7 +11,7 @@ interface ReviewPromptProps {
 
 export function ReviewPrompt(props: ReviewPromptProps) {
   const card = props.group.card;
-  const front = card.originalText || card.exercise?.sentence || card.focus;
+  const front = card.originalText || card.focus;
 
   return (
     <>

@@ -9,7 +9,7 @@ interface ReviewAnswerProps {
 
 export function ReviewAnswer({ group, config, reviewed }: ReviewAnswerProps) {
   const card = group.card;
-  const answer = card.correctedText || card.exercise?.answer || '';
+  const answer = card.correctedText || '';
 
   return (
     <div className="mt-4 border-t border-[var(--line)] pt-4">

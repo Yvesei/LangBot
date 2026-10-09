@@ -20,8 +20,8 @@ export function SetupIntroduction({ isChanging }: { isChanging: boolean }) {
       </p>
       {isChanging && (
         <p className="text-sm text-gray-500">
-          Starting with these languages begins a new chat. Your saved practice is kept for
-          each language pair.
+          Starting with these languages begins a new chat. Review cards are kept for each
+          language pair.
         </p>
       )}
     </>
