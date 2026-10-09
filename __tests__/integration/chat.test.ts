@@ -59,11 +59,8 @@ test('rejects malformed JSON and unsupported content types', async () => {
     ).status,
   ).toBe(400);
   expect(
-    (
-      await POST(
-        new Request(apiUrl('/api/chat'), { method: 'POST', body: 'text' }),
-      )
-    ).status,
+    (await POST(new Request(apiUrl('/api/chat'), { method: 'POST', body: 'text' })))
+      .status,
   ).toBe(415);
 });
 
@@ -92,11 +89,7 @@ test.each([
 test.each([
   {
     correction: { ...tutorResult.correction, correctedText: chatBody.prompt },
-    expected: { correctedText: chatBody.prompt, issues: [], exercise: null },
-  },
-  {
-    correction: { ...tutorResult.correction, exercise: null },
-    expected: { ...tutorResult.correction, exercise: null },
+    expected: { correctedText: chatBody.prompt, issues: [] },
   },
   {
     correction: { ...tutorResult.correction, issues: [] },

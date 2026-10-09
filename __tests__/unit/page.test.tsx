@@ -87,7 +87,7 @@ test('language and level selections reach the tutor', async () => {
   );
 });
 
-test('deleting a user turn removes it and its reply from future history and removes its exercise', async () => {
+test('deleting a user turn removes it and its reply from future history', async () => {
   render(<Page />);
   submit('I has a apple.');
   await screen.findByText(tutorResult.reply);
