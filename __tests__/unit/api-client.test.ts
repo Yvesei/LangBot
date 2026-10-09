@@ -60,8 +60,8 @@ test('correction and translation use their own validated contracts', async () =>
 
 test.each([
   [
-    Response.json({ success: false, error: 'Quota reached' }, { status: 429 }),
-    'Quota reached',
+    Response.json({ success: false, error: 'Too many requests.' }, { status: 429 }),
+    'Too many requests.',
   ],
   [Response.json({ unexpected: true }, { status: 503 }), 'The request failed'],
   [new Response('<html>Proxy error</html>', { status: 502 }), 'unreadable response'],

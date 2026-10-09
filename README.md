@@ -37,25 +37,21 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-Open http://localhost:3000. Local development uses per-process request counters unless a shared store is configured.
+Open http://localhost:3000. Request counters are stored in the server process's memory.
 
 Configuration:
 
-| Variable                                             | Purpose                                                                                                  |
-| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `MISTRAL_API_KEY`                                    | Server-only provider credential                                                                          |
-| `MISTRAL_MODEL`                                      | Defaults to `ministral-8b-latest`; use a supported pinned model for reproducible evaluations             |
-| `MISTRAL_BILINGUAL_MODEL`                            | Defaults to `voxtral-small-latest` for transcription with both selected languages                        |
-| `REQUESTS_PER_MINUTE`                                | Request allowance per trusted client identity; default 20, shared across endpoints                       |
-| `DAILY_REQUEST_LIMIT`                                | Application-wide daily request allowance; default 1000                                                   |
-| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Shared Redis counters required in production                                                             |
-| `ALLOW_IN_MEMORY_LIMITS`                             | Explicit `true` permits local, single-process production previews; unsuitable for multi-instance hosting |
+| Variable                  | Purpose                                                                                      |
+| ------------------------- | -------------------------------------------------------------------------------------------- |
+| `MISTRAL_API_KEY`         | Server-only provider credential                                                              |
+| `MISTRAL_MODEL`           | Defaults to `ministral-8b-latest`; use a supported pinned model for reproducible evaluations |
+| `MISTRAL_BILINGUAL_MODEL` | Defaults to `voxtral-small-latest` for transcription with both selected languages            |
 
 Mistral Free mode provides limited API usage. A model's listed API price does not mean Free mode has been removed; whether requests are billed depends on your account configuration. Check your Mistral usage and limits. Switching models does not guarantee unlimited free access.
 
-For Vercel production and preview deployments, configure the Mistral key and both Redis variables in the project's environment settings. The limiter uses atomic Redis increments with expiry through the REST API. Store failures return 503 instead of disabling protection.
+For Vercel production and preview deployments, configure the Mistral key in the project's environment settings. The app allows five requests per minute across all API endpoints. The limit is defined in `src/lib/server/limits.ts`.
 
-Vercel's platform-supplied client IP header determines the minute bucket there. Other hosts use one shared bucket rather than trusting arbitrary forwarding headers; configure a trusted proxy integration before adding per-client limits elsewhere. IPs are hashed before being used as counter keys. These are anonymous usage controls, not authentication or a strict dollar budget. Invalid requests consume quota, and each permitted AI operation can retry once.
+Vercel's platform-supplied client IP header gives each IP a separate counter. Other hosts and requests without that header share a counter. Counters reset when the server process restarts and are separate on each server instance. Invalid requests consume the allowance, and each permitted AI operation can retry once.
 
 ## API and reliability
 
@@ -122,7 +118,7 @@ pnpm eval
 pnpm build
 ```
 
-Unit tests cover diff reconstruction, correction consistency, request bounds, scheduling, UI interactions, API client validation/cancellation/timeouts, limiter behavior, provider failure handling, and scoring. Voice tests cover recording, pause detection, silence, permission failure, upload limits, transcription failure, cancellation, and microphone cleanup. Review tests cover persistence across reloads, language isolation, repeated-error grouping, vocabulary cards, reveal/self-grading, and forgetting cards. Transcription tests verify both language settings, mixed and single-language transcripts, unrelated-language rejection, and quota failures. Integration tests call route handlers with mocked Mistral responses; they do not start a server or spend API credits. Network calls are blocked by default in Jest. CI runs these checks before the existing Vercel deployment jobs.
+Unit tests cover diff reconstruction, correction consistency, request bounds, scheduling, UI interactions, API client validation/cancellation/timeouts, limiter behavior, provider failure handling, and scoring. Voice tests cover recording, pause detection, silence, permission failure, upload limits, transcription failure, cancellation, and microphone cleanup. Review tests cover persistence across reloads, language isolation, repeated-error grouping, vocabulary cards, reveal/self-grading, and forgetting cards. Transcription tests verify both language settings, mixed and single-language transcripts, unrelated-language rejection, and quota failures. Integration tests call route handlers with mocked Mistral responses; they do not start a server or spend API credits. Network calls are blocked by default in Jest. CI runs lint, type checks, tests, offline evaluation and the production build. Vercel's Git integration handles preview and production deployments separately.
 
 Run `pnpm test:coverage` for a local coverage report. Passing mocked tests does not verify microphone hardware, speech quality, live Mistral access, or production capacity. No live benchmark or load-test results are claimed.
 

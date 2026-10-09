@@ -1,4 +1,3 @@
-import type { StudyCard } from '../learning';
 import type { ChatRequest, LanguageConfig, Level } from '../schemas';
 import {
   MAX_CONVERSATION_LENGTH,
@@ -10,7 +9,7 @@ import type { ConversationMessage } from './conversation';
 interface ChatRequestOptions {
   content: string;
   messages: ConversationMessage[];
-  cards: StudyCard[];
+  cards: Array<{ streak: number; focus: string }>;
   config: LanguageConfig;
   level: Level;
   retryMessageId?: string;
