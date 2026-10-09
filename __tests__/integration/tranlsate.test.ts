@@ -2,9 +2,9 @@
  * @jest-environment node
  */
 
+import { apiUrl } from '../helpers/api';
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
-const TRANSLATE_ENDPOINT = `${BASE_URL}/api/translate`;
+const TRANSLATE_ENDPOINT = apiUrl('/api/translate');
 
 describe('POST /api/translate - Integration Tests', () => {
 
