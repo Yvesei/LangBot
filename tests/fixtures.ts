@@ -12,11 +12,6 @@ export const corrected = {
       explanation: 'Use have with I and an before a vowel sound.',
     },
   ],
-  exercise: {
-    instruction: 'Complete the sentence.',
-    sentence: 'I ___ a book.',
-    answer: 'have',
-  },
 };
 export const tutorResult = {
   reply: 'What fruit do you like?',
