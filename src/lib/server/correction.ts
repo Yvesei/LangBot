@@ -8,15 +8,13 @@ export function normalizeCorrection(
     return {
       correctedText: original,
       issues: [],
-      exercise: null,
     };
   }
 
-  // Never apply an unexplained rewrite or save an exercise derived from it.
+  // Never apply an unexplained rewrite.
   if (correction.issues.length === 0) {
     return null;
   }
 
-  // A missing optional exercise should not invalidate an explained correction.
   return correction;
 }

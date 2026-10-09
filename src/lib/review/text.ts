@@ -27,8 +27,8 @@ export function getReviewKey(card: StudyCard): string {
   }
 
   if (!originalText && !correctedText) {
-    originalText = card.exercise?.sentence ?? card.focus;
-    correctedText = card.exercise?.answer ?? '';
+    originalText = card.focus;
+    correctedText = '';
   }
 
   return JSON.stringify([
