@@ -9,10 +9,7 @@ import {
   startNewChat,
 } from './chat-session-actions';
 import {
-  forgetAllCards as applyForgetAll,
-  forgetCard as applyForgetCard,
   forgetReview as applyForgetReview,
-  gradePractice as applyPracticeGrade,
   gradeReview as applyReviewGrade,
 } from './chat-study-actions';
 import type { ChatState } from './useChatState';
@@ -56,9 +53,6 @@ export function useChatActions(state: ChatState) {
     selectLanguages,
     changeLevel,
     deleteMessage,
-    gradePractice: applyPracticeGrade.bind(null, state),
-    forgetCard: applyForgetCard.bind(null, state),
-    forgetAllCards: applyForgetAll.bind(null, state),
     openVoiceCall,
     closeVoiceCall: applyVoiceClose.bind(null, state),
     gradeReview: applyReviewGrade.bind(null, state),

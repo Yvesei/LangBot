@@ -42,7 +42,6 @@ export const createVocabularyCards: CreateVocabularyCards =
         originalText: vocabularyEntry.original,
         correctedText: vocabularyEntry.translation,
         example: vocabularyEntry.example,
-        exercise: null,
         focus: vocabularyEntry.explanation,
         dueAt: now,
         streak: 0,

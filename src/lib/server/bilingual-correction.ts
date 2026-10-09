@@ -5,7 +5,6 @@ function unchangedCorrection(original: string): Correction {
   return {
     correctedText: original,
     issues: [],
-    exercise: null,
   };
 }
 
