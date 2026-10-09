@@ -1,9 +1,6 @@
 import { addAssistantReply } from '@/lib/chat/conversation';
-import { createCard } from '@/lib/learning';
 import type { ChatResult, LanguageConfig } from '@/lib/schemas';
 import type { ChatState } from './useChatState';
-
-const MAX_SAVED_CARDS = 100;
 
 interface TutorResponseOptions {
   messageId: string;
@@ -14,21 +11,6 @@ interface TutorResponseOptions {
 }
 
 export function applyTutorResponse(options: TutorResponseOptions) {
-  const { messageId, content, tutorResponse, config, state } = options;
+  const { messageId, tutorResponse, state } = options;
   state.setMessages((current) => addAssistantReply(current, messageId, tutorResponse));
-  const correctionCard = createCard(
-    messageId,
-    tutorResponse.correction,
-    config,
-    Date.now(),
-    content,
-  );
-  const generatedCards = correctionCard ? [correctionCard] : [];
-  if (generatedCards.length === 0) {
-    return;
-  }
-  state.setCards((current) => {
-    const retainedCards = current.filter((card) => card.sourceMessageId !== messageId);
-    return [...retainedCards, ...generatedCards].slice(-MAX_SAVED_CARDS);
-  });
 }

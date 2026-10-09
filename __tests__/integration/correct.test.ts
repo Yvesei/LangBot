@@ -14,7 +14,7 @@ beforeEach(() => {
 });
 afterEach(() => jest.restoreAllMocks());
 
-test('returns minimal corrections and an exercise instead of a magic sentinel', async () => {
+test('returns structured corrections instead of a magic sentinel', async () => {
   const response = await POST(
     request(
       { content: 'I has a apple.', languageConfig, userLevel: 'beginner' },
@@ -25,7 +25,7 @@ test('returns minimal corrections and an exercise instead of a magic sentinel', 
   expect(await response.json()).toEqual({ success: true, correction: corrected });
 });
 test('returns unchanged text explicitly when no errors are found', async () => {
-  const correction = { correctedText: 'Hello.', issues: [], exercise: null };
+  const correction = { correctedText: 'Hello.', issues: [] };
   jest.mocked(fetch).mockResolvedValue(providerResponse(correction));
   const response = await POST(
     request({ content: 'Hello.', languageConfig, userLevel: 'beginner' }, 'correct'),
@@ -47,11 +47,7 @@ test('rejects non-string content rather than throwing a 500', async () => {
 test.each([
   {
     correction: { ...corrected, correctedText: 'I has a apple.' },
-    expected: { correctedText: 'I has a apple.', issues: [], exercise: null },
-  },
-  {
-    correction: { ...corrected, exercise: null },
-    expected: { ...corrected, exercise: null },
+    expected: { correctedText: 'I has a apple.', issues: [] },
   },
   {
     correction: { ...corrected, issues: [] },

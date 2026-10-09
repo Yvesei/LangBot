@@ -36,9 +36,6 @@ export function deleteMessage(state: ChatState, cancel: () => void, messageId: s
       (message) => message.id !== messageId && message.replyTo !== messageId,
     ),
   );
-  state.setCards((current) =>
-    current.filter((card) => card.sourceMessageId !== messageId),
-  );
   state.setError('');
 }
 

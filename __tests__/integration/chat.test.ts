@@ -1,6 +1,7 @@
 import { POST } from '@/app/api/chat/route';
 import { enforceLimits } from '@/lib/server/limits';
 import { ApiError } from '@/lib/server/errors';
+import { apiUrl } from '../helpers/api';
 import { chatBody, providerResponse, request, tutorResult } from '../../tests/fixtures';
 
 jest.mock('@/lib/server/limits', () => ({
@@ -49,7 +50,7 @@ test('rejects malformed JSON and unsupported content types', async () => {
   expect(
     (
       await POST(
-        new Request('http://localhost:3000/api/chat', {
+        new Request(apiUrl('/api/chat'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: '{',
@@ -58,11 +59,8 @@ test('rejects malformed JSON and unsupported content types', async () => {
     ).status,
   ).toBe(400);
   expect(
-    (
-      await POST(
-        new Request('http://localhost:3000/api/chat', { method: 'POST', body: 'text' }),
-      )
-    ).status,
+    (await POST(new Request(apiUrl('/api/chat'), { method: 'POST', body: 'text' })))
+      .status,
   ).toBe(415);
 });
 
@@ -91,11 +89,7 @@ test.each([
 test.each([
   {
     correction: { ...tutorResult.correction, correctedText: chatBody.prompt },
-    expected: { correctedText: chatBody.prompt, issues: [], exercise: null },
-  },
-  {
-    correction: { ...tutorResult.correction, exercise: null },
-    expected: { ...tutorResult.correction, exercise: null },
+    expected: { correctedText: chatBody.prompt, issues: [] },
   },
   {
     correction: { ...tutorResult.correction, issues: [] },
@@ -122,7 +116,7 @@ test('does not accept token-truncated structured output', async () => {
   expect((await POST(request(chatBody))).status).toBe(502);
 });
 
-test('returns quota errors with Retry-After without calling Mistral', async () => {
+test('returns rate-limit errors with Retry-After without calling Mistral', async () => {
   jest
     .mocked(enforceLimits)
     .mockRejectedValueOnce(new ApiError(429, 'Too many requests.', 60));

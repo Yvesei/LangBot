@@ -7,7 +7,7 @@ import {
 } from 'react';
 import type { LanguageConfig, Level } from '@/lib/schemas';
 import { getLanguageConfigFromStorage, getLevelFromStorage } from '@/lib/config/language';
-import { loadCards, saveCards, type StudyCard } from '@/lib/learning';
+
 import type { ActiveRequestRef } from './chat-types';
 
 interface StoredPreferencesOptions {
@@ -15,7 +15,6 @@ interface StoredPreferencesOptions {
   setLevel: Dispatch<SetStateAction<Level>>;
   setIsReady: Dispatch<SetStateAction<boolean>>;
   activeChatRequest: ActiveRequestRef;
-  setCards: Dispatch<SetStateAction<StudyCard[]>>;
 }
 
 export function useStoredPreferences(options: StoredPreferencesOptions) {
@@ -24,8 +23,6 @@ export function useStoredPreferences(options: StoredPreferencesOptions) {
     const savedConfig = getLanguageConfigFromStorage();
     initialOptions.setConfig(savedConfig);
     initialOptions.setLevel(getLevelFromStorage());
-    const savedCards = loadCards();
-    initialOptions.setCards(savedCards);
 
     initialOptions.setIsReady(true);
     return () => initialOptions.activeChatRequest.current?.controller.abort();
@@ -35,20 +32,11 @@ export function useStoredPreferences(options: StoredPreferencesOptions) {
 interface ChatEffectsOptions {
   messagesChanged: unknown;
   messagesEndRef: RefObject<HTMLDivElement | null>;
-  cards: StudyCard[];
-  isReady: boolean;
-  setStorageWarning: Dispatch<SetStateAction<string>>;
 }
 
 export function useChatEffects(options: ChatEffectsOptions) {
-  const { messagesChanged, messagesEndRef, cards, isReady, setStorageWarning } = options;
-  useEffect(() => {
-    if (isReady && !saveCards(cards)) {
-      setStorageWarning(
-        'Browser storage is unavailable. Practice progress will last only for this visit.',
-      );
-    }
-  }, [cards, isReady, setStorageWarning]);
+  const { messagesChanged, messagesEndRef } = options;
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messagesChanged, messagesEndRef]);

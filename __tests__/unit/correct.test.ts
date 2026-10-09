@@ -43,14 +43,10 @@ describe('correction diff', () => {
     expect(validateCorrection('I has a apple.', { ...corrected, issues: [] })).toBe(
       false,
     );
-    expect(validateCorrection('I has a apple.', { ...corrected, exercise: null })).toBe(
-      true,
-    );
     expect(
       validateCorrection('Hello.', {
         correctedText: 'Hello.',
         issues: [],
-        exercise: null,
       }),
     ).toBe(true);
   });

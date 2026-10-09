@@ -1,6 +1,5 @@
 import { ConversationWelcome } from '@/components/ui/chat/ConversationWelcome';
 import { Message } from '@/components/ui/chat/Message';
-import { PracticePanel } from '@/components/ui/panels/PracticePanel';
 import { EmptyState } from '@/components/ui/states/EmptyState';
 import type { ChatActions } from './useChatActions';
 import type { ChatState } from './useChatState';
@@ -52,14 +51,6 @@ export function ChatConversation({ state, actions }: ChatConversationProps) {
 
   return (
     <>
-      <PracticePanel
-        key={state.config.nativeLanguage + state.config.targetLanguage}
-        cards={state.visibleCards.filter((card) => card.exercise !== null)}
-        config={state.config}
-        onGrade={actions.gradePractice}
-        onForget={actions.forgetCard}
-        onForgetAll={actions.forgetAllCards}
-      />
       {state.topics.length > 0 && (
         <p
           className="mb-6 text-xs text-[var(--muted)]"

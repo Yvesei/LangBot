@@ -1,4 +1,5 @@
 import type { ChatRequest } from '@/lib/schemas';
+import { apiUrl } from '../__tests__/helpers/api';
 
 export const languageConfig = {
   nativeLanguage: 'fr' as const,
@@ -12,11 +13,6 @@ export const corrected = {
       explanation: 'Use have with I and an before a vowel sound.',
     },
   ],
-  exercise: {
-    instruction: 'Complete the sentence.',
-    sentence: 'I ___ a book.',
-    answer: 'have',
-  },
 };
 export const tutorResult = {
   reply: 'What fruit do you like?',
@@ -32,7 +28,7 @@ export const chatBody: ChatRequest = {
 };
 
 export function request(body: unknown, path = 'chat') {
-  return new Request('http://localhost:3000/api/' + path, {
+  return new Request(apiUrl('/api/' + path), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
