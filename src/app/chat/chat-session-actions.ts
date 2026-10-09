@@ -7,6 +7,7 @@ export function startNewChat(state: ChatState, cancel: () => void) {
     state.setReviewRequested(true);
   }
   cancel();
+  state.setVoiceOpen(false);
   state.setMessages([]);
   state.setPrompt('');
   state.setError('');
@@ -49,7 +50,15 @@ export function deleteMessage(state: ChatState, cancel: () => void, messageId: s
 
 export function changeLanguages(state: ChatState, cancel: () => void) {
   cancel();
+  state.setVoiceOpen(false);
   state.setReviewOpen(false);
   state.setReviewRequested(false);
   state.setIsSelectingLanguages(true);
+}
+
+export function closeVoiceCall(state: ChatState) {
+  state.setVoiceOpen(false);
+  if (state.visibleCards.length > 0 || state.loading) {
+    state.setReviewRequested(true);
+  }
 }
