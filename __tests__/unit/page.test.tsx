@@ -10,6 +10,7 @@ jest.mock('@/lib/api', () => ({
   send: jest.fn(),
   translateMessage: jest.fn(),
 }));
+
 beforeEach(() => {
   HTMLDialogElement.prototype.showModal = function () {
     this.setAttribute('open', '');
