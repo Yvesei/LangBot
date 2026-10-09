@@ -51,6 +51,9 @@ jobs:
       - name: Run route integration tests with mocked provider
         run: pnpm run test:integration
 
+      - name: Validate evaluation fixtures (no API calls)
+        run: pnpm eval
+
       # Build the Next.js application
       - name: Build Next.js app
         run: pnpm run build
