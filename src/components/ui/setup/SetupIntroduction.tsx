@@ -1,4 +1,4 @@
-import { ArrowRight, Languages } from 'lucide-react';
+import { Languages } from 'lucide-react';
 
 export function SetupIntroduction({ isChanging }: { isChanging: boolean }) {
   return (
@@ -22,28 +22,6 @@ export function SetupIntroduction({ isChanging }: { isChanging: boolean }) {
         <p className="text-sm text-gray-500">
           Starting with these languages begins a new chat.
         </p>
-      )}
-    </>
-  );
-}
-
-export function SetupActions({ onCancel }: { onCancel?: () => void }) {
-  return (
-    <>
-      <button
-        type="submit"
-        className="primary-button flex w-full items-center justify-center gap-3"
-      >
-        Start practising <ArrowRight size={16} />
-      </button>
-      {onCancel && (
-        <button
-          type="button"
-          onClick={onCancel}
-          className="w-full underline"
-        >
-          Back to chat
-        </button>
       )}
     </>
   );

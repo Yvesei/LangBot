@@ -2,7 +2,8 @@ import { useState } from 'react';
 import type { ReviewGroup } from '@/lib/review';
 import type { LanguageConfig } from '@/lib/schemas';
 import { ReviewAnswer } from './ReviewAnswer';
-import { ReviewControls, ReviewPrompt } from './ReviewCardContent';
+import { ReviewControls } from './ReviewControls';
+import { ReviewPrompt } from './ReviewPrompt';
 
 interface ReviewCardProps {
   group: ReviewGroup;

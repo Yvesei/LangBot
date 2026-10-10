@@ -17,27 +17,13 @@ function getNextReviewDate(streak: number, correct: boolean, now: number): numbe
   return now + REVIEW_INTERVALS_DAYS[intervalIndex] * MILLISECONDS_PER_DAY;
 }
 
-type CreateCard = (
-  ...parameters: [
-    id: string,
-    correction: Correction | null,
-    languageConfig: LanguageConfig,
-    now?: number,
-    originalText?: string,
-  ]
-) => StudyCard | null;
-
-export const createCard: CreateCard = function createCard(
-  id,
-  correction,
-  languageConfig,
-) {
-  // Preserve the original three-argument runtime arity while accepting optional values.
-  // eslint-disable-next-line prefer-rest-params
-  const now = arguments[3] === undefined ? Date.now() : (arguments[3] as number);
-  // eslint-disable-next-line prefer-rest-params
-  const originalText = arguments[4] === undefined ? '' : (arguments[4] as string);
-
+export function createCard(
+  id: string,
+  correction: Correction | null,
+  languageConfig: LanguageConfig,
+  now = Date.now(),
+  originalText = '',
+): StudyCard | null {
   if (!correction || !correction.issues.length) {
     return null;
   }
@@ -56,7 +42,7 @@ export const createCard: CreateCard = function createCard(
     attempts: 0,
     successes: 0,
   };
-};
+}
 
 export function recordReview(
   card: StudyCard,

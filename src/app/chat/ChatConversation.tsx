@@ -1,35 +1,13 @@
-import { ConversationWelcome } from '@/components/ui/chat/ConversationWelcome';
-import { Message } from '@/components/ui/chat/Message';
-import { EmptyState } from '@/components/ui/states/EmptyState';
+import { ConversationWelcome } from '@/components/ui/chat/welcome/ConversationWelcome';
+import { Message } from '@/components/ui/chat/message/Message';
+import { EmptyState } from '@/components/ui/setup/EmptyState';
+import { ReviewToolbar } from '@/components/ui/review/ReviewToolbar';
 import type { ChatActions } from './useChatActions';
 import type { ChatState } from './useChatState';
 
 interface ChatConversationProps {
   state: ChatState;
   actions: ChatActions;
-}
-
-function SessionToolbar({ state, actions }: ChatConversationProps) {
-  return (
-    <div className="mb-5 flex items-center justify-between gap-3 text-xs">
-      <button
-        type="button"
-        className="subtle-button"
-        onClick={() => state.setReviewOpen(true)}
-      >
-        Review cards · {state.reviewGroups.length}
-      </button>
-      {state.messages.length > 0 && (
-        <button
-          type="button"
-          className="text-[var(--muted)]"
-          onClick={actions.newChat}
-        >
-          End session & review
-        </button>
-      )}
-    </div>
-  );
 }
 
 function Messages({ state, actions }: ChatConversationProps) {
@@ -74,18 +52,12 @@ export function ChatConversation({ state, actions }: ChatConversationProps) {
 
   return (
     <>
-      <SessionToolbar
-        state={state}
-        actions={actions}
+      <ReviewToolbar
+        reviewCount={state.reviewGroups.length}
+        hasMessages={state.messages.length > 0}
+        onOpenReview={() => state.setReviewOpen(true)}
+        onEndSession={actions.newChat}
       />
-      {state.topics.length > 0 && (
-        <p
-          className="mb-6 text-xs text-[var(--muted)]"
-          lang={state.config.nativeLanguage}
-        >
-          {state.topics.join(' / ')}
-        </p>
-      )}
       <Messages
         state={state}
         actions={actions}

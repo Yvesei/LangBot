@@ -8,7 +8,8 @@ A Next.js-based AI-powered language learning application that helps users practi
 - **Multi-language Support**: Configurable native and target languages
 - **Real-time Translation**: Translate messages between target and native languages
 - **Grammar Correction**: Automatic spelling and grammar correction
-- **Topic Tracking**: Monitors conversation topics for better context
+- **Bilingual Vocabulary**: Helps with native-language words used in target-language sentences
+- **Saved Review Cards**: Saves vocabulary and corrections in this browser for later review
 - **Conversation History**: Maintains chat history for contextual responses
 
 ## 🏗️ Architecture
@@ -57,8 +58,6 @@ A Next.js-based AI-powered language learning application that helps users practi
 │   │       │   └── Message.tsx
 │   │       ├── indicators
 │   │       │   └── LoadingIndicator.tsx
-│   │       ├── panels
-│   │       │   └── TopicsPanel.tsx
 │   │       └── states
 │   │           ├── EmptyState.tsx
 │   │           └── ErrorDisplay.tsx
@@ -66,8 +65,8 @@ A Next.js-based AI-powered language learning application that helps users practi
 │       ├── utils.ts
 │       ├── api
 │       │   ├── chat.ts
-│       │   ├── correct.ts
 │       │   ├── index.ts
+│       │   ├── request.ts
 │       │   └── translate.ts
 │       ├── config
 │       │   └── language.ts
@@ -91,7 +90,6 @@ graph TB
         Loading["LoadingIndicator"]
         Error["ErrorDisplay"]
         Empty["EmptyState"]
-        Topics["TopicsPanel"]
     end
     
     %% Client Library Layer
@@ -103,10 +101,9 @@ graph TB
         end
         
         subgraph API["API Layer (code)"]
-            ClientBarrel["@/lib/api (index.ts)<br/><br/>API Abstraction:<br/>• send()<br/>• translateMessage()<br/>• correctMessage()"]
+            ClientBarrel["@/lib/api (index.ts)<br/><br/>API Abstraction:<br/>• send()<br/>• translateMessage()"]
             ChatApi["chat.ts<br/>(send)"]
             TransApi["translate.ts<br/>(translateMessage)"]
-            CorrectApi["correct.ts<br/>(correctMessage)"]
         end
     end
     
@@ -127,11 +124,9 @@ graph TB
     
     ClientBarrel --> ChatApi
     ClientBarrel --> TransApi
-    ClientBarrel --> CorrectApi
     
     ChatApi -.-> ChatRoute
     TransApi -.-> TransRoute
-    CorrectApi -.-> CorrectRoute
     
     ChatRoute --> Mistral
     TransRoute --> Mistral
@@ -145,8 +140,8 @@ graph TB
     classDef externalStyle fill:#ffebee,stroke:#b71c1c,stroke-width:2px
     
     class Page pageStyle
-    class Header,Input,Msg,Loading,Error,Empty,Topics uiStyle
-    class ClientBarrel,ChatApi,TransApi,CorrectApi apiStyle
+    class Header,Input,Msg,Loading,Error,Empty uiStyle
+    class ClientBarrel,ChatApi,TransApi apiStyle
     class ChatRoute,TransRoute,CorrectRoute routeStyle
     class Mistral externalStyle
 ```
@@ -212,10 +207,12 @@ pnpm dev
 ![Original message (before correction)](./imgs/before_correction.png)
 ![Corrected message (after correction)](./imgs/correction.gif)
 
-#### Topic Tracking
-- Automatically detects discussion topics (food, travel, work, hobbies, family)
-- Displays topics in the sidebar
-- Helps maintain conversation context
+#### Vocabulary and Review
+- Mixing a native-language word into a sentence can produce a separate vocabulary suggestion
+- Vocabulary and explained corrections become review cards saved in this browser
+- Open **Review cards** or **End session & review**, reveal an answer, and choose **I remembered** or **Practise again**
+- Repeated mistakes are grouped; review cards are kept separate for each language pair
+- Deleting a message removes its saved cards, and **Forget this card** removes the selected group
 
 ## 🔌 API Endpoints
 
@@ -302,7 +299,7 @@ sequenceDiagram
 
   UI->>UI: Create assistant message object
   UI->>Context: Add assistant message
-  UI->>UI: Update learning context<br>(topics, mistakes)
+  UI->>UI: Attach the correction to the user message
 
   UI-->>User: Display AI response
   deactivate UI
@@ -401,7 +398,7 @@ The AI tutor is designed to:
 
 - **Adapt to User Level**: Adjusts language complexity based on proficiency
 - **Encourage Expression**: Promotes natural conversation without harsh corrections
-- **Maintain Context**: References previous topics and common mistakes
+- **Maintain Context**: Uses previous messages to continue the conversation
 - **Stay Engaging**: Asks follow-up questions to continue conversations
 - **Be Patient**: Creates a supportive learning environment
 

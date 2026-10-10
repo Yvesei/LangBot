@@ -1,9 +1,9 @@
 'use client';
 
-import { ChatHeader } from '@/components/ui/chat/ChatHeader';
-import { ChatInput } from '@/components/ui/chat/ChatInput';
+import { ChatHeader } from '@/components/ui/chat/header/ChatHeader';
+import { ChatInput } from '@/components/ui/chat/input/ChatInput';
+import { ReviewDialog } from '@/components/ui/review/dialog/ReviewDialog';
 import { ChatConversation } from './ChatConversation';
-import { ChatOverlays } from './ChatOverlays';
 import { useChatActions } from './useChatActions';
 import { useChatState } from './useChatState';
 
@@ -70,10 +70,15 @@ export default function ChatPage() {
         onCancel={actions.cancel}
         disabled={!state.isReady || !state.config || state.isSelectingLanguages}
       />
-      <ChatOverlays
-        state={state}
-        actions={actions}
-      />
+      {state.config && state.reviewOpen && (
+        <ReviewDialog
+          cards={state.visibleCards}
+          config={state.config}
+          onGrade={actions.gradeReview}
+          onForget={actions.forgetReview}
+          onClose={() => state.setReviewOpen(false)}
+        />
+      )}
     </div>
   );
 }

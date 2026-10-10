@@ -3,8 +3,9 @@
 import { groupReviewCards } from '@/lib/review';
 import type { StudyCard } from '@/lib/learning';
 import type { LanguageConfig } from '@/lib/schemas';
-import { ReviewCard } from './ReviewCard';
-import { ReviewFooter, ReviewHeader } from './ReviewDialogChrome';
+import { ReviewCard } from '../card/ReviewCard';
+import { ReviewFooter } from './ReviewFooter';
+import { ReviewHeader } from './ReviewHeader';
 import { useReviewDialog } from './useReviewDialog';
 
 interface ReviewDialogProps {

@@ -92,10 +92,11 @@ test('deleting a user turn removes it and its reply from future history', async 
   await screen.findByText(tutorResult.reply);
   fireEvent.click(screen.getByRole('button', { name: 'Delete turn' }));
   expect(screen.queryByText(tutorResult.reply)).not.toBeInTheDocument();
+  expect(JSON.parse(localStorage.getItem(STUDY_KEY)!)).toEqual([]);
   submit('Hello again.');
   await waitFor(() =>
     expect(send).toHaveBeenLastCalledWith(
-      expect.objectContaining({ history: [] }),
+      expect.objectContaining({ history: [], learningFocus: [] }),
       expect.anything(),
     ),
   );
@@ -117,6 +118,7 @@ test('New chat cancels outstanding work and ignores a late result', async () => 
     resolve({ success: true, ...tutorResult });
   });
   expect(screen.queryByText(tutorResult.reply)).not.toBeInTheDocument();
+  expect(JSON.parse(localStorage.getItem(STUDY_KEY)!)).toEqual([]);
 });
 test('a failed send is visible and can be retried without duplicating the user turn', async () => {
   jest.mocked(send).mockRejectedValueOnce(new Error('The AI service is busy.'));

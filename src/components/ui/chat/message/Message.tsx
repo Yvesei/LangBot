@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot, User } from 'lucide-react';
+import { MessageAuthor } from './MessageAuthor';
 import type { ChatMessage } from '@/lib/types';
 import type { LanguageConfig } from '@/lib/schemas';
 import { MessageActions } from './MessageActions';
@@ -15,14 +15,6 @@ interface MessageProps {
   onDelete: () => void;
   onRetry: () => void;
   busy: boolean;
-}
-
-function MessageAuthor({ user }: { user: boolean }) {
-  return (
-    <p className="mb-3 flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
-      {user ? <User size={15} /> : <Bot size={17} />} {user ? 'You' : 'LangBot'}
-    </p>
-  );
 }
 
 export function Message({ message, config, onDelete, onRetry, busy }: MessageProps) {
