@@ -39,8 +39,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Test shared API foundations without provider calls
-        run: pnpm exec jest --runInBand --runTestsByPath __tests__/unit/provider.test.ts __tests__/unit/limits.test.ts __tests__/unit/refactor-characterization.test.ts
+      - name: Lint
+        run: pnpm run lint
 
       - name: Type check
         run: pnpm run typecheck
+
+      - name: Run unit tests
+        run: pnpm run test:unit
+
+      - name: Run route integration tests with mocked provider
+        run: pnpm run test:integration
+
+      # Build the Next.js application
+      - name: Build Next.js app
+        run: pnpm run build

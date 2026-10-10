@@ -44,7 +44,6 @@ export const tutorOutputSchema = z
   .object({
     reply: z.string().min(1).max(4000),
     correction: correctionSchema,
-    topics: z.array(z.string().min(1).max(60)).max(5),
   })
   .strict();
 

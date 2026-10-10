@@ -1,26 +1,275 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fafaf8;
+  --foreground: #252623;
+  --surface: #ffffff;
+  --soft: #f0f0ec;
+  --muted: #73746d;
+  --line: #e5e6df;
+  --accent: #304c40;
+  --font-ui: Arial, Helvetica, sans-serif;
+  --font-code: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-code);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    color-scheme: dark;
+    --background: #171917;
+    --foreground: #edeee8;
+    --surface: #1e211e;
+    --soft: #272b26;
+    --muted: #a0a69a;
+    --line: #32382f;
+    --accent: #b9d4b6;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
+}
+
+button,
+a,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled),
+select,
+summary {
+  cursor: pointer;
+}
+button,
+a,
+select {
+  transition:
+    background-color 160ms,
+    color 160ms,
+    border-color 160ms;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background: var(--background);
+  color: var(--foreground);
+}
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 28px;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  height: 34px;
+  width: 34px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
+}
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  color: var(--muted);
+}
+.icon-button:hover:not(:disabled),
+.icon-button[aria-pressed='true'] {
+  background: var(--soft);
+  color: var(--foreground);
+}
+.level-select {
+  max-width: 115px;
+  padding: 8px 4px;
+  background: transparent;
+  color: var(--muted);
+}
+.level-select option {
+  background: var(--surface);
+  color: var(--foreground);
+}
+.welcome {
+  margin: auto 0;
+  padding: 48px 0 40px;
+  text-align: center;
+}
+.welcome-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 23px;
+  color: var(--accent);
+  background: var(--soft);
+  border: 1px solid var(--line);
+}
+.starter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  font-size: 12px;
+}
+.starter:hover {
+  border-color: var(--muted);
+  background: var(--soft);
+}
+.composer-wrap {
+  padding: 12px 20px max(16px, env(safe-area-inset-bottom));
+}
+.composer {
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: 0 4px 24px #00000004;
+}
+.composer:focus-within {
+  border-color: var(--muted);
+}
+.send-button {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--foreground);
+  color: var(--background);
+  border-radius: 50%;
+}
+.send-button:hover:not(:disabled) {
+  background: var(--accent);
+}
+.primary-button {
+  background: var(--foreground);
+  color: var(--background);
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.primary-button:hover:not(:disabled) {
+  background: var(--accent);
+}
+.subtle-button {
+  background: var(--soft);
+  border-radius: 9px;
+  padding: 7px 11px;
+  font-size: 11px;
+}
+.review-dialog {
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  padding: 24px;
+  overflow-y: auto;
+  color: var(--foreground);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.review-dialog::backdrop {
+  background: rgb(0 0 0 / 35%);
+}
+.review-card {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+.message {
+  max-width: 90%;
+  padding: 20px;
+  font-size: 15px;
+}
+.message-user {
+  margin-left: auto;
+}
+.message-assistant {
+  margin-right: auto;
+  padding-left: 0;
+}
+.message-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 10px;
+}
+.message-actions .icon-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+.setup-form {
+  width: 100%;
+  max-width: 380px;
+  margin: auto;
+  padding: 28px 0;
+}
+.setup-form > * + * {
+  margin-top: 24px;
+}
+.setup-select {
+  display: block;
+  width: 100%;
+  margin-top: 9px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--foreground);
+  padding: 14px;
+  font-size: 14px;
+}
+@media (max-width: 480px) {
+  .chat-header {
+    padding: 14px 16px;
+    gap: 6px;
+  }
+  .level-select {
+    max-width: 96px;
+    font-size: 11px;
+  }
+  .chat-header .icon-button {
+    width: 32px;
+    height: 32px;
+  }
+  .chat-header a.icon-button {
+    display: none;
+  }
+  .welcome {
+    padding-top: 24px;
+  }
+  .message {
+    max-width: 95%;
+    padding: 16px;
+  }
+  .message-assistant {
+    padding-left: 0;
+  }
 }
