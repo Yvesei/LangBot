@@ -50,19 +50,9 @@ export function ChatConversation({ state, actions }: ChatConversationProps) {
   }
 
   return (
-    <>
-      {state.topics.length > 0 && (
-        <p
-          className="mb-6 text-xs text-[var(--muted)]"
-          lang={state.config.nativeLanguage}
-        >
-          {state.topics.join(' / ')}
-        </p>
-      )}
-      <Messages
-        state={state}
-        actions={actions}
-      />
-    </>
+    <Messages
+      state={state}
+      actions={actions}
+    />
   );
 }

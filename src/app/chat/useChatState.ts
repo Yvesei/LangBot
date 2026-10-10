@@ -1,12 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  getConversationTopics,
-  type ConversationMessage,
-} from '@/lib/chat/conversation';
-import {
-  getLanguageConfigFromStorage,
-  getLevelFromStorage,
-} from '@/lib/config/language';
+import type { ConversationMessage } from '@/lib/chat/conversation';
+import { getLanguageConfigFromStorage, getLevelFromStorage } from '@/lib/config/language';
 import type { LanguageConfig, Level } from '@/lib/schemas';
 
 interface ActiveChatRequest {
@@ -63,7 +57,6 @@ export function useChatState() {
     setStorageWarning,
     activeChatRequest,
     messagesEndRef,
-    topics: getConversationTopics(messages),
   };
 }
 

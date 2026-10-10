@@ -17,7 +17,6 @@ export const corrected = {
 export const tutorResult = {
   reply: 'What fruit do you like?',
   correction: corrected,
-  topics: ['Nourriture'],
 };
 export const chatBody: ChatRequest = {
   prompt: 'I has a apple.',

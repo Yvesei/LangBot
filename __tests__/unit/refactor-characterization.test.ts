@@ -9,11 +9,7 @@ import {
   tutorResult,
 } from '../../tests/fixtures';
 import { wordDiff } from '@/lib/diff';
-import {
-  addAssistantReply,
-  buildChatRequest,
-  getConversationTopics,
-} from '@/lib/chat/conversation';
+import { addAssistantReply, buildChatRequest } from '@/lib/chat/conversation';
 import { MAX_REQUEST_BYTES } from '@/lib/config/limits';
 
 afterEach(() => {
@@ -23,8 +19,8 @@ afterEach(() => {
 
 const outputSchema = z.object({ translation: z.string().trim().min(1) });
 
-function conversationMessage(id: string, content: string, topics?: string[]) {
-  return { id, content, role: 'user' as const, timestamp: new Date(0), topics };
+function conversationMessage(id: string, content: string) {
+  return { id, content, role: 'user' as const, timestamp: new Date(0) };
 }
 
 test('diff ties prefer removing the original tokens and merge adjacent parts', () => {
@@ -214,9 +210,9 @@ test('chat history respects UTF-8 request size and retry cutoffs', () => {
   ]);
 });
 
-test('reply insertion preserves unrelated message identities and keeps topics in first-seen order', () => {
-  const original = conversationMessage('one', 'Original', ['A', 'B']);
-  const unrelated = conversationMessage('two', 'Other', ['A', 'C', 'D', 'E', 'F']);
+test('reply insertion preserves unrelated message identities', () => {
+  const original = conversationMessage('one', 'Original');
+  const unrelated = conversationMessage('two', 'Other');
   const replies = addAssistantReply([original, unrelated], original.id, tutorResult);
   expect(replies[0]).toEqual({ ...original, correction: corrected, status: 'complete' });
   expect(replies[1]).toMatchObject({
@@ -226,5 +222,4 @@ test('reply insertion preserves unrelated message identities and keeps topics in
   });
   expect(replies[2]).toBe(unrelated);
   expect(original).not.toHaveProperty('correction');
-  expect(getConversationTopics([original, unrelated])).toEqual(['B', 'C', 'D', 'E', 'F']);
 });
