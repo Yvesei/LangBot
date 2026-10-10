@@ -2,47 +2,42 @@ import { useState } from 'react';
 import type { ReviewGroup } from '@/lib/review';
 import type { LanguageConfig } from '@/lib/schemas';
 import { ReviewAnswer } from './ReviewAnswer';
-import { ReviewControls } from './ReviewControls';
 import { ReviewPrompt } from './ReviewPrompt';
+import { getReviewText } from '@/lib/review/text';
 
 interface ReviewCardProps {
   group: ReviewGroup;
   config: LanguageConfig;
-  onGrade: (ids: string[], correct: boolean) => void;
-  onForget: (ids: string[]) => void;
 }
 
-export function ReviewCard(props: ReviewCardProps) {
-  const [revealed, setRevealed] = useState(false);
-  const [reviewed, setReviewed] = useState(false);
+export function ReviewCard({ group, config }: ReviewCardProps) {
+  const [flipped, setFlipped] = useState(false);
+  const { originalText, correctedText } = getReviewText(group.card);
 
-  function grade(correct: boolean) {
-    props.onGrade(props.group.ids, correct);
-    setReviewed(true);
+  function flipCard() {
+    setFlipped((current) => !current);
   }
 
   return (
-    <article className="review-card">
-      <ReviewPrompt
-        group={props.group}
-        config={props.config}
-        revealed={revealed}
-        onReveal={() => setRevealed(true)}
-      />
-      {revealed && (
-        <ReviewAnswer
-          group={props.group}
-          config={props.config}
-          reviewed={reviewed}
+    <button
+      type="button"
+      className="review-card"
+      aria-pressed={flipped}
+      onClick={flipCard}
+    >
+      <span className={`review-card-inner${flipped ? ' is-flipped' : ''}`}>
+        <ReviewPrompt
+          text={originalText}
+          kind={group.card.kind}
+          flipped={flipped}
         />
-      )}
-      <ReviewControls
-        group={props.group}
-        revealed={revealed}
-        reviewed={reviewed}
-        onGrade={grade}
-        onForget={props.onForget}
-      />
-    </article>
+        <ReviewAnswer
+          text={correctedText}
+          explanation={group.card.focus}
+          config={config}
+          flipped={flipped}
+        />
+      </span>
+    </button>
   );
 }

@@ -8,28 +8,35 @@ export function normalizeReviewText(text: string): string {
 function getChangedText(parts: DiffPart[], type: 'removed' | 'added'): string {
   return parts
     .filter((part) => part.type === type)
-    .map((part) => part.text)
+    .map((part) => part.text.trim())
+    .filter(Boolean)
     .join(' ');
 }
 
-export function getReviewKey(card: StudyCard): string {
-  let originalText = card.originalText;
-  let correctedText = card.correctedText;
+export function getReviewText(card: StudyCard) {
+  const originalText = card.originalText || card.focus;
+  const correctedText = card.correctedText;
 
-  if (card.kind === 'correction' && originalText) {
+  if (card.kind === 'correction' && card.originalText) {
     const parts = wordDiff(
       originalText,
       correctedText,
       card.languageConfig.targetLanguage,
     );
-    originalText = getChangedText(parts, 'removed');
-    correctedText = getChangedText(parts, 'added');
+    const incorrectWords = getChangedText(parts, 'removed');
+    const correctWords = getChangedText(parts, 'added');
+
+    // Missing or extra words need the sentence to show what changed.
+    if (incorrectWords && correctWords) {
+      return { originalText: incorrectWords, correctedText: correctWords };
+    }
   }
 
-  if (!originalText && !correctedText) {
-    originalText = card.focus;
-    correctedText = '';
-  }
+  return { originalText, correctedText };
+}
+
+export function getReviewKey(card: StudyCard): string {
+  const { originalText, correctedText } = getReviewText(card);
 
   return JSON.stringify([
     card.languageConfig.nativeLanguage,

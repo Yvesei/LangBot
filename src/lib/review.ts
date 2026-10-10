@@ -10,7 +10,6 @@ export function createVocabularyCards(
   content: string,
   vocabulary: Vocabulary[],
   config: LanguageConfig,
-  now = Date.now(),
 ): StudyCard[] {
   const cards: StudyCard[] = [];
   const seen = new Set<string>();
@@ -33,10 +32,6 @@ export function createVocabularyCards(
       correctedText: vocabularyEntry.translation,
       example: vocabularyEntry.example,
       focus: vocabularyEntry.explanation,
-      dueAt: now,
-      streak: 0,
-      attempts: 0,
-      successes: 0,
     });
   }
 

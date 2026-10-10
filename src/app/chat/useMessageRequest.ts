@@ -103,9 +103,8 @@ function saveReviewCards(
     return;
   }
 
-  const now = Date.now();
-  const correctionCard = createCard(messageId, result.correction, config, now, content);
-  const cards = createVocabularyCards(messageId, content, result.vocabulary, config, now);
+  const correctionCard = createCard(messageId, result.correction, config, content);
+  const cards = createVocabularyCards(messageId, content, result.vocabulary, config);
 
   if (correctionCard) {
     cards.push(correctionCard);

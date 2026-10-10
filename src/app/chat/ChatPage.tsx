@@ -74,7 +74,6 @@ export default function ChatPage() {
         <ReviewDialog
           cards={state.visibleCards}
           config={state.config}
-          onGrade={actions.gradeReview}
           onForget={actions.forgetReview}
           onClose={() => state.setReviewOpen(false)}
         />

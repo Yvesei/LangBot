@@ -1,6 +1,5 @@
 import type { ConversationMessage } from '@/lib/chat/conversation';
 import { saveLanguageConfigToStorage } from '@/lib/config/language';
-import { recordReview } from '@/lib/learning';
 import type { LanguageConfig, Level } from '@/lib/schemas';
 import type { ChatState } from './useChatState';
 import { useMessageRequest } from './useMessageRequest';
@@ -59,12 +58,6 @@ export function useChatActions(state: ChatState) {
     state.setError('');
   }
 
-  function gradeReview(ids: string[], correct: boolean) {
-    state.setCards((current) =>
-      current.map((card) => (ids.includes(card.id) ? recordReview(card, correct) : card)),
-    );
-  }
-
   function forgetReview(ids: string[]) {
     state.setCards((current) => current.filter((card) => !ids.includes(card.id)));
   }
@@ -91,7 +84,6 @@ export function useChatActions(state: ChatState) {
     selectLanguages,
     changeLevel,
     deleteMessage,
-    gradeReview,
     forgetReview,
     clearError,
     send,

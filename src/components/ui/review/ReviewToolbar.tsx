@@ -13,7 +13,7 @@ export function ReviewToolbar(props: ReviewToolbarProps) {
         className="subtle-button"
         onClick={props.onOpenReview}
       >
-        Review cards · {props.reviewCount}
+        Flashcards · {props.reviewCount}
       </button>
       {props.hasMessages && (
         <button
@@ -21,7 +21,7 @@ export function ReviewToolbar(props: ReviewToolbarProps) {
           className="text-[var(--muted)]"
           onClick={props.onEndSession}
         >
-          End session & review
+          End session
         </button>
       )}
     </div>

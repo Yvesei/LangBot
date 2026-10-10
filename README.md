@@ -9,7 +9,7 @@ A Next.js-based AI-powered language learning application that helps users practi
 - **Real-time Translation**: Translate messages between target and native languages
 - **Grammar Correction**: Automatic spelling and grammar correction
 - **Bilingual Vocabulary**: Helps with native-language words used in target-language sentences
-- **Saved Review Cards**: Saves vocabulary and corrections in this browser for later review
+- **Flashcards**: Click a saved word or correction to flip it and see the answer with an explanation
 - **Conversation History**: Maintains chat history for contextual responses
 
 ## 🏗️ Architecture
@@ -207,12 +207,12 @@ pnpm dev
 ![Original message (before correction)](./imgs/before_correction.png)
 ![Corrected message (after correction)](./imgs/correction.gif)
 
-#### Vocabulary and Review
+#### Vocabulary and Flashcards
 - Mixing a native-language word into a sentence can produce a separate vocabulary suggestion
-- Vocabulary and explained corrections become review cards saved in this browser
-- Open **Review cards** or **End session & review**, reveal an answer, and choose **I remembered** or **Practise again**
-- Repeated mistakes are grouped; review cards are kept separate for each language pair
-- Deleting a message removes its saved cards, and **Forget this card** removes the selected group
+- Vocabulary and explained corrections become flashcards saved in this browser
+- Open **Flashcards**, click a card to flip between the original word and its correction or translation with an explanation
+- Use **Previous** and **Next** to browse; repeated corrections appear once, and cards stay separate for each language pair
+- Deleting a message removes its saved cards, and **Remove card** removes that correction or vocabulary item
 
 ## 🔌 API Endpoints
 

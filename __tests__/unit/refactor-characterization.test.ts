@@ -226,15 +226,12 @@ test('reply insertion preserves unrelated message identities', () => {
   expect(original).not.toHaveProperty('correction');
 });
 
-test('review groups count unique source messages, retain all IDs, and choose the last card', () => {
-  const first = createCard('one', corrected, languageConfig, 200, 'I has a apple.')!;
-  const duplicate = { ...first, id: 'duplicate', dueAt: 100 };
-  const last = { ...first, id: 'last', sourceMessageId: 'two', dueAt: 300 };
+test('repeated flashcards retain all IDs for deletion and choose the last card', () => {
+  const first = createCard('one', corrected, languageConfig, 'I has a apple.')!;
+  const duplicate = { ...first, id: 'duplicate' };
+  const last = { ...first, id: 'last', sourceMessageId: 'two' };
   expect(groupReviewCards([first, duplicate, last])[0]).toMatchObject({
     ids: ['one', 'duplicate', 'last'],
-    sourceMessageIds: ['one', 'two'],
-    occurrences: 2,
-    dueAt: 100,
   });
   expect(groupReviewCards([first, duplicate, last])[0].card).toBe(last);
 });

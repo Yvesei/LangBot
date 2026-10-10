@@ -38,13 +38,10 @@ export function useChatState() {
     const requestRef = activeChatRequest;
     const savedConfig = getLanguageConfigFromStorage();
     const savedCards = loadCards();
-    const matchingCards = getVisibleCards(savedCards, savedConfig);
-    const hasDueCards = matchingCards.some((card) => card.dueAt <= Date.now());
 
     setConfig(savedConfig);
     setLevel(getLevelFromStorage());
     setCards(savedCards);
-    setReviewOpen(hasDueCards);
     setIsReady(true);
 
     return () => {
@@ -55,7 +52,7 @@ export function useChatState() {
   useEffect(() => {
     if (isReady && !saveCards(cards)) {
       setStorageWarning(
-        'Browser storage is unavailable. Review progress will last only for this visit.',
+        'Browser storage is unavailable. Flashcards will last only for this visit.',
       );
     }
   }, [cards, isReady]);

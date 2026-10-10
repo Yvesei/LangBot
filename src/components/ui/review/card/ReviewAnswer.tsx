@@ -1,49 +1,33 @@
-import type { ReviewGroup } from '@/lib/review';
 import type { LanguageConfig } from '@/lib/schemas';
 
 interface ReviewAnswerProps {
-  group: ReviewGroup;
+  text: string;
+  explanation: string;
   config: LanguageConfig;
-  reviewed: boolean;
+  flipped: boolean;
 }
 
-export function ReviewAnswer({ group, config, reviewed }: ReviewAnswerProps) {
-  const card = group.card;
-  const answer = card.correctedText || '';
-
+export function ReviewAnswer({ text, explanation, config, flipped }: ReviewAnswerProps) {
   return (
-    <div className="mt-4 border-t border-[var(--line)] pt-4">
-      <p
-        className="whitespace-pre-wrap font-medium"
+    <span
+      className="review-card-face review-card-back"
+      hidden={!flipped}
+    >
+      <span
+        className="whitespace-pre-wrap text-3xl font-medium"
         lang={config.targetLanguage}
         dir="auto"
       >
-        {answer}
-      </p>
-      <p
-        className="mt-2 text-sm text-[var(--muted)]"
+        {text}
+      </span>
+      <span
+        className="mt-5 whitespace-pre-wrap text-sm text-[var(--muted)]"
         lang={config.nativeLanguage}
         dir="auto"
       >
-        {card.focus}
-      </p>
-      {card.example && (
-        <p
-          className="mt-3 text-sm"
-          lang={config.targetLanguage}
-          dir="auto"
-        >
-          {card.example}
-        </p>
-      )}
-      {reviewed && (
-        <p
-          role="status"
-          className="mt-3 text-xs text-[var(--muted)]"
-        >
-          Review saved. Next review: {new Date(group.dueAt).toLocaleString()}.
-        </p>
-      )}
-    </div>
+        {explanation}
+      </span>
+      <span className="mt-6 text-xs text-[var(--muted)]">Click to flip back</span>
+    </span>
   );
 }

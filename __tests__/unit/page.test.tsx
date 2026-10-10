@@ -140,33 +140,41 @@ test('same-language setup stays on the form', () => {
   expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
 });
 
-test('end of session opens saved cards and due cards return on the next visit', async () => {
+test('flashcards flip between the changed words and the correction, and stay saved', async () => {
   const view = render(<Page />);
   submit('I has a apple.');
   await screen.findByText(tutorResult.reply);
-  fireEvent.click(screen.getByRole('button', { name: 'End session & review' }));
-  const dialog = await screen.findByRole('dialog', { name: 'Your review cards' });
-  expect(within(dialog).getByText('I has a apple.')).toBeVisible();
-  expect(within(dialog).queryByText('I have an apple.')).not.toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Close review' })).toHaveFocus();
+  fireEvent.click(screen.getByRole('button', { name: 'End session' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Your flashcards' });
+  expect(screen.queryByText(tutorResult.reply)).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Close flashcards' })).toHaveFocus();
+  expect(within(dialog).getByText('has a')).toBeVisible();
+  expect(within(dialog).getByText('have an')).not.toBeVisible();
+  expect(within(dialog).queryByText('I has a apple.')).not.toBeInTheDocument();
+
+  fireEvent.click(within(dialog).getByRole('button', { pressed: false }));
+  expect(within(dialog).getByText('have an')).toBeVisible();
+  expect(
+    within(dialog).getByText(tutorResult.correction.issues[0].explanation),
+  ).toBeVisible();
+  expect(within(dialog).getByText('has a')).not.toBeVisible();
+  fireEvent.click(within(dialog).getByRole('button', { pressed: true }));
+  expect(within(dialog).getByText('has a')).toBeVisible();
+  expect(within(dialog).getByText('have an')).not.toBeVisible();
+  expect(
+    within(dialog).queryByRole('button', { name: 'I remembered' }),
+  ).not.toBeInTheDocument();
   view.unmount();
 
   render(<Page />);
-  const nextVisit = await screen.findByRole('dialog');
-  fireEvent.click(within(nextVisit).getByRole('button', { name: 'Show answer' }));
-  expect(within(nextVisit).getByText('I have an apple.')).toBeVisible();
-  fireEvent.click(within(nextVisit).getByRole('button', { name: 'I remembered' }));
-  expect(within(nextVisit).getByRole('status')).toHaveTextContent('Review saved');
-  await waitFor(() => {
-    const saved = JSON.parse(localStorage.getItem(STUDY_KEY)!);
-    expect(saved[0].successes).toBe(1);
-    expect(saved[0].dueAt).toBeGreaterThan(Date.now());
-  });
-  fireEvent.click(screen.getByRole('button', { name: 'Close review' }));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Flashcards · 1' }));
+  expect(within(screen.getByRole('dialog')).getByText('has a')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Close flashcards' }));
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 
-test('saves vocabulary from a mixed sentence without marking it as a grammar error', async () => {
+test('saves vocabulary from a mixed sentence and flips to its translation', async () => {
   const content = 'I need une cuillère.';
   jest.mocked(send).mockResolvedValue({
     success: true,
@@ -186,52 +194,97 @@ test('saves vocabulary from a mixed sentence without marking it as a grammar err
   await screen.findByText(tutorResult.reply);
   expect(container.querySelector('.message-user')).toHaveTextContent(content);
   expect(container.querySelector('ins')).not.toBeInTheDocument();
-  const openReview = screen.getByRole('button', { name: 'Review cards · 1' });
+  const openReview = screen.getByRole('button', { name: 'Flashcards · 1' });
   openReview.focus();
   fireEvent.click(openReview);
   const dialog = screen.getByRole('dialog');
   expect(within(dialog).getByText('cuillère')).toBeVisible();
-  fireEvent.click(within(dialog).getByRole('button', { name: 'Show answer' }));
+  expect(within(dialog).getByText('spoon')).not.toBeVisible();
+  fireEvent.click(within(dialog).getByRole('button', { pressed: false }));
   expect(within(dialog).getByText('spoon')).toBeVisible();
-  fireEvent.click(within(dialog).getByRole('button', { name: 'Practise again' }));
-  const saved = JSON.parse(localStorage.getItem(STUDY_KEY)!);
-  expect(saved[0].attempts).toBe(1);
-  expect(saved[0].successes).toBe(0);
-  expect(saved[0].dueAt).toBeGreaterThan(Date.now());
+  expect(within(dialog).getByText('Une cuillère se dit spoon.')).toBeVisible();
+  expect(send).toHaveBeenCalledTimes(1);
   fireEvent(dialog, new Event('cancel', { bubbles: true, cancelable: true }));
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   expect(openReview).toHaveFocus();
 });
 
-test('recurring errors share a review card and forgetting removes all its occurrences', async () => {
+test('browsing resets the card to its front and removing the last card keeps navigation usable', async () => {
+  jest
+    .mocked(send)
+    .mockResolvedValueOnce({ success: true, ...tutorResult })
+    .mockResolvedValueOnce({
+      success: true,
+      ...tutorResult,
+      reply: 'What did the message say?',
+      correction: {
+        correctedText: 'I received your message.',
+        issues: [{ category: 'spelling', explanation: 'Write received, with ei.' }],
+      },
+    });
+  render(<Page />);
+  submit('I has a apple.');
+  await screen.findByText(tutorResult.reply);
+  submit('I recieved your message.');
+  await screen.findByText('What did the message say?');
+  fireEvent.click(screen.getByRole('button', { name: 'Flashcards · 2' }));
+  const dialog = screen.getByRole('dialog');
+  expect(within(dialog).getByRole('button', { name: 'Previous' })).toBeDisabled();
+  expect(within(dialog).getByText('1 / 2')).toBeVisible();
+  fireEvent.click(within(dialog).getByRole('button', { pressed: false }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
+  expect(within(dialog).getByRole('button', { pressed: false })).toHaveTextContent(
+    'recieved',
+  );
+  expect(within(dialog).getByRole('button', { name: 'Next' })).toBeDisabled();
+  expect(within(dialog).getByText('2 / 2')).toBeVisible();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Previous' }));
+  expect(within(dialog).getByRole('button', { pressed: false })).toHaveTextContent(
+    'has a',
+  );
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Remove card' }));
+  expect(within(dialog).getByRole('button', { pressed: false })).toHaveTextContent(
+    'has a',
+  );
+  expect(within(dialog).getByText('1 / 1')).toBeVisible();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Remove card' }));
+  expect(
+    within(dialog).getByText('Corrections and words you ask about will appear here.'),
+  ).toBeVisible();
+  expect(within(dialog).queryByRole('navigation')).not.toBeInTheDocument();
+});
+
+test('recurring errors appear once and removing a card deletes all its occurrences', async () => {
   render(<Page />);
   submit('I has a apple.');
   await screen.findByText(tutorResult.reply);
   submit('I has a apple.');
   await waitFor(() => expect(screen.getAllByText(tutorResult.reply)).toHaveLength(2));
-  fireEvent.click(screen.getByRole('button', { name: 'Review cards · 1' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Flashcards · 1' }));
   const dialog = screen.getByRole('dialog');
-  expect(within(dialog).getAllByRole('article')).toHaveLength(1);
-  expect(within(dialog).getByText('2 times in your conversations')).toBeVisible();
-  fireEvent.click(within(dialog).getByRole('button', { name: 'Forget this card' }));
-  expect(within(dialog).queryByRole('article')).not.toBeInTheDocument();
+  expect(within(dialog).getByText('1 / 1')).toBeVisible();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Remove card' }));
+  expect(
+    within(dialog).queryByRole('button', { pressed: false }),
+  ).not.toBeInTheDocument();
   expect(JSON.parse(localStorage.getItem(STUDY_KEY)!)).toEqual([]);
 });
 
-test('review cards from a different language pair do not appear in the new session', async () => {
+test('flashcards from a different language pair do not appear in the new session', async () => {
   const view = render(<Page />);
   submit('I has a apple.');
   await screen.findByText(tutorResult.reply);
   view.unmount();
   localStorage.setItem('langbot-target', 'ja');
   render(<Page />);
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Review cards · 0' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Flashcards · 0' }));
   expect(
-    within(screen.getByRole('dialog')).queryByRole('article'),
+    within(screen.getByRole('dialog')).queryByRole('button', { pressed: false }),
   ).not.toBeInTheDocument();
   expect(JSON.parse(localStorage.getItem(STUDY_KEY)!)).toHaveLength(1);
 });
+
 test('IME Enter does not submit a partially composed word', () => {
   render(<Page />);
   const input = screen.getByRole('textbox', { name: 'Your message' });

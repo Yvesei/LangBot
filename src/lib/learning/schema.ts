@@ -9,11 +9,7 @@ export const studyCardSchema = z.object({
   originalText: z.string().max(2000).default(''),
   correctedText: z.string().max(4000).default(''),
   example: z.string().max(500).default(''),
-  focus: z.string().max(500),
-  dueAt: z.number().finite().nonnegative(),
-  streak: z.number().int().min(0).max(1000),
-  attempts: z.number().int().min(0).max(100000),
-  successes: z.number().int().min(0).max(100000),
+  focus: z.string().max(4000),
 });
 
 export type StudyCard = z.infer<typeof studyCardSchema>;
