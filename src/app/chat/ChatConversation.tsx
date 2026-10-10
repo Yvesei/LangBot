@@ -1,6 +1,6 @@
-import { ConversationWelcome } from '@/components/ui/chat/ConversationWelcome';
-import { Message } from '@/components/ui/chat/Message';
-import { EmptyState } from '@/components/ui/states/EmptyState';
+import { ConversationWelcome } from '@/components/ui/chat/welcome/ConversationWelcome';
+import { Message } from '@/components/ui/chat/message/Message';
+import { EmptyState } from '@/components/ui/setup/EmptyState';
 import type { ChatActions } from './useChatActions';
 import type { ChatState } from './useChatState';
 
@@ -50,19 +50,9 @@ export function ChatConversation({ state, actions }: ChatConversationProps) {
   }
 
   return (
-    <>
-      {state.topics.length > 0 && (
-        <p
-          className="mb-6 text-xs text-[var(--muted)]"
-          lang={state.config.nativeLanguage}
-        >
-          {state.topics.join(' / ')}
-        </p>
-      )}
-      <Messages
-        state={state}
-        actions={actions}
-      />
-    </>
+    <Messages
+      state={state}
+      actions={actions}
+    />
   );
 }

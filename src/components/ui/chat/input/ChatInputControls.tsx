@@ -1,43 +1,10 @@
-import { ArrowUp, Square } from 'lucide-react';
+import { SendButton } from './SendButton';
 
 interface ChatInputControlsProps {
   prompt: string;
   loading: boolean;
   disabled: boolean;
   onCancel: () => void;
-}
-
-function SendButton(
-  props: Pick<ChatInputControlsProps, 'prompt' | 'loading' | 'disabled' | 'onCancel'>,
-) {
-  if (props.loading) {
-    return (
-      <button
-        type="button"
-        onClick={props.onCancel}
-        className="send-button"
-        aria-label="Cancel reply"
-        title="Stop reply"
-      >
-        <Square
-          size={16}
-          fill="currentColor"
-        />
-      </button>
-    );
-  }
-
-  return (
-    <button
-      type="submit"
-      disabled={props.disabled || !props.prompt.trim()}
-      className="send-button"
-      aria-label="Send"
-      title="Send message"
-    >
-      <ArrowUp size={20} />
-    </button>
-  );
 }
 
 export function ChatInputControls(props: ChatInputControlsProps) {

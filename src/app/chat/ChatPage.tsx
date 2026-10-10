@@ -1,7 +1,7 @@
 'use client';
 
-import { ChatHeader } from '@/components/ui/chat/ChatHeader';
-import { ChatInput } from '@/components/ui/chat/ChatInput';
+import { ChatHeader } from '@/components/ui/chat/header/ChatHeader';
+import { ChatInput } from '@/components/ui/chat/input/ChatInput';
 import { ChatConversation } from './ChatConversation';
 import { useChatActions } from './useChatActions';
 import { useChatState } from './useChatState';

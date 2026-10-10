@@ -8,7 +8,6 @@ A Next.js-based AI-powered language learning application that helps users practi
 - **Multi-language Support**: Configurable native and target languages
 - **Real-time Translation**: Translate messages between target and native languages
 - **Grammar Correction**: Automatic spelling and grammar correction
-- **Topic Tracking**: Monitors conversation topics for better context
 - **Conversation History**: Maintains chat history for contextual responses
 
 ## 🏗️ Architecture
@@ -57,8 +56,6 @@ A Next.js-based AI-powered language learning application that helps users practi
 │   │       │   └── Message.tsx
 │   │       ├── indicators
 │   │       │   └── LoadingIndicator.tsx
-│   │       ├── panels
-│   │       │   └── TopicsPanel.tsx
 │   │       └── states
 │   │           ├── EmptyState.tsx
 │   │           └── ErrorDisplay.tsx
@@ -91,7 +88,6 @@ graph TB
         Loading["LoadingIndicator"]
         Error["ErrorDisplay"]
         Empty["EmptyState"]
-        Topics["TopicsPanel"]
     end
     
     %% Client Library Layer
@@ -145,7 +141,7 @@ graph TB
     classDef externalStyle fill:#ffebee,stroke:#b71c1c,stroke-width:2px
     
     class Page pageStyle
-    class Header,Input,Msg,Loading,Error,Empty,Topics uiStyle
+    class Header,Input,Msg,Loading,Error,Empty uiStyle
     class ClientBarrel,ChatApi,TransApi,CorrectApi apiStyle
     class ChatRoute,TransRoute,CorrectRoute routeStyle
     class Mistral externalStyle
@@ -211,11 +207,6 @@ pnpm dev
 
 ![Original message (before correction)](./imgs/before_correction.png)
 ![Corrected message (after correction)](./imgs/correction.gif)
-
-#### Topic Tracking
-- Automatically detects discussion topics (food, travel, work, hobbies, family)
-- Displays topics in the sidebar
-- Helps maintain conversation context
 
 ## 🔌 API Endpoints
 
@@ -302,7 +293,7 @@ sequenceDiagram
 
   UI->>UI: Create assistant message object
   UI->>Context: Add assistant message
-  UI->>UI: Update learning context<br>(topics, mistakes)
+  UI->>UI: Attach the correction to the user message
 
   UI-->>User: Display AI response
   deactivate UI
@@ -401,7 +392,7 @@ The AI tutor is designed to:
 
 - **Adapt to User Level**: Adjusts language complexity based on proficiency
 - **Encourage Expression**: Promotes natural conversation without harsh corrections
-- **Maintain Context**: References previous topics and common mistakes
+- **Maintain Context**: Uses previous messages to continue the conversation
 - **Stay Engaging**: Asks follow-up questions to continue conversations
 - **Be Patient**: Creates a supportive learning environment
 

@@ -1,5 +1,5 @@
-import { send, correctMessage, translateMessage } from '@/lib/api';
-import { chatBody, corrected, languageConfig, tutorResult } from '../../tests/fixtures';
+import { send, translateMessage } from '@/lib/api';
+import { chatBody, languageConfig, tutorResult } from '../../tests/fixtures';
 
 beforeEach(() => {
   jest.mocked(fetch).mockReset();
@@ -41,21 +41,12 @@ test('chat sends the contract and validates the response', async () => {
   );
 });
 
-test('correction and translation use their own validated contracts', async () => {
-  jest
-    .mocked(fetch)
-    .mockResolvedValueOnce(Response.json({ success: true, correction: corrected }));
-  expect(
-    (await correctMessage('I has a apple.', languageConfig, 'beginner')).correction,
-  ).toEqual(corrected);
+test('translation uses its own validated contract', async () => {
   jest
     .mocked(fetch)
     .mockResolvedValueOnce(Response.json({ success: true, translation: 'Bonjour' }));
   expect((await translateMessage('Hello', languageConfig)).translation).toBe('Bonjour');
-  expect(jest.mocked(fetch).mock.calls.map(([url]) => url)).toEqual([
-    '/api/correct',
-    '/api/translate',
-  ]);
+  expect(jest.mocked(fetch).mock.calls.map(([url]) => url)).toEqual(['/api/translate']);
 });
 
 test.each([
