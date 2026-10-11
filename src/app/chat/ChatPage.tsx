@@ -1,9 +1,10 @@
 'use client';
 
-import { ChatHeader } from '@/components/ui/chat/ChatHeader';
-import { ChatInput } from '@/components/ui/chat/ChatInput';
+import { ChatHeader } from '@/components/ui/chat/header/ChatHeader';
+import { ChatInput } from '@/components/ui/chat/input/ChatInput';
+import { ReviewDialog } from '@/components/ui/review/dialog/ReviewDialog';
+import { VoiceCall } from '@/components/ui/voice/VoiceCall';
 import { ChatConversation } from './ChatConversation';
-import { ChatOverlays } from './ChatOverlays';
 import { useChatActions } from './useChatActions';
 import { useChatState } from './useChatState';
 
@@ -71,10 +72,27 @@ export default function ChatPage() {
         onVoiceCall={actions.openVoiceCall}
         disabled={!state.isReady || !state.config || state.isSelectingLanguages}
       />
-      <ChatOverlays
-        state={state}
-        actions={actions}
-      />
+      {state.config && state.voiceOpen && (
+        <VoiceCall
+          open
+          config={state.config}
+          messages={state.messages}
+          loading={state.loading}
+          error={state.error}
+          onSend={actions.sendSpoken}
+          onRetry={actions.retry}
+          onClearError={actions.clearError}
+          onClose={actions.closeVoiceCall}
+        />
+      )}
+      {state.config && state.reviewOpen && !state.voiceOpen && (
+        <ReviewDialog
+          cards={state.visibleCards}
+          config={state.config}
+          onForget={actions.forgetReview}
+          onClose={() => state.setReviewOpen(false)}
+        />
+      )}
     </div>
   );
 }

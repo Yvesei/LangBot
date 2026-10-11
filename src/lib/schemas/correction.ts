@@ -4,7 +4,7 @@ import { languageConfigSchema, levelSchema } from './language';
 
 const correctionIssueSchema = z
   .object({
-    category: z.enum(['grammar', 'spelling', 'punctuation']),
+    category: z.enum(['grammar', 'spelling', 'punctuation', 'translation']),
     explanation: z.string().min(1).max(500),
   })
   .strict();

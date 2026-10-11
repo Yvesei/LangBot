@@ -1,30 +1,31 @@
-# Maintainability lint report
+# Lint and formatting rules
 
-Date: 2026-10-05 (Europe/Paris).
+The current rules are defined in [eslint.config.mjs](eslint.config.mjs). Formatting is defined in [.prettierrc.json](.prettierrc.json).
 
-The whole-project lint run now passes with no errors or warnings. The initial strict-rule audit reported 67 errors across 27 files; all production, evaluation, configuration, and component violations were resolved through targeted extraction and naming changes.
+## Limits
 
-Production JavaScript and TypeScript retain these limits:
+- Code files: at most 250 lines; functions: at most 100 lines.
+- Jest test files: at most 400 lines; functions: at most 150 lines.
+- Blank lines and comment-only lines do not count toward these limits.
+- Functions accept at most four parameters.
+- Control-flow nesting is limited to two levels, complexity to ten, and nested callbacks to three.
+- Use guard clauses instead of an `else` after a returning branch.
+- Application code uses explicit braces, one statement per line, and no nested ternaries.
 
-| Rule                   | Limit |
-| ---------------------- | ----: |
-| max-lines              |   100 |
-| max-params             |     4 |
-| max-lines-per-function |    50 |
-| max-depth              |     2 |
-| complexity             |    10 |
-| max-nested-callbacks   |     3 |
+These limits allow related small helpers to share a file while keeping larger functions readable.
 
-Tests use bounded limits of 400 lines per file and 100 lines per function. This keeps lifecycle-heavy behavior suites together with their shared mocks while the same parameter, depth, complexity, callback, spacing, and guard-clause rules continue to apply.
+## Blank lines
 
-## Verification
+The local rule in [eslint-function-spacing.mjs](eslint-function-spacing.mjs) requires blank lines between functions, including named arrow functions and methods.
 
-| Check                          | Result                      |
-| ------------------------------ | --------------------------- |
-| `pnpm lint`                    | PASS, no errors or warnings |
-| `pnpm exec prettier --check .` | PASS                        |
-| `pnpm run typecheck`           | PASS                        |
-| `pnpm test`                    | PASS, 18 suites / 160 tests |
-| `pnpm run build`               | PASS                        |
+It also handles `test()`, `it()`, `describe()`, and setup/cleanup blocks such as `beforeEach()`. Table-driven tests and `.only`/`.skip` variants are covered. Documentation comments stay attached to their functions.
 
-The first sandboxed build could not open Turbopack's local worker port. Running the same build with the required process permission passed.
+The rule has 26 automated cases in [function-spacing.test.mjs](tests/lint/function-spacing.test.mjs). Run them with `pnpm test:lint`.
+
+## Pre-commit checks
+
+`pnpm install` enables Husky. On commit, lint-staged runs ESLint fixes, formats staged JavaScript/TypeScript with Prettier, then checks ESLint again. Other supported staged files are formatted with Prettier.
+
+Generated files and the dependency lockfile are ignored by Prettier. Remaining lint errors block the commit.
+
+Use `pnpm lint` to check the project or `pnpm lint:staged` to run the staged-file checks manually. GitHub Actions also runs lint and the spacing-rule tests.

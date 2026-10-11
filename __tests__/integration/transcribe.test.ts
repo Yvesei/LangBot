@@ -20,10 +20,16 @@ function request(
     },
   });
 }
+
 beforeEach(() => {
-  jest.replaceProperty(process, 'env', { ...process.env, MISTRAL_API_KEY: 'test-key' });
+  jest.replaceProperty(process, 'env', {
+    ...process.env,
+    MISTRAL_API_KEY: 'test-key',
+    MISTRAL_TRANSCRIPTION_MODEL: '',
+  });
   jest.mocked(global.fetch).mockReset();
 });
+
 afterEach(() => jest.restoreAllMocks());
 
 test('sends both selected languages to Voxtral and preserves a mixed transcript', async () => {
@@ -88,7 +94,8 @@ test.each(['fr', 'en'])(
   },
 );
 
-test('uses updated language settings instead of a fixed English recognition language', async () => {
+test('uses the configured transcription model and language pair', async () => {
+  process.env.MISTRAL_TRANSCRIPTION_MODEL = 'transcription-test-model';
   jest
     .mocked(global.fetch)
     .mockResolvedValue(providerResponse({ text: '日本語', languages: ['ja'] }));
@@ -97,6 +104,7 @@ test('uses updated language settings instead of a fixed English recognition lang
   );
   expect(response.status).toBe(200);
   const body = JSON.parse(jest.mocked(global.fetch).mock.calls[0][1]!.body as string);
+  expect(body.model).toBe('transcription-test-model');
   expect(body.messages[0].content).toContain('German (de) and Japanese (ja)');
 });
 

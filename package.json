@@ -7,23 +7,15 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "lint:staged": "lint-staged",
-    "prepare": "husky",
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "test:unit": "jest --testPathPatterns=__tests__/unit --runInBand",
     "test:integration": "jest --testPathPatterns=__tests__/integration --runInBand",
     "test:coverage": "jest --coverage --runInBand",
     "typecheck": "tsc --noEmit",
-    "eval": "ts-node --project tsconfig.eval.json eval/run.ts"
-  },
-  "lint-staged": {
-    "*.{js,jsx,cjs,mjs,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write",
-      "eslint"
-    ],
-    "!(*.{js,jsx,cjs,mjs,ts,tsx})": "prettier --write --ignore-unknown"
+    "lint:staged": "lint-staged",
+    "prepare": "husky",
+    "test:lint": "node --test tests/lint/function-spacing.test.mjs"
   },
   "dependencies": {
     "@fortawesome/free-solid-svg-icons": "^7.0.1",
@@ -61,5 +53,13 @@
     "typescript": "^5",
     "undici": "^7.16.0",
     "vercel": "^48.2.1"
+  },
+  "lint-staged": {
+    "*.{js,jsx,cjs,mjs,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write",
+      "eslint"
+    ],
+    "!(*.{js,jsx,cjs,mjs,ts,tsx})": "prettier --write --ignore-unknown"
   }
 }

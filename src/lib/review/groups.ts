@@ -5,21 +5,6 @@ export interface ReviewGroup {
   key: string;
   card: StudyCard;
   ids: string[];
-  sourceMessageIds: string[];
-  occurrences: number;
-  dueAt: number;
-}
-
-function addReviewOccurrence(group: ReviewGroup, card: StudyCard) {
-  group.card = card;
-  group.ids.push(card.id);
-
-  if (!group.sourceMessageIds.includes(card.sourceMessageId)) {
-    group.sourceMessageIds.push(card.sourceMessageId);
-    group.occurrences += 1;
-  }
-
-  group.dueAt = Math.min(group.dueAt, card.dueAt);
 }
 
 function addCardToReviewGroup(groups: Map<string, ReviewGroup>, card: StudyCard) {
@@ -27,7 +12,8 @@ function addCardToReviewGroup(groups: Map<string, ReviewGroup>, card: StudyCard)
   const existingGroup = groups.get(key);
 
   if (existingGroup) {
-    addReviewOccurrence(existingGroup, card);
+    existingGroup.card = card;
+    existingGroup.ids.push(card.id);
     return;
   }
 
@@ -35,16 +21,7 @@ function addCardToReviewGroup(groups: Map<string, ReviewGroup>, card: StudyCard)
     key,
     card,
     ids: [card.id],
-    sourceMessageIds: [card.sourceMessageId],
-    occurrences: 1,
-    dueAt: card.dueAt,
   });
-}
-
-function compareReviewGroups(first: ReviewGroup, second: ReviewGroup): number {
-  return first.occurrences === second.occurrences
-    ? first.dueAt - second.dueAt
-    : second.occurrences - first.occurrences;
 }
 
 export function groupReviewCards(cards: StudyCard[]): ReviewGroup[] {
@@ -54,5 +31,5 @@ export function groupReviewCards(cards: StudyCard[]): ReviewGroup[] {
     addCardToReviewGroup(groups, card);
   }
 
-  return Array.from(groups.values()).sort(compareReviewGroups);
+  return Array.from(groups.values());
 }

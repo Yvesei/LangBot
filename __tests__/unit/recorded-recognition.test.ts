@@ -32,6 +32,7 @@ const stream = { getTracks: () => [{ stop: stopTrack }] };
 const flush = async () => {
   for (let i = 0; i < 8; i++) await Promise.resolve();
 };
+
 beforeEach(() => {
   jest.useFakeTimers();
   stopTrack.mockReset();
@@ -45,6 +46,7 @@ beforeEach(() => {
     value: FakeRecorder,
   });
 });
+
 afterEach(() => {
   jest.restoreAllMocks();
   jest.useRealTimers();

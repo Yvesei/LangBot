@@ -11,6 +11,7 @@ describe('language and translation validation', () => {
   ])('rejects unsupported configurations', (value) => {
     expect(languageConfigSchema.safeParse(value).success).toBe(false);
   });
+
   test('requires a supported language pair', () => {
     expect(translationRequestSchema.safeParse({ content: 'Hello' }).success).toBe(false);
     expect(

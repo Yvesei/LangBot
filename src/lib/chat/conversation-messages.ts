@@ -41,22 +41,9 @@ export function addAssistantReply(
       content: result.reply,
       timestamp: new Date(),
       replyTo: messageId,
-      topics: result.topics,
       status: 'complete',
     });
   }
 
   return updatedMessages;
-}
-
-export function getConversationTopics(messages: ConversationMessage[]): string[] {
-  const topics = new Set<string>();
-
-  for (const message of messages) {
-    for (const topic of message.topics ?? []) {
-      topics.add(topic);
-    }
-  }
-
-  return Array.from(topics).slice(-5);
 }

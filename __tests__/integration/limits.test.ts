@@ -1,6 +1,7 @@
 import { POST as chat } from '@/app/api/chat/route';
 import { POST as correct } from '@/app/api/correct/route';
 import { POST as translate } from '@/app/api/translate/route';
+import { POST as transcribe } from '@/app/api/transcribe/route';
 import {
   chatBody,
   corrected,
@@ -21,7 +22,19 @@ beforeEach(() => {
 
 afterEach(() => jest.restoreAllMocks());
 
-test('shares the five-request limit across text routes and allows requests after a minute', async () => {
+function audioRequest() {
+  return new Request('http://localhost:3000/api/transcribe', {
+    method: 'POST',
+    body: new Uint8Array([79, 103, 103, 83]),
+    headers: {
+      'Content-Type': 'audio/ogg',
+      'X-Native-Language': 'fr',
+      'X-Target-Language': 'en',
+    },
+  });
+}
+
+test('shares the five-request limit across text and transcription routes and resets after a minute', async () => {
   const clock = jest.spyOn(Date, 'now').mockReturnValue(0);
   const chatRoute = {
     handler: chat,
@@ -42,20 +55,19 @@ test('shares the five-request limit across text routes and allows requests after
     output: { translation: 'Bonjour' },
   };
 
-  for (const route of [
-    chatRoute,
-    correctionRoute,
-    translationRoute,
-    chatRoute,
-    translationRoute,
-  ]) {
+  for (const route of [chatRoute, correctionRoute, translationRoute, chatRoute]) {
     jest.mocked(fetch).mockResolvedValueOnce(providerResponse(route.output));
     const response = await route.handler(request(route.body, route.path));
 
     expect(response.status).toBe(200);
   }
 
-  const blocked = await correct(request(correctionRoute.body, 'correct'));
+  jest
+    .mocked(fetch)
+    .mockResolvedValueOnce(providerResponse({ text: 'Hello', languages: ['en'] }));
+  expect((await transcribe(audioRequest())).status).toBe(200);
+
+  const blocked = await transcribe(audioRequest());
 
   expect(blocked.status).toBe(429);
   expect(blocked.headers.get('Retry-After')).toBe('60');

@@ -1,11 +1,11 @@
-import type { ChatMessage } from '@/lib/types';
+import type { ConversationMessage } from '@/lib/chat/conversation';
 import { LANGUAGES, type LanguageConfig } from '@/lib/schemas';
 import type { RecognitionEvent } from '@/lib/voice/recognition';
 
-export const MAX_VOICE_MESSAGE_LENGTH = 2000;
+export { MAX_MESSAGE_LENGTH as MAX_VOICE_MESSAGE_LENGTH } from '@/lib/config/limits';
 export const RECOGNITION_RESTART_DELAY_MS = 250;
 
-export type VoiceMessage = ChatMessage & { replyTo?: string };
+export type VoiceMessage = ConversationMessage;
 export type CallState =
   | 'starting'
   | 'listening'
