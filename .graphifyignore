@@ -1,0 +1,43 @@
+# Local tools, dependency trees, and generated artifacts.
+.graphify/
+graphify-out/
+node_modules/
+.pnpm-store/
+.yarn/
+.next/
+.next-dev/
+.swc/
+.vercel/
+coverage/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Credentials and local machine configuration.
+.env*
+*.pem
+.aws/
+.git/
+.DS_Store
+
+# Harness instructions and Graphify itself are not application architecture.
+.agents/
+.codex/
+.claude/
+.cursor/
+.mcp.json
+AGENTS.md
+CLAUDE.md
+docs/graphify.md
+scripts/graphify.mjs
+scripts/graphify-constraints.txt
+
+# Media is outside the local code graph.
+imgs/
+public/
+*.ico

@@ -76,11 +76,12 @@ A Next.js-based AI-powered language learning application that helps users practi
 │           ├── language.ts
 │           └── mistral.ts
 ```
+
 ```mermaid
 graph TB
     %% Top Layer - Page
     Page["page.tsx<br/>Main Chat Page<br/><br/>State Management:<br/>• messages<br/>• loading<br/>• error<br/>• context<br/>• languageConfig"]
-    
+
     %% UI Components Layer
     subgraph UI["UI Components Layer"]
         direction LR
@@ -91,7 +92,7 @@ graph TB
         Error["ErrorDisplay"]
         Empty["EmptyState"]
     end
-    
+
     %% Client Library Layer
     subgraph ClientLib["Client Library"]
         direction TB
@@ -99,14 +100,14 @@ graph TB
             LangCfg["@/lib/config/language.ts<br/>(get/set)"]
             TypesBarrel["@/lib/types<br/>(index.ts)"]
         end
-        
+
         subgraph API["API Layer (code)"]
             ClientBarrel["@/lib/api (index.ts)<br/><br/>API Abstraction:<br/>• send()<br/>• translateMessage()"]
             ChatApi["chat.ts<br/>(send)"]
             TransApi["translate.ts<br/>(translateMessage)"]
         end
     end
-    
+
     %% API Routes Layer
     subgraph Routes["API Routes"]
         direction LR
@@ -114,31 +115,31 @@ graph TB
         TransRoute["/api/translate"]
         CorrectRoute["/api/correct"]
     end
-    
+
     %% External Services
     Mistral["Mistral AI API"]
-    
+
     %% Connections - Top to Bottom Flow
     Page --> UI
     Page --> ClientLib
-    
+
     ClientBarrel --> ChatApi
     ClientBarrel --> TransApi
-    
+
     ChatApi -.-> ChatRoute
     TransApi -.-> TransRoute
-    
+
     ChatRoute --> Mistral
     TransRoute --> Mistral
     CorrectRoute --> Mistral
-    
+
     %% Styling
     classDef pageStyle fill:#e1f5ff,stroke:#01579b,stroke-width:3px
     classDef uiStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
     classDef apiStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
     classDef routeStyle fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
     classDef externalStyle fill:#ffebee,stroke:#b71c1c,stroke-width:2px
-    
+
     class Page pageStyle
     class Header,Input,Msg,Loading,Error,Empty uiStyle
     class ClientBarrel,ChatApi,TransApi apiStyle
@@ -148,26 +149,38 @@ graph TB
 
 ## 🚀 Getting Started
 
+### AI harness setup
+
+This repo includes [Graphify](https://github.com/Graphify-Labs/graphify) agent
+guidance, a project skill, and local MCP configuration. With uv and Python 3.10+
+installed, coding agents use the graph automatically through `AGENTS.md`.
+For a new checkout, agents run `pnpm graphify:setup` and `pnpm graphify:build`
+to create the local graph, then `pnpm graphify:update` after source changes.
+See [the Graphify guide](docs/graphify.md) for queries and harness configuration.
+
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - pnpm
 - Mistral AI API key
 
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/Yvesei/LangBot
 cd LangBot
 ```
 
 2. Install dependencies:
+
 ```bash
 pnpm install
 ```
 
 3. Create a `.env.local` file in the root directory:
+
 ```env
 MISTRAL_API_KEY=your_mistral_api_key_here
 # 1 second delay test backend calls
@@ -175,6 +188,7 @@ TEST_MIN_INTERVAL_MS=1000
 ```
 
 4. Run the development server:
+
 ```bash
 pnpm dev
 ```
@@ -193,14 +207,15 @@ pnpm dev
 ### Features Usage
 
 #### Translation
+
 - Messages can be translated between target and native languages
 - Uses the language configuration set at startup
 
 ![original message (before translation)](./imgs/before_translation.png)
 ![Translated message (before translation)](./imgs/translation.gif)
 
-
 #### Grammar Correction
+
 - Automatic detection of spelling and grammar mistakes
 - Returns `[CORRECT]` if no mistakes found
 
@@ -208,6 +223,7 @@ pnpm dev
 ![Corrected message (after correction)](./imgs/correction.gif)
 
 #### Corrections and Flashcards
+
 - Grammar mistakes, spelling mistakes, and native-language words use one correction object with an explanation for each change
 - Explained corrections become flashcards saved in this browser
 - Open **Flashcards**, click a card to flip between the original word and its correction or translation with an explanation
@@ -223,6 +239,7 @@ Main conversation endpoint.
 Grammar edits and native-word replacements use the same correction object.
 
 **Request Body:**
+
 ```json
 {
   "prompt": "I need une cuillère.",
@@ -237,6 +254,7 @@ Grammar edits and native-word replacements use the same correction object.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -311,12 +329,12 @@ sequenceDiagram
   deactivate UI
 ```
 
-
 ### POST `/api/translate`
 
 Translates text between configured languages.
 
 **Request Body:**
+
 ```json
 {
   "content": "Bonjour, comment allez-vous?",
@@ -328,6 +346,7 @@ Translates text between configured languages.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -383,6 +402,7 @@ sequenceDiagram
 Corrects spelling and grammar mistakes.
 
 **Request Body:**
+
 ```json
 {
   "content": "I has a appel"
@@ -390,13 +410,13 @@ Corrects spelling and grammar mistakes.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
   "correctedContent": "I have an apple"
 }
 ```
-
 
 ## 🎯 AI Tutor Behavior
 
@@ -407,7 +427,6 @@ The AI tutor is designed to:
 - **Maintain Context**: Uses previous messages to continue the conversation
 - **Stay Engaging**: Asks follow-up questions to continue conversations
 - **Be Patient**: Creates a supportive learning environment
-
 
 ## 🔧 Configuration
 
@@ -420,7 +439,7 @@ import { setLanguageConfig } from '@/lib/prompts';
 
 setLanguageConfig({
   nativeLanguage: 'en',
-  targetLanguage: 'fr'
+  targetLanguage: 'fr',
 });
 ```
 
@@ -452,36 +471,44 @@ interface ConversationContext {
 ## 🧪 Testing
 
 All tests are located in the `__tests__` directory, organized into **unit** and **integration** categories:
+
 ```
-__tests__  
-├── integration  
-│   ├── chat.test.ts  
-│   ├── correct.test.ts  
-│   └── translate.test.ts  
-└── unit  
-│   ├── chat.test.ts  
-│   ├── correct.test.ts  
-│   └── translate.test.ts  
+__tests__
+├── integration
+│   ├── chat.test.ts
+│   ├── correct.test.ts
+│   └── translate.test.ts
+└── unit
+│   ├── chat.test.ts
+│   ├── correct.test.ts
+│   └── translate.test.ts
 ```
+
 ### 🧩 Test Structure
-- **Unit tests** focus on individual modules and functions.  
-- **Integration tests** validate how multiple components interact (for example, API routes or service integrations).  
+
+- **Unit tests** focus on individual modules and functions.
+- **Integration tests** validate how multiple components interact (for example, API routes or service integrations).
 
 ### 🚀 Running Tests
+
 You can execute tests using **pnpm** commands defined in `package.json`:
 
-- `pnpm run test` — Runs all Jest tests (passes even if no tests are found).  
-- `pnpm run test:unit` — Runs only the unit tests located in `__tests__/unit/`.  
-- `pnpm run test:integration` — Runs only the integration tests located in `__tests__/integration/`.  
+- `pnpm run test` — Runs all Jest tests (passes even if no tests are found).
+- `pnpm run test:unit` — Runs only the unit tests located in `__tests__/unit/`.
+- `pnpm run test:integration` — Runs only the integration tests located in `__tests__/integration/`.
 
 ### ✅ Example Usage
-To run all integration tests:  
+
+To run all integration tests:
+
 ```bash
-pnpm run test:integration  
+pnpm run test:integration
 ```
-To run a specific test file (e.g., `chat.test.ts`):  
+
+To run a specific test file (e.g., `chat.test.ts`):
+
 ```bash
-pnpm run test __tests__/integration/chat.test.ts  
+pnpm run test __tests__/integration/chat.test.ts
 ```
 
 ## CI/CD Pipeline
@@ -491,11 +518,13 @@ This project uses GitHub Actions for continuous integration and deployment to Ve
 ### Workflow Overview
 
 **On Pull Requests:**
+
 - Runs unit tests, builds the app, and runs integration tests
 - Deploys to Vercel preview environment
 - Posts preview URL as a PR comment for review
 
 **On Main Branch (after merge):**
+
 - Runs the full test suite
 - Automatically deploys to production on Vercel
 
@@ -510,6 +539,7 @@ Add these in **Settings → Secrets and variables → Actions**:
 - `TEST_MIN_INTERVAL_MS` - Minimum interval for rate-limited tests
 
 ## 🗺️ Roadmap
+
 - [x] add tests
 - [x] CI/CD
 - [ ] user input validation and safe output parsing

@@ -15,7 +15,13 @@
     "typecheck": "tsc --noEmit",
     "lint:staged": "lint-staged",
     "prepare": "husky",
-    "test:lint": "node --test tests/lint/function-spacing.test.mjs"
+    "test:lint": "node --test tests/lint/function-spacing.test.mjs",
+    "graphify": "node scripts/graphify.mjs",
+    "graphify:setup": "node scripts/graphify.mjs setup",
+    "graphify:build": "node scripts/graphify.mjs build",
+    "graphify:update": "node scripts/graphify.mjs build",
+    "graphify:check": "node scripts/graphify.mjs check-update .",
+    "graphify:mcp": "node scripts/graphify.mjs mcp"
   },
   "dependencies": {
     "@fortawesome/free-solid-svg-icons": "^7.0.1",

@@ -69,6 +69,8 @@ const eslintConfig = [
       'out/**',
       'build/**',
       'coverage/**',
+      '.graphify/**',
+      'graphify-out/**',
       'next-env.d.ts',
     ],
   },
