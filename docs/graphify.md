@@ -50,11 +50,15 @@ source is deleted; the pipeline enables Graphify's `--allow-dedup-shrink` flag.
 ## Agent use
 
 `AGENTS.md` gives harnesses the repository map and graph query guidance. The
-official project skill lives at `.agents/skills/graphify/SKILL.md` with its
-reference files. Skill-aware harnesses can discover it there. Agents consult
-the graph without a special user command; `$graphify` is also available for
-explicit requests in Codex. Always use the repository wrapper for shell commands
-in the skill, for example:
+project skill lives at `.agents/skills/graphify/SKILL.md`, adapted from upstream
+0.9.85 for this repository's code-only workflow. Its single reference,
+`references/query.md`, covers vocabulary matching and source navigation. The
+bundle retains the upstream version marker, licenses, and NOTICE; optional media,
+import, export, and hook references are omitted.
+
+Skill-aware harnesses can discover it there. Agents consult the graph without a
+special user command; `$graphify` is also available for explicit requests in
+Codex. Use the repository wrapper for shell commands in the skill, for example:
 
 ```sh
 pnpm graphify query "How are chat responses corrected?" --budget 1500
@@ -95,15 +99,19 @@ Use `GRAPHIFY_OUT` to select another output directory if needed. Relative paths
 are resolved from the repository root. Ordinary Git worktrees already have
 separate output and cache directories.
 
-To upgrade, change the package pin in `scripts/graphify.mjs`, run setup, refresh
-the official skill, and rebuild:
+To upgrade, change the package pin in `scripts/graphify.mjs`, run setup, and
+rebuild:
 
 ```sh
 pnpm graphify:setup
-pnpm graphify install --project --platform agents
 pnpm graphify:build --force
 ```
 
-Keep the skill and package on the same version. The wrapper disables Graphify's
-automatic refresh of user-global skills and query logs. Git hooks are managed
-by the existing Husky setup; graph refreshes use the explicit pnpm commands.
+Review upstream skill changes against the tailored `SKILL.md` and query reference,
+then update `.agents/skills/graphify/.graphify_version` to match the package pin.
+Preserve this adaptation when upgrading: `graphify install --project` would
+overwrite it and restore the full reference bundle.
+
+The wrapper disables Graphify's automatic refresh of user-global skills and
+query logs. Git hooks are managed by the existing Husky setup; graph refreshes
+use the explicit pnpm commands.

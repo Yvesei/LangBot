@@ -23,11 +23,10 @@ The repository's local code knowledge graph is in `graphify-out/`. The project
 skill is `.agents/skills/graphify/SKILL.md`. `docs/graphify.md` documents how to
 reproduce the setup in a new checkout.
 
-- Use `pnpm graphify` in place of the bare `graphify` commands in the upstream
-  skill. This wrapper uses the pinned package and a repository-local uv cache.
+- Use `pnpm graphify` for graph commands. The repository-tailored skill uses
+  this wrapper, the pinned package, and a repository-local uv cache.
 - The wrapper manages the runtime. Use `pnpm graphify:setup` for installation
-  and `pnpm graphify:build` for ordinary builds instead of the upstream skill's
-  global installation and interpreter-discovery snippets.
+  and `pnpm graphify:build` for ordinary builds.
 - For architecture, dependencies, and impact questions, start with a scoped
   query when `graphify-out/graph.json` exists:
   `pnpm graphify query "<question>" --budget 1500`.
