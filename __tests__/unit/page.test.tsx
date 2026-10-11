@@ -199,6 +199,47 @@ test('flashcards flip between the changed words and the correction, and stay sav
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 
+test('English-native Spanish learners see English explanations in chat and flashcards', async () => {
+  localStorage.clear();
+  const explanation = 'With “yo”, use “tengo”, the first-person form of “tener”.';
+  const reply = '¿Qué fruta te gusta?';
+  jest.mocked(send).mockResolvedValue({
+    success: true,
+    reply,
+    correction: {
+      correctedText: 'Yo tengo una manzana.',
+      issues: [{ category: 'grammar', explanation }],
+    },
+  });
+  render(<Page />);
+  fireEvent.change(screen.getByRole('combobox', { name: 'Your native language' }), {
+    target: { value: 'en' },
+  });
+  fireEvent.change(screen.getByRole('combobox', { name: 'Language to practise' }), {
+    target: { value: 'es' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Start practising' }));
+  submit('Yo tiene una manzana.');
+  await screen.findByText(reply);
+  expect(send).toHaveBeenCalledWith(
+    expect.objectContaining({
+      languageConfig: { nativeLanguage: 'en', targetLanguage: 'es' },
+    }),
+    expect.anything(),
+  );
+  expect(screen.getByText(explanation).closest('ul')).toHaveAttribute('lang', 'en');
+  expect(JSON.parse(localStorage.getItem(STUDY_KEY)!)[0].focus).toBe(explanation);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Flashcards · 1' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Your flashcards' });
+  expect(within(dialog).getByText('tiene')).toBeVisible();
+  fireEvent.click(within(dialog).getByRole('button', { pressed: false }));
+  expect(within(dialog).getByText('tengo')).toBeVisible();
+  expect(within(dialog).getByText('tengo')).toHaveAttribute('lang', 'es');
+  expect(within(dialog).getByText(explanation)).toBeVisible();
+  expect(within(dialog).getByText(explanation)).toHaveAttribute('lang', 'en');
+});
+
 test('saves a translated word through the correction and flips to its answer', async () => {
   const content = 'I need a cuillère.';
   jest.mocked(send).mockResolvedValue({

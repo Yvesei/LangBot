@@ -1,19 +1,20 @@
-import { correctionRequestSchema, correctionSchema } from '@/lib/schemas';
+import { correctionRequestSchema } from '@/lib/schemas';
 import { route, methodNotAllowed } from '@/lib/server/http';
 import { complete } from '@/lib/server/mistral';
-import { CORRECTION_RULES, learnerPrompt } from '@/lib/server/prompts';
+import { correctionPrompt } from '@/lib/server/prompts';
 import { normalizeCorrection } from '@/lib/server/correction';
+import { correctionOutputSchema } from '@/lib/server/output-schemas';
 
 export const runtime = 'nodejs';
 export const maxDuration = 40;
 export const POST = route(correctionRequestSchema, async (body, signal) => {
   const correction = await complete(
-    correctionSchema,
+    correctionOutputSchema(body.languageConfig),
     'correction',
     [
       {
         role: 'system',
-        content: `${learnerPrompt(body.languageConfig, body.userLevel)}\n${CORRECTION_RULES}`,
+        content: correctionPrompt(body.languageConfig, body.userLevel),
       },
       {
         role: 'user',
