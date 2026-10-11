@@ -11,6 +11,8 @@ import {
 import { wordDiff } from '@/lib/diff';
 import { addAssistantReply, buildChatRequest } from '@/lib/chat/conversation';
 import { MAX_REQUEST_BYTES } from '@/lib/config/limits';
+import { createFlashcards } from '@/lib/learning';
+import { groupReviewCards } from '@/lib/review';
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -222,4 +224,14 @@ test('reply insertion preserves unrelated message identities', () => {
   });
   expect(replies[2]).toBe(unrelated);
   expect(original).not.toHaveProperty('correction');
+});
+
+test('repeated flashcards retain all IDs for deletion and choose the last card', () => {
+  const first = createFlashcards('one', corrected, languageConfig, 'I has a apple.')[0]!;
+  const duplicate = { ...first, id: 'duplicate' };
+  const last = { ...first, id: 'last', sourceMessageId: 'two' };
+  expect(groupReviewCards([first, duplicate, last])[0]).toMatchObject({
+    ids: ['one', 'duplicate', 'last'],
+  });
+  expect(groupReviewCards([first, duplicate, last])[0].card).toBe(last);
 });

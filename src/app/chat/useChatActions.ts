@@ -16,6 +16,7 @@ export function useChatActions(state: ChatState) {
 
   function selectLanguages(config: LanguageConfig) {
     newChat();
+    state.setReviewOpen(false);
     state.setConfig(config);
     state.setIsSelectingLanguages(false);
 
@@ -34,6 +35,7 @@ export function useChatActions(state: ChatState) {
 
   function changeLanguages() {
     request.cancel();
+    state.setReviewOpen(false);
     state.setIsSelectingLanguages(true);
   }
 
@@ -44,7 +46,14 @@ export function useChatActions(state: ChatState) {
         (message) => message.id !== messageId && message.replyTo !== messageId,
       ),
     );
+    state.setCards((current) =>
+      current.filter((card) => card.sourceMessageId !== messageId),
+    );
     state.setError('');
+  }
+
+  function forgetReview(ids: string[]) {
+    state.setCards((current) => current.filter((card) => !ids.includes(card.id)));
   }
 
   function clearError() {
@@ -69,6 +78,7 @@ export function useChatActions(state: ChatState) {
     selectLanguages,
     changeLevel,
     deleteMessage,
+    forgetReview,
     clearError,
     send,
     sendSpoken,

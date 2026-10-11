@@ -1,6 +1,7 @@
 import { ConversationWelcome } from '@/components/ui/chat/welcome/ConversationWelcome';
 import { Message } from '@/components/ui/chat/message/Message';
 import { EmptyState } from '@/components/ui/setup/EmptyState';
+import { ReviewToolbar } from '@/components/ui/review/ReviewToolbar';
 import type { ChatActions } from './useChatActions';
 import type { ChatState } from './useChatState';
 
@@ -50,9 +51,15 @@ export function ChatConversation({ state, actions }: ChatConversationProps) {
   }
 
   return (
-    <Messages
-      state={state}
-      actions={actions}
-    />
+    <>
+      <ReviewToolbar
+        reviewCount={state.reviewGroups.length}
+        onOpenReview={() => state.setReviewOpen(true)}
+      />
+      <Messages
+        state={state}
+        actions={actions}
+      />
+    </>
   );
 }
