@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import type { VoiceMessage, CallState, VoiceCallProps } from './voice-call-types';
-import { getSpeechText, LOCALES } from './voice-call-types';
+import type { VoiceMessage, CallState, VoiceCallProps } from '../voice-call-types';
+import { getSpeechText, LOCALES } from '../voice-call-types';
 import type { VoiceCallState } from './useVoiceCallState';
 
 interface SpeechOptions {

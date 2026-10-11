@@ -3,7 +3,7 @@ import {
   MAX_VOICE_MESSAGE_LENGTH,
   type CallState,
   type VoiceCallProps,
-} from './voice-call-types';
+} from '../voice-call-types';
 import type { VoiceCallState } from './useVoiceCallState';
 
 interface VoiceActionContext {

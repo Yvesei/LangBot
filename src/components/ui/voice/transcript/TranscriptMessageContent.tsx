@@ -1,6 +1,6 @@
 import { CorrectionDiff } from '@/components/ui/chat/message/CorrectionDiff';
 import type { LanguageCode } from '@/lib/schemas';
-import type { VoiceMessage } from './voice-call-types';
+import type { VoiceMessage } from '../voice-call-types';
 
 interface TranscriptMessageContentProps {
   message: VoiceMessage;

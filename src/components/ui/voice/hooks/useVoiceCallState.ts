@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { Recognition } from '@/lib/voice/recognition';
-import type { CallState, VoiceCallProps } from './voice-call-types';
+import type { CallState, VoiceCallProps } from '../voice-call-types';
 
 function useVoiceDisplayState() {
   const [isRecordingSupported, setIsRecordingSupported] = useState<boolean | null>(null);

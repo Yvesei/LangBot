@@ -1,5 +1,5 @@
-import type { VoiceCallProps } from './voice-call-types';
-import type { VoiceCallState } from './useVoiceCallState';
+import type { VoiceCallProps } from '../voice-call-types';
+import type { VoiceCallState } from '../hooks/useVoiceCallState';
 import { VoiceCallHeader } from './VoiceCallHeader';
 import { VoiceUnavailable } from './VoiceUnavailable';
 import { AvailableVoiceCall } from './AvailableVoiceCall';

@@ -1,7 +1,7 @@
 import { ArrowUp } from 'lucide-react';
 import { getListeningHint } from '@/lib/voice/messages';
 import type { LanguageConfig } from '@/lib/schemas';
-import { getCallStatusLabel, type CallState } from './voice-call-types';
+import { getCallStatusLabel, type CallState } from '../voice-call-types';
 import { VoiceCallControls } from './VoiceCallControls';
 import { VoiceError } from './VoiceError';
 

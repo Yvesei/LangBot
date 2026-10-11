@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { VoiceCallProps } from './voice-call-types';
+import type { VoiceCallProps } from '../voice-call-types';
 import type { VoiceCallState } from './useVoiceCallState';
 
 interface VoiceEffectsOptions {

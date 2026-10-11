@@ -1,5 +1,5 @@
 import type { LanguageCode } from '@/lib/schemas';
-import type { VoiceMessage } from './voice-call-types';
+import type { VoiceMessage } from '../voice-call-types';
 import { TranscriptMessage } from './TranscriptMessage';
 
 interface VoiceTranscriptProps {

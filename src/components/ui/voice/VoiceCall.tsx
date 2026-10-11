@@ -1,12 +1,12 @@
 'use client';
 
 import type { VoiceCallProps } from './voice-call-types';
-import { useRecognitionSession } from './useRecognitionSession';
-import { useSpeechPlayback } from './useSpeechPlayback';
-import { useVoiceActions } from './useVoiceActions';
-import { useVoiceCallState } from './useVoiceCallState';
-import { useVoiceEffects } from './useVoiceEffects';
-import { VoiceCallView } from './VoiceCallView';
+import { useRecognitionSession } from './hooks/useRecognitionSession';
+import { useSpeechPlayback } from './hooks/useSpeechPlayback';
+import { useVoiceActions } from './hooks/useVoiceActions';
+import { useVoiceCallState } from './hooks/useVoiceCallState';
+import { useVoiceEffects } from './hooks/useVoiceEffects';
+import { VoiceCallView } from './dialog/VoiceCallView';
 
 export function VoiceCall(props: VoiceCallProps) {
   const state = useVoiceCallState(props);

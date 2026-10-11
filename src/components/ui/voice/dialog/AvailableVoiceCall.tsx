@@ -1,6 +1,6 @@
 import type { VoiceCallViewProps } from './VoiceCallView';
-import { VoiceStage } from './VoiceStage';
-import { VoiceTranscript } from './VoiceTranscript';
+import { VoiceStage } from '../controls/VoiceStage';
+import { VoiceTranscript } from '../transcript/VoiceTranscript';
 
 export function AvailableVoiceCall({ state, props, actions }: VoiceCallViewProps) {
   const sessionMessages =

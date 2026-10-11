@@ -7,7 +7,7 @@ import {
   RECOGNITION_RESTART_DELAY_MS,
   type CallState,
   type VoiceCallProps,
-} from './voice-call-types';
+} from '../voice-call-types';
 import type { VoiceCallState } from './useVoiceCallState';
 
 interface RecognitionSessionOptions {
