@@ -174,26 +174,22 @@ test('flashcards flip between the changed words and the correction, and stay sav
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 
-test('saves vocabulary from a mixed sentence and flips to its translation', async () => {
-  const content = 'I need une cuillère.';
+test('saves a translated word through the correction and flips to its answer', async () => {
+  const content = 'I need a cuillère.';
   jest.mocked(send).mockResolvedValue({
     success: true,
     ...tutorResult,
-    correction: { correctedText: content, issues: [] },
-    vocabulary: [
-      {
-        original: 'cuillère',
-        translation: 'spoon',
-        example: 'I need a spoon.',
-        explanation: 'Une cuillère se dit spoon.',
-      },
-    ],
+    correction: {
+      correctedText: 'I need a spoon.',
+      issues: [{ category: 'translation', explanation: 'Une cuillère se dit spoon.' }],
+    },
   });
   const { container } = render(<Page />);
   submit(content);
   await screen.findByText(tutorResult.reply);
-  expect(container.querySelector('.message-user')).toHaveTextContent(content);
-  expect(container.querySelector('ins')).not.toBeInTheDocument();
+  const userMessage = container.querySelector('.message-user');
+  expect(userMessage?.querySelector('del')).toHaveTextContent('cuillère');
+  expect(userMessage?.querySelector('ins')).toHaveTextContent('spoon');
   const openReview = screen.getByRole('button', { name: 'Flashcards · 1' });
   openReview.focus();
   fireEvent.click(openReview);

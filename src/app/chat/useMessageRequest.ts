@@ -5,8 +5,7 @@ import {
   updateMessageStatus,
   type ConversationMessage,
 } from '@/lib/chat/conversation';
-import { createCard } from '@/lib/learning';
-import { createVocabularyCards } from '@/lib/review';
+import { createFlashcards } from '@/lib/learning';
 import type { ChatResult } from '@/lib/schemas';
 import type { ChatState } from './useChatState';
 
@@ -103,12 +102,7 @@ function saveReviewCards(
     return;
   }
 
-  const correctionCard = createCard(messageId, result.correction, config, content);
-  const cards = createVocabularyCards(messageId, content, result.vocabulary, config);
-
-  if (correctionCard) {
-    cards.push(correctionCard);
-  }
+  const cards = createFlashcards(messageId, result.correction, config, content);
   if (cards.length === 0) {
     return;
   }

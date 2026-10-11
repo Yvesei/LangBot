@@ -5,10 +5,8 @@ export const studyCardSchema = z.object({
   id: z.string().max(100),
   sourceMessageId: z.string().max(100),
   languageConfig: languageConfigSchema,
-  kind: z.enum(['correction', 'vocabulary']).default('correction'),
   originalText: z.string().max(2000).default(''),
   correctedText: z.string().max(4000).default(''),
-  example: z.string().max(500).default(''),
   focus: z.string().max(4000),
 });
 

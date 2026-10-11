@@ -11,7 +11,7 @@ import {
 import { wordDiff } from '@/lib/diff';
 import { addAssistantReply, buildChatRequest } from '@/lib/chat/conversation';
 import { MAX_REQUEST_BYTES } from '@/lib/config/limits';
-import { createCard } from '@/lib/learning';
+import { createFlashcards } from '@/lib/learning';
 import { groupReviewCards } from '@/lib/review';
 
 afterEach(() => {
@@ -227,7 +227,7 @@ test('reply insertion preserves unrelated message identities', () => {
 });
 
 test('repeated flashcards retain all IDs for deletion and choose the last card', () => {
-  const first = createCard('one', corrected, languageConfig, 'I has a apple.')!;
+  const first = createFlashcards('one', corrected, languageConfig, 'I has a apple.')[0]!;
   const duplicate = { ...first, id: 'duplicate' };
   const last = { ...first, id: 'last', sourceMessageId: 'two' };
   expect(groupReviewCards([first, duplicate, last])[0]).toMatchObject({

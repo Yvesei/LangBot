@@ -17,7 +17,7 @@ export function getReviewText(card: StudyCard) {
   const originalText = card.originalText || card.focus;
   const correctedText = card.correctedText;
 
-  if (card.kind === 'correction' && card.originalText) {
+  if (card.originalText) {
     const parts = wordDiff(
       originalText,
       correctedText,
@@ -41,7 +41,6 @@ export function getReviewKey(card: StudyCard): string {
   return JSON.stringify([
     card.languageConfig.nativeLanguage,
     card.languageConfig.targetLanguage,
-    card.kind,
     normalizeReviewText(originalText),
     normalizeReviewText(correctedText),
   ]);

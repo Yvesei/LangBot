@@ -28,7 +28,6 @@ export function ReviewCard({ group, config }: ReviewCardProps) {
       <span className={`review-card-inner${flipped ? ' is-flipped' : ''}`}>
         <ReviewPrompt
           text={originalText}
-          kind={group.card.kind}
           flipped={flipped}
         />
         <ReviewAnswer

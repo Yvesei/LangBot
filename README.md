@@ -8,8 +8,8 @@ A Next.js-based AI-powered language learning application that helps users practi
 - **Multi-language Support**: Configurable native and target languages
 - **Real-time Translation**: Translate messages between target and native languages
 - **Grammar Correction**: Automatic spelling and grammar correction
-- **Bilingual Vocabulary**: Helps with native-language words used in target-language sentences
-- **Flashcards**: Click a saved word or correction to flip it and see the answer with an explanation
+- **Bilingual Corrections**: Explains target-language replacements for native-language words through the same correction flow
+- **Flashcards**: Click a saved word or phrase to flip it and see the correction with an explanation
 - **Conversation History**: Maintains chat history for contextual responses
 
 ## 🏗️ Architecture
@@ -207,12 +207,12 @@ pnpm dev
 ![Original message (before correction)](./imgs/before_correction.png)
 ![Corrected message (after correction)](./imgs/correction.gif)
 
-#### Vocabulary and Flashcards
-- Mixing a native-language word into a sentence can produce a separate vocabulary suggestion
-- Vocabulary and explained corrections become flashcards saved in this browser
+#### Corrections and Flashcards
+- Grammar mistakes, spelling mistakes, and native-language words use one correction object with an explanation for each change
+- Explained corrections become flashcards saved in this browser
 - Open **Flashcards**, click a card to flip between the original word and its correction or translation with an explanation
 - Use **Previous** and **Next** to browse; repeated corrections appear once, and cards stay separate for each language pair
-- Deleting a message removes its saved cards, and **Remove card** removes that correction or vocabulary item
+- Deleting a message removes its saved cards, and **Remove card** removes that saved correction
 
 ## 🔌 API Endpoints
 
@@ -220,22 +220,19 @@ pnpm dev
 
 Main conversation endpoint.
 
+Grammar edits and native-word replacements use the same correction object.
+
 **Request Body:**
 ```json
 {
-  "prompt": "Hello, how are you?",
-  "history": [
-    {
-      "role": "user",
-      "content": "Previous message"
-    }
-  ],
-  "context": {
-    "learningLanguage": "French",
-    "userLevel": "beginner",
-    "topicsDiscussed": ["food"],
-    "commonMistakes": []
-  }
+  "prompt": "I need une cuillère.",
+  "history": [],
+  "languageConfig": {
+    "nativeLanguage": "fr",
+    "targetLanguage": "en"
+  },
+  "userLevel": "beginner",
+  "learningFocus": []
 }
 ```
 
@@ -243,7 +240,16 @@ Main conversation endpoint.
 ```json
 {
   "success": true,
-  "message": "I'm doing well, thank you! How about you?"
+  "reply": "You need a spoon. What are you making?",
+  "correction": {
+    "correctedText": "I need a spoon.",
+    "issues": [
+      {
+        "category": "translation",
+        "explanation": "Une cuillère se dit a spoon en anglais."
+      }
+    ]
+  }
 }
 ```
 

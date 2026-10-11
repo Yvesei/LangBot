@@ -4,26 +4,26 @@ import type { StudyCard } from './learning/schema';
 export { loadCards, saveCards } from './learning/storage';
 export { STUDY_KEY, studyCardSchema, type StudyCard } from './learning/schema';
 
-export function createCard(
+export function createFlashcards(
   id: string,
   correction: Correction | null,
   languageConfig: LanguageConfig,
   originalText = '',
-): StudyCard | null {
+): StudyCard[] {
   if (!correction || !correction.issues.length) {
-    return null;
+    return [];
   }
 
-  return {
-    id,
-    sourceMessageId: id,
-    languageConfig,
-    kind: 'correction',
-    originalText,
-    correctedText: correction.correctedText,
-    example: '',
-    focus: correction.issues.map((issue) => issue.explanation).join('\n'),
-  };
+  return [
+    {
+      id,
+      sourceMessageId: id,
+      languageConfig,
+      originalText,
+      correctedText: correction.correctedText,
+      focus: correction.issues.map((issue) => issue.explanation).join('\n'),
+    },
+  ];
 }
 
 export function sameLanguages(first: LanguageConfig, second: LanguageConfig) {
