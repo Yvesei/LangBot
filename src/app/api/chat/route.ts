@@ -1,14 +1,15 @@
-import { chatRequestSchema, tutorOutputSchema } from '@/lib/schemas';
+import { chatRequestSchema } from '@/lib/schemas';
 import { route, methodNotAllowed } from '@/lib/server/http';
 import { complete } from '@/lib/server/mistral';
 import { tutorPrompt } from '@/lib/server/prompts';
 import { normalizeCorrection } from '@/lib/server/correction';
+import { tutorResponseSchema } from '@/lib/server/output-schemas';
 
 export const runtime = 'nodejs';
 export const maxDuration = 40;
 export const POST = route(chatRequestSchema, async (body, signal) => {
   const result = await complete(
-    tutorOutputSchema,
+    tutorResponseSchema(body.languageConfig),
     'tutor',
     [
       {

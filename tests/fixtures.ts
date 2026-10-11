@@ -10,7 +10,7 @@ export const corrected = {
   issues: [
     {
       category: 'grammar' as const,
-      explanation: 'Use have with I and an before a vowel sound.',
+      explanation: 'Avec « I », utilise « have », et « an » devant une voyelle.',
     },
   ],
 };
