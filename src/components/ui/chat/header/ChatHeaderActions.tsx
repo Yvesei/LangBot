@@ -1,16 +1,22 @@
 import { Github, Languages, Plus } from 'lucide-react';
 import type { Level } from '@/lib/schemas';
+import { ReviewToolbar } from '@/components/ui/review/ReviewToolbar';
 
 interface ChatHeaderActionsProps {
   level: Level;
   onLevelChange: (level: Level) => void;
   onChangeLanguages: () => void;
   onNewChat: () => void;
+  reviewCount: number;
+  onOpenReview?: () => void;
 }
 
 export function ChatHeaderActions(props: ChatHeaderActionsProps) {
   return (
-    <div className="flex items-center gap-1 sm:gap-2">
+    <nav
+      aria-label="Chat navigation"
+      className="ml-auto flex items-center gap-1 sm:gap-2"
+    >
       <label className="mr-1 text-xs">
         <span className="sr-only">Level</span>
         <select
@@ -24,6 +30,12 @@ export function ChatHeaderActions(props: ChatHeaderActionsProps) {
           <option value="advanced">Advanced</option>
         </select>
       </label>
+      {props.onOpenReview && (
+        <ReviewToolbar
+          reviewCount={props.reviewCount}
+          onOpenReview={props.onOpenReview}
+        />
+      )}
       <button
         onClick={props.onNewChat}
         className="icon-button"
@@ -50,6 +62,6 @@ export function ChatHeaderActions(props: ChatHeaderActionsProps) {
       >
         <Github size={18} />
       </a>
-    </div>
+    </nav>
   );
 }

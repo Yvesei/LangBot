@@ -38,7 +38,6 @@ export function ConversationWelcome({
         loading={loading}
         onStartConversation={onStartConversation}
       />
-      <p className="mt-6 text-[11px] text-[var(--muted)]">Chats last this visit.</p>
     </div>
   );
 }

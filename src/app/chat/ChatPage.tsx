@@ -49,6 +49,12 @@ export default function ChatPage() {
         onLevelChange={actions.changeLevel}
         onNewChat={actions.newChat}
         onChangeLanguages={actions.changeLanguages}
+        reviewCount={state.reviewGroups.length}
+        onOpenReview={
+          state.config && !state.isSelectingLanguages
+            ? () => state.setReviewOpen(true)
+            : undefined
+        }
       />
       <main className="flex min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col px-5 py-6 sm:px-6">

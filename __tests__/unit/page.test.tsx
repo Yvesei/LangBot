@@ -163,7 +163,8 @@ test('flashcards flip between the changed words and the correction, and stay sav
   const view = render(<Page />);
   submit('I has a apple.');
   await screen.findByText(tutorResult.reply);
-  fireEvent.click(screen.getByRole('button', { name: 'Flashcards · 1' }));
+  const navigation = screen.getByRole('navigation', { name: 'Chat navigation' });
+  fireEvent.click(within(navigation).getByRole('button', { name: 'Flashcards · 1' }));
   const dialog = await screen.findByRole('dialog', { name: 'Your flashcards' });
   expect(screen.getByText(tutorResult.reply)).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Close flashcards' })).toHaveFocus();
