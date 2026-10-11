@@ -155,6 +155,9 @@ button:disabled {
 .composer:focus-within {
   border-color: var(--muted);
 }
+.composer textarea:focus-visible {
+  outline: none;
+}
 .send-button {
   width: 36px;
   height: 36px;

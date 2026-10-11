@@ -8,6 +8,8 @@ interface ChatHeaderProps {
   onLevelChange: (level: Level) => void;
   onChangeLanguages: () => void;
   onNewChat: () => void;
+  reviewCount: number;
+  onOpenReview?: () => void;
 }
 
 export function ChatHeader(props: ChatHeaderProps) {
@@ -16,7 +18,7 @@ export function ChatHeader(props: ChatHeaderProps) {
     : 'Language companion';
 
   return (
-    <header className="chat-header">
+    <header className="chat-header flex-wrap">
       <div className="flex items-center gap-3">
         <span className="brand-mark">
           <Bot
@@ -36,6 +38,8 @@ export function ChatHeader(props: ChatHeaderProps) {
         onLevelChange={props.onLevelChange}
         onChangeLanguages={props.onChangeLanguages}
         onNewChat={props.onNewChat}
+        reviewCount={props.reviewCount}
+        onOpenReview={props.onOpenReview}
       />
     </header>
   );

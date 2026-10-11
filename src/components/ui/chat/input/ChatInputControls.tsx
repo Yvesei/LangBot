@@ -10,31 +10,24 @@ interface ChatInputControlsProps {
 }
 
 export function ChatInputControls(props: ChatInputControlsProps) {
-  const promptStatus = props.prompt.length
-    ? `${props.prompt.length}/2000`
-    : 'A little practice, every day.';
-
   return (
-    <div className="flex items-center justify-between px-1 pb-1 pt-2">
-      <span className="text-xs text-[var(--muted)]">{promptStatus}</span>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={props.onVoiceCall}
-          disabled={props.disabled || props.loading}
-          className="icon-button"
-          aria-label="Voice call"
-          title="Start a voice call"
-        >
-          <AudioLines size={21} />
-        </button>
-        <SendButton
-          prompt={props.prompt}
-          loading={props.loading}
-          disabled={props.disabled}
-          onCancel={props.onCancel}
-        />
-      </div>
+    <div className="flex items-center justify-end gap-2 px-1 pb-1 pt-2">
+      <button
+        type="button"
+        onClick={props.onVoiceCall}
+        disabled={props.disabled || props.loading}
+        className="icon-button"
+        aria-label="Voice call"
+        title="Start a voice call"
+      >
+        <AudioLines size={21} />
+      </button>
+      <SendButton
+        prompt={props.prompt}
+        loading={props.loading}
+        disabled={props.disabled}
+        onCancel={props.onCancel}
+      />
     </div>
   );
 }
