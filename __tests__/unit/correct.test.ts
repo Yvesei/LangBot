@@ -31,12 +31,14 @@ describe('correction diff', () => {
         .join(''),
     ).toBe(replacement);
   });
+
   test('marks the changed word, not the whole sentence', () => {
     const parts = wordDiff('She go home.', 'She goes home.');
     expect(parts.find((p) => p.type === 'removed')?.text).toBe('go');
     expect(parts.find((p) => p.type === 'added')?.text).toBe('goes');
     expect(parts[0]).toEqual({ type: 'equal', text: 'She ' });
   });
+
   test('rejects contradictory corrections', () => {
     expect(validateCorrection('I has a apple.', corrected)).toBe(true);
     expect(validateCorrection('I have an apple.', corrected)).toBe(false);

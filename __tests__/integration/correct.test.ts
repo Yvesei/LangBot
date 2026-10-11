@@ -8,10 +8,12 @@ import {
 jest.mock('@/lib/server/limits', () => ({
   enforceLimits: jest.fn().mockResolvedValue(undefined),
 }));
+
 beforeEach(() => {
   jest.replaceProperty(process, 'env', { ...process.env, MISTRAL_API_KEY: 'test-key' });
   jest.spyOn(global, 'fetch').mockResolvedValue(providerResponse(corrected));
 });
+
 afterEach(() => jest.restoreAllMocks());
 
 test('returns structured corrections instead of a magic sentinel', async () => {
@@ -24,6 +26,7 @@ test('returns structured corrections instead of a magic sentinel', async () => {
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ success: true, correction: corrected });
 });
+
 test('returns unchanged text explicitly when no errors are found', async () => {
   const correction = { correctedText: 'Hello.', issues: [] };
   jest.mocked(fetch).mockResolvedValue(providerResponse(correction));
@@ -33,6 +36,7 @@ test('returns unchanged text explicitly when no errors are found', async () => {
   expect(response.status).toBe(200);
   expect((await response.json()).correction).toEqual(correction);
 });
+
 test('rejects non-string content rather than throwing a 500', async () => {
   expect(
     (

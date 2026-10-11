@@ -1,4 +1,3 @@
-import { measureVolume } from './audio';
 import {
   ANALYSER_WINDOW_SIZE,
   MAX_RECORDING_DURATION_MS,
@@ -11,6 +10,18 @@ interface MonitorOptions {
   generation: number;
   stop: () => void;
   fail: (generation: number, error: string, message?: string) => void;
+}
+
+function measureVolume(samples: Uint8Array): number {
+  let sumOfSquares = 0;
+
+  for (const sample of samples) {
+    const normalizedSample = (sample - 128) / 128;
+    sumOfSquares += normalizedSample * normalizedSample;
+  }
+
+  const meanSquare = sumOfSquares / samples.length;
+  return Math.sqrt(meanSquare);
 }
 
 export class RecordingMonitor {

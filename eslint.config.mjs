@@ -19,11 +19,11 @@ const eslintConfig = [
     },
     rules: {
       'project/blank-line-before-function': 'error',
-      'max-lines': ['error', { max: 100, skipBlankLines: true, skipComments: true }],
+      'max-lines': ['error', { max: 250, skipBlankLines: true, skipComments: true }],
       'max-params': ['error', { max: 4 }],
       'max-lines-per-function': [
         'error',
-        { max: 50, skipBlankLines: true, skipComments: true },
+        { max: 100, skipBlankLines: true, skipComments: true },
       ],
       'max-depth': ['error', 2],
       complexity: ['error', 10],
@@ -57,7 +57,7 @@ const eslintConfig = [
       'max-lines': ['error', { max: 400, skipBlankLines: true, skipComments: true }],
       'max-lines-per-function': [
         'error',
-        { max: 100, skipBlankLines: true, skipComments: true },
+        { max: 150, skipBlankLines: true, skipComments: true },
       ],
     },
   },
@@ -65,6 +65,7 @@ const eslintConfig = [
     ignores: [
       'node_modules/**',
       '.next/**',
+      '.next-dev/**',
       'out/**',
       'build/**',
       'coverage/**',

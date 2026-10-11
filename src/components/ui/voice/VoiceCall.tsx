@@ -1,43 +1,19 @@
 'use client';
 
-import {
-  endVoiceCall,
-  listenAgain,
-  showRequestError,
-  toggleMicrophone,
-  toggleSpeaker,
-  type VoiceActionContext,
-} from './voice-actions';
 import type { VoiceCallProps } from './voice-call-types';
-import { useListeningControls } from './useListeningControls';
-import { useRecognitionSession } from './useRecognitionSession';
-import { useSpeechPlayback } from './useSpeechPlayback';
-import { useTranscriptSubmission } from './useTranscriptSubmission';
-import { useCallStateControl, useStopSpeaking } from './useVoiceControls';
-import { useVoiceCallState } from './useVoiceCallState';
-import { useVoiceEffects } from './useVoiceEffects';
-import { VoiceCallView } from './VoiceCallView';
+import { useRecognitionSession } from './hooks/useRecognitionSession';
+import { useSpeechPlayback } from './hooks/useSpeechPlayback';
+import { useVoiceActions } from './hooks/useVoiceActions';
+import { useVoiceCallState } from './hooks/useVoiceCallState';
+import { useVoiceEffects } from './hooks/useVoiceEffects';
+import { VoiceCallView } from './dialog/VoiceCallView';
 
 export function VoiceCall(props: VoiceCallProps) {
   const state = useVoiceCallState(props);
-  const setCallState = useCallStateControl(state);
-  const stopSpeaking = useStopSpeaking(state);
-  const { startListening, stopListening } = useListeningControls(state, setCallState);
-  const submitTranscript = useTranscriptSubmission(state, setCallState);
-  const context: VoiceActionContext = {
+  const { context, actions, submitTranscript, setErrorState } = useVoiceActions(
     state,
     props,
-    setCallState,
-    startListening,
-    stopListening,
-    stopSpeaking,
-  };
-  const actions = {
-    close: endVoiceCall.bind(null, context),
-    listenAgain: listenAgain.bind(null, context),
-    toggleMicrophone: toggleMicrophone.bind(null, context),
-    toggleSpeaker: toggleSpeaker.bind(null, context),
-  };
+  );
 
   useRecognitionSession({
     ...context,
@@ -47,9 +23,9 @@ export function VoiceCall(props: VoiceCallProps) {
   useVoiceEffects({
     state,
     props,
-    stopListening,
-    stopSpeaking,
-    setErrorState: showRequestError.bind(null, context),
+    stopListening: context.stopListening,
+    stopSpeaking: context.stopSpeaking,
+    setErrorState,
     endCall: actions.close,
   });
 

@@ -1,3 +1,13 @@
+const TEST_FUNCTIONS = new Set([
+  'test',
+  'it',
+  'describe',
+  'beforeEach',
+  'afterEach',
+  'beforeAll',
+  'afterAll',
+]);
+
 function getFunctionDefinition(functionNode) {
   const parentNode = functionNode.parent;
 
@@ -17,6 +27,10 @@ function getFunctionDefinition(functionNode) {
     return parentNode.parent.parent;
   }
 
+  if (isTestCallback(parentNode)) {
+    return parentNode.parent;
+  }
+
   if (
     parentNode.type === 'AssignmentExpression' &&
     parentNode.right === functionNode &&
@@ -26,6 +40,34 @@ function getFunctionDefinition(functionNode) {
   }
 
   return null;
+}
+
+function getCallName(node) {
+  if (node.type === 'Identifier') {
+    return node.name;
+  }
+
+  if (node.type === 'MemberExpression') {
+    return getCallName(node.object);
+  }
+
+  if (node.type === 'CallExpression') {
+    return getCallName(node.callee);
+  }
+
+  if (node.type === 'TaggedTemplateExpression') {
+    return getCallName(node.tag);
+  }
+
+  return null;
+}
+
+function isTestCallback(parentNode) {
+  return (
+    parentNode.type === 'CallExpression' &&
+    parentNode.parent.type === 'ExpressionStatement' &&
+    TEST_FUNCTIONS.has(getCallName(parentNode.callee))
+  );
 }
 
 function isCallbackVariable(parentNode) {
