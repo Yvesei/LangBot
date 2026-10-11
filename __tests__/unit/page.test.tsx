@@ -5,11 +5,22 @@ import Page from '@/app/page';
 import { send } from '@/lib/api';
 import { STUDY_KEY } from '@/lib/learning';
 import { tutorResult } from '../../tests/fixtures';
+import {
+  canRecord,
+  RecordedRecognition,
+  type Recognition,
+} from '@/lib/voice/recognition';
 
 jest.mock('@/lib/api', () => ({
   send: jest.fn(),
   translateMessage: jest.fn(),
 }));
+
+jest.mock('@/lib/voice/recognition', () => ({
+  canRecord: jest.fn(),
+  RecordedRecognition: jest.fn(),
+}));
+
 beforeEach(() => {
   HTMLDialogElement.prototype.showModal = function () {
     this.setAttribute('open', '');
@@ -24,6 +35,8 @@ beforeEach(() => {
   window.HTMLElement.prototype.scrollIntoView = jest.fn();
   jest.mocked(send).mockReset();
   jest.mocked(send).mockResolvedValue({ success: true, ...tutorResult });
+  jest.mocked(canRecord).mockReturnValue(false);
+  jest.mocked(RecordedRecognition).mockReset();
 });
 
 function submit(text: string) {
@@ -208,6 +221,79 @@ test('saves a translated word through the correction and flips to its answer', a
   fireEvent(dialog, new Event('cancel', { bubbles: true, cancelable: true }));
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   expect(openReview).toHaveFocus();
+});
+
+test('spoken turns use the same correction and flashcards, which open manually after a call', async () => {
+  const content = 'I need a cuillère.';
+  const explanation = 'Une cuillère se dit spoon.';
+  const recognition: Recognition = {
+    start: jest.fn(() => recognition.onstart?.()),
+    stop: jest.fn(),
+    abort: jest.fn(),
+    onstart: null,
+    onend: null,
+    onresult: null,
+    onerror: null,
+  };
+  jest.mocked(canRecord).mockReturnValue(true);
+  jest
+    .mocked(RecordedRecognition)
+    .mockImplementation(() => recognition as unknown as RecordedRecognition);
+  jest.mocked(send).mockResolvedValue({
+    success: true,
+    ...tutorResult,
+    correction: {
+      correctedText: 'I need a spoon.',
+      issues: [{ category: 'translation', explanation }],
+    },
+  });
+
+  render(<Page />);
+  fireEvent.click(screen.getByRole('button', { name: 'Voice call' }));
+  const call = screen.getByRole('dialog', { name: 'Voice call with LangBot' });
+
+  act(() => {
+    recognition.onresult?.({
+      resultIndex: 0,
+      results: {
+        length: 1,
+        0: { isFinal: true, length: 1, 0: { transcript: content } },
+      },
+    });
+    recognition.onend?.();
+  });
+
+  await within(call).findByText(tutorResult.reply);
+  expect(send).toHaveBeenCalledTimes(1);
+  expect(send).toHaveBeenCalledWith(
+    expect.objectContaining({
+      prompt: content,
+      languageConfig: { nativeLanguage: 'fr', targetLanguage: 'en' },
+    }),
+    expect.anything(),
+  );
+  const spokenMessage = within(call).getByText('You said').closest('article');
+  expect(spokenMessage?.querySelector('del')).toHaveTextContent('cuillère');
+  expect(spokenMessage?.querySelector('ins')).toHaveTextContent('spoon');
+  const cards = JSON.parse(localStorage.getItem(STUDY_KEY)!);
+  expect(cards).toHaveLength(1);
+  expect(cards[0]).toMatchObject({
+    originalText: content,
+    correctedText: 'I need a spoon.',
+    focus: explanation,
+  });
+
+  fireEvent.keyDown(window, { key: 'Escape' });
+  expect(recognition.abort).toHaveBeenCalled();
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(screen.getByText(tutorResult.reply)).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Flashcards · 1' }));
+  const flashcards = screen.getByRole('dialog', { name: 'Your flashcards' });
+  expect(within(flashcards).getByText('cuillère')).toBeVisible();
+  fireEvent.click(within(flashcards).getByRole('button', { pressed: false }));
+  expect(within(flashcards).getByText('spoon')).toBeVisible();
+  expect(within(flashcards).getByText(explanation)).toBeVisible();
 });
 
 test('browsing resets the card to its front and removing the last card keeps navigation usable', async () => {

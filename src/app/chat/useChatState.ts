@@ -30,6 +30,7 @@ export function useChatState() {
   const [storageWarning, setStorageWarning] = useState('');
   const [cards, setCards] = useState<StudyCard[]>([]);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const activeChatRequest = useRef<ActiveChatRequest | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -87,6 +88,8 @@ export function useChatState() {
     setCards,
     reviewOpen,
     setReviewOpen,
+    voiceOpen,
+    setVoiceOpen,
     visibleCards,
     reviewGroups: groupReviewCards(visibleCards),
   };

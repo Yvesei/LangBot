@@ -9,6 +9,7 @@ export function useChatActions(state: ChatState) {
 
   function newChat() {
     request.cancel();
+    state.setVoiceOpen(false);
     state.setMessages([]);
     state.setPrompt('');
     state.setError('');
@@ -35,6 +36,7 @@ export function useChatActions(state: ChatState) {
 
   function changeLanguages() {
     request.cancel();
+    state.setVoiceOpen(false);
     state.setReviewOpen(false);
     state.setIsSelectingLanguages(true);
   }
@@ -68,6 +70,16 @@ export function useChatActions(state: ChatState) {
     void request.sendMessage(undefined, content);
   }
 
+  function openVoiceCall() {
+    state.setError('');
+    state.setReviewOpen(false);
+    state.setVoiceOpen(true);
+  }
+
+  function closeVoiceCall() {
+    state.setVoiceOpen(false);
+  }
+
   function retry(message: ConversationMessage) {
     void request.sendMessage(message);
   }
@@ -82,6 +94,8 @@ export function useChatActions(state: ChatState) {
     clearError,
     send,
     sendSpoken,
+    openVoiceCall,
+    closeVoiceCall,
     retry,
     changeLanguages,
   };

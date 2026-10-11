@@ -8,6 +8,7 @@ interface ChatInputProps {
   loading: boolean;
   onSend: () => void;
   onCancel: () => void;
+  onVoiceCall: () => void;
   disabled: boolean;
 }
 
