@@ -4,6 +4,7 @@ import { chatBody, languageConfig, tutorResult } from '../../tests/fixtures';
 beforeEach(() => {
   jest.mocked(fetch).mockReset();
 });
+
 afterEach(() => {
   jest.restoreAllMocks();
   jest.useRealTimers();

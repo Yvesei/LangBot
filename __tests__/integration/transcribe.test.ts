@@ -20,6 +20,7 @@ function request(
     },
   });
 }
+
 beforeEach(() => {
   jest.replaceProperty(process, 'env', {
     ...process.env,
@@ -28,6 +29,7 @@ beforeEach(() => {
   });
   jest.mocked(global.fetch).mockReset();
 });
+
 afterEach(() => jest.restoreAllMocks());
 
 test('sends both selected languages to Voxtral and preserves a mixed transcript', async () => {

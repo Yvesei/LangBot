@@ -58,7 +58,10 @@ export function useChatState() {
   }, [cards, isReady]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    messagesEndRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'end',
+    });
   }, [messages]);
 
   const visibleCards = getVisibleCards(cards, config);

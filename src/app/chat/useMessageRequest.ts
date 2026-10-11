@@ -133,7 +133,10 @@ export function useMessageRequest(state: ChatState) {
       return;
     }
 
-    const options = { retryMessage, spokenContent };
+    const options = {
+      retryMessage,
+      spokenContent,
+    };
     const content = getMessageContent(state, options);
     if (!content) {
       return;
@@ -141,7 +144,10 @@ export function useMessageRequest(state: ChatState) {
 
     const messageId = retryMessage?.id ?? crypto.randomUUID();
     const controller = new AbortController();
-    state.activeChatRequest.current = { controller, messageId };
+    state.activeChatRequest.current = {
+      controller,
+      messageId,
+    };
     state.setLoading(true);
     state.setError('');
     addPendingMessage(state, messageId, content, options);

@@ -7,6 +7,7 @@ import { chatBody, providerResponse, request, tutorResult } from '../../tests/fi
 jest.mock('@/lib/server/limits', () => ({
   enforceLimits: jest.fn().mockResolvedValue(undefined),
 }));
+
 beforeEach(() => {
   jest.replaceProperty(process, 'env', {
     ...process.env,
@@ -16,6 +17,7 @@ beforeEach(() => {
   jest.spyOn(global, 'fetch').mockResolvedValue(providerResponse(tutorResult));
   jest.mocked(enforceLimits).mockResolvedValue(undefined);
 });
+
 afterEach(() => jest.restoreAllMocks());
 
 test('returns a reply and structured correction from one provider request', async () => {

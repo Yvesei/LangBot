@@ -12,7 +12,10 @@
     "test:unit": "jest --testPathPatterns=__tests__/unit --runInBand",
     "test:integration": "jest --testPathPatterns=__tests__/integration --runInBand",
     "test:coverage": "jest --coverage --runInBand",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint:staged": "lint-staged",
+    "prepare": "husky",
+    "test:lint": "node --test tests/lint/function-spacing.test.mjs"
   },
   "dependencies": {
     "@fortawesome/free-solid-svg-icons": "^7.0.1",
@@ -40,12 +43,23 @@
     "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "15.5.27",
+    "husky": "^9.1.7",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.9.9",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5",
     "undici": "^7.16.0",
     "vercel": "^48.2.1"
+  },
+  "lint-staged": {
+    "*.{js,jsx,cjs,mjs,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write",
+      "eslint"
+    ],
+    "!(*.{js,jsx,cjs,mjs,ts,tsx})": "prettier --write --ignore-unknown"
   }
 }

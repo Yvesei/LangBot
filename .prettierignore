@@ -1,0 +1,9 @@
+# Generated dependency lockfile.
+pnpm-lock.yaml
+node_modules/
+.next/
+.next-dev/
+out/
+build/
+coverage/
+.husky/_/

@@ -45,6 +45,7 @@ function submit(text: string) {
   });
   fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 }
+
 test('Send produces a visible correction diff', async () => {
   const { container } = render(<Page />);
   submit('I has a apple.');
@@ -62,6 +63,7 @@ test('Send produces a visible correction diff', async () => {
     expect.anything(),
   );
 });
+
 test('keeps the original and reply when a correction is unavailable', async () => {
   jest.mocked(send).mockResolvedValue({
     success: true,
@@ -99,6 +101,7 @@ test('language and level selections reach the tutor', async () => {
     ),
   );
 });
+
 test('deleting a user turn removes it and its reply from future history', async () => {
   render(<Page />);
   submit('I has a apple.');
@@ -114,6 +117,7 @@ test('deleting a user turn removes it and its reply from future history', async 
     ),
   );
 });
+
 test('New chat cancels outstanding work and ignores a late result', async () => {
   let resolve!: (value: Awaited<ReturnType<typeof send>>) => void;
   jest.mocked(send).mockImplementation(
@@ -133,6 +137,7 @@ test('New chat cancels outstanding work and ignores a late result', async () => 
   expect(screen.queryByText(tutorResult.reply)).not.toBeInTheDocument();
   expect(JSON.parse(localStorage.getItem(STUDY_KEY)!)).toEqual([]);
 });
+
 test('a failed send is visible and can be retried without duplicating the user turn', async () => {
   jest.mocked(send).mockRejectedValueOnce(new Error('The AI service is busy.'));
   const { container } = render(<Page />);
@@ -142,6 +147,7 @@ test('a failed send is visible and can be retried without duplicating the user t
   await screen.findByText(tutorResult.reply);
   expect(container.querySelectorAll('article')).toHaveLength(2);
 });
+
 test('same-language setup stays on the form', () => {
   localStorage.clear();
   render(<Page />);

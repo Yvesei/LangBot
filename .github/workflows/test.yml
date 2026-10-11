@@ -45,6 +45,9 @@ jobs:
       - name: Type check
         run: pnpm run typecheck
 
+      - name: Test function spacing rule
+        run: pnpm run test:lint
+
       - name: Run unit tests
         run: pnpm run test:unit
 

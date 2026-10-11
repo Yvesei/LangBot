@@ -28,11 +28,17 @@ export function getReviewText(card: StudyCard) {
 
     // Missing or extra words need the sentence to show what changed.
     if (incorrectWords && correctWords) {
-      return { originalText: incorrectWords, correctedText: correctWords };
+      return {
+        originalText: incorrectWords,
+        correctedText: correctWords,
+      };
     }
   }
 
-  return { originalText, correctedText };
+  return {
+    originalText,
+    correctedText,
+  };
 }
 
 export function getReviewKey(card: StudyCard): string {

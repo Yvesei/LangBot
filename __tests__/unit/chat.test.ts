@@ -27,6 +27,7 @@ describe('chat input boundaries', () => {
   ])('rejects malformed or excessive input: %j', (body) => {
     expect(chatRequestSchema.safeParse(body).success).toBe(false);
   });
+
   test('selected language and level control the system prompt', () => {
     const prompt = tutorPrompt(
       { nativeLanguage: 'en', targetLanguage: 'ja' },
