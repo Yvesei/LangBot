@@ -8,10 +8,6 @@ export function useChatActions(state: ChatState) {
   const request = useMessageRequest(state);
 
   function newChat() {
-    if (state.messages.length > 0 && state.visibleCards.length > 0) {
-      state.setReviewRequested(true);
-    }
-
     request.cancel();
     state.setMessages([]);
     state.setPrompt('');
@@ -21,7 +17,6 @@ export function useChatActions(state: ChatState) {
   function selectLanguages(config: LanguageConfig) {
     newChat();
     state.setReviewOpen(false);
-    state.setReviewRequested(false);
     state.setConfig(config);
     state.setIsSelectingLanguages(false);
 
@@ -41,7 +36,6 @@ export function useChatActions(state: ChatState) {
   function changeLanguages() {
     request.cancel();
     state.setReviewOpen(false);
-    state.setReviewRequested(false);
     state.setIsSelectingLanguages(true);
   }
 

@@ -54,9 +54,7 @@ export function ChatConversation({ state, actions }: ChatConversationProps) {
     <>
       <ReviewToolbar
         reviewCount={state.reviewGroups.length}
-        hasMessages={state.messages.length > 0}
         onOpenReview={() => state.setReviewOpen(true)}
-        onEndSession={actions.newChat}
       />
       <Messages
         state={state}

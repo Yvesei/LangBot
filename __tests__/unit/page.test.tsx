@@ -144,9 +144,9 @@ test('flashcards flip between the changed words and the correction, and stay sav
   const view = render(<Page />);
   submit('I has a apple.');
   await screen.findByText(tutorResult.reply);
-  fireEvent.click(screen.getByRole('button', { name: 'End session' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Flashcards · 1' }));
   const dialog = await screen.findByRole('dialog', { name: 'Your flashcards' });
-  expect(screen.queryByText(tutorResult.reply)).not.toBeInTheDocument();
+  expect(screen.getByText(tutorResult.reply)).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Close flashcards' })).toHaveFocus();
   expect(within(dialog).getByText('has a')).toBeVisible();
   expect(within(dialog).getByText('have an')).not.toBeVisible();
@@ -164,6 +164,11 @@ test('flashcards flip between the changed words and the correction, and stay sav
   expect(
     within(dialog).queryByRole('button', { name: 'I remembered' }),
   ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Close flashcards' }));
+  fireEvent.click(screen.getByRole('button', { name: 'New chat' }));
+  expect(screen.queryByText(tutorResult.reply)).not.toBeInTheDocument();
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Flashcards · 1' })).toBeInTheDocument();
   view.unmount();
 
   render(<Page />);

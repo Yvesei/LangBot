@@ -30,7 +30,6 @@ export function useChatState() {
   const [storageWarning, setStorageWarning] = useState('');
   const [cards, setCards] = useState<StudyCard[]>([]);
   const [reviewOpen, setReviewOpen] = useState(false);
-  const [reviewRequested, setReviewRequested] = useState(false);
   const activeChatRequest = useRef<ActiveChatRequest | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -61,13 +60,6 @@ export function useChatState() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages]);
 
-  useEffect(() => {
-    if (reviewRequested && !loading) {
-      setReviewOpen(true);
-      setReviewRequested(false);
-    }
-  }, [reviewRequested, loading]);
-
   const visibleCards = getVisibleCards(cards, config);
 
   return {
@@ -95,8 +87,6 @@ export function useChatState() {
     setCards,
     reviewOpen,
     setReviewOpen,
-    reviewRequested,
-    setReviewRequested,
     visibleCards,
     reviewGroups: groupReviewCards(visibleCards),
   };
