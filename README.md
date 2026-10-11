@@ -1,517 +1,154 @@
 # LangBot
 
-A Next.js-based AI-powered language learning application that helps users practice their target language through natural conversation with an intelligent tutor.
+A language-learning chat app built with Next.js 15.5.27, React 19, TypeScript, and Mistral.
 
-## 🌟 Features
+## Chat and corrections
 
-- **Interactive Chat Interface**: Natural conversation-based language learning
-- **Multi-language Support**: Configurable native and target languages
-- **Real-time Translation**: Translate messages between target and native languages
-- **Grammar Correction**: Automatic spelling and grammar correction
-- **Bilingual Corrections**: Explains target-language replacements for native-language words through the same correction flow
-- **Flashcards**: Click a saved word or phrase to flip it and see the correction with an explanation
-- **Conversation History**: Maintains chat history for contextual responses
+Choose your native language, target language, and level, then send a message. The tutor replies in your target language and returns corrections in the same AI response.
 
-## 🏗️ Architecture
+Corrections appear inside your message as green additions and red struck-through deletions. Open **Why these changes?** for explanations in your native language, or use **Copy corrected** to copy the sentence. You can also translate replies, retry failed messages, and stop a pending reply.
 
-### Tech Stack
+The same correction object handles grammar, spelling, and native-language words you use when you do not know their target-language equivalent. For example, a French speaker learning English can write “I need une cuillère.” and receive “I need a spoon.” with a translation explanation. Valid wording and the learner's meaning should stay intact. These are model-generated suggestions, so errors are still possible.
 
-- **Framework**: Next.js 14+ (App Router)
-- **Language**: TypeScript
-- **AI Provider**: Mistral AI (mistral-small-latest)
-- **UI Components**: React with custom components
-- **Styling**: Tailwind CSS
-
-### Project Structure
-
-```
-├── README.md
-├── __tests__
-│   ├── integration
-│   │   ├── chat.test.ts
-│   │   ├── correct.test.ts
-│   │   └── tranlsate.test.ts
-│   └── unit
-│       ├── chat.test.ts
-│       ├── correct.test.ts
-│       └── translate.test.ts
-├── imgs
-├── public
-├── src
-│   ├── app
-│   │   ├── api
-│   │   │   ├── chat
-│   │   │   │   └── route.ts
-│   │   │   ├── correct
-│   │   │   │   └── route.ts
-│   │   │   └── translate
-│   │   │       └── route.ts
-│   │   ├── favicon.ico
-│   │   ├── globals.css
-│   │   ├── layout.tsx
-│   │   └── page.tsx
-│   ├── components
-│   │   └── ui
-│   │       ├── chat
-│   │       │   ├── ChatHeader.tsx
-│   │       │   ├── ChatInput.tsx
-│   │       │   └── Message.tsx
-│   │       ├── indicators
-│   │       │   └── LoadingIndicator.tsx
-│   │       └── states
-│   │           ├── EmptyState.tsx
-│   │           └── ErrorDisplay.tsx
-│   └── lib
-│       ├── utils.ts
-│       ├── api
-│       │   ├── chat.ts
-│       │   ├── index.ts
-│       │   ├── request.ts
-│       │   └── translate.ts
-│       ├── config
-│       │   └── language.ts
-│       └── types
-│           ├── chat.ts
-│           ├── index.ts
-│           ├── language.ts
-│           └── mistral.ts
-```
 ```mermaid
-graph TB
-    %% Top Layer - Page
-    Page["page.tsx<br/>Main Chat Page<br/><br/>State Management:<br/>• messages<br/>• loading<br/>• error<br/>• context<br/>• languageConfig"]
-    
-    %% UI Components Layer
-    subgraph UI["UI Components Layer"]
-        direction LR
-        Header["ChatHeader"]
-        Input["ChatInput"]
-        Msg["Message"]
-        Loading["LoadingIndicator"]
-        Error["ErrorDisplay"]
-        Empty["EmptyState"]
-    end
-    
-    %% Client Library Layer
-    subgraph ClientLib["Client Library"]
-        direction TB
-        subgraph Config["Configuration"]
-            LangCfg["@/lib/config/language.ts<br/>(get/set)"]
-            TypesBarrel["@/lib/types<br/>(index.ts)"]
-        end
-        
-        subgraph API["API Layer (code)"]
-            ClientBarrel["@/lib/api (index.ts)<br/><br/>API Abstraction:<br/>• send()<br/>• translateMessage()"]
-            ChatApi["chat.ts<br/>(send)"]
-            TransApi["translate.ts<br/>(translateMessage)"]
-        end
-    end
-    
-    %% API Routes Layer
-    subgraph Routes["API Routes"]
-        direction LR
-        ChatRoute["/api/chat"]
-        TransRoute["/api/translate"]
-        CorrectRoute["/api/correct"]
-    end
-    
-    %% External Services
-    Mistral["Mistral AI API"]
-    
-    %% Connections - Top to Bottom Flow
-    Page --> UI
-    Page --> ClientLib
-    
-    ClientBarrel --> ChatApi
-    ClientBarrel --> TransApi
-    
-    ChatApi -.-> ChatRoute
-    TransApi -.-> TransRoute
-    
-    ChatRoute --> Mistral
-    TransRoute --> Mistral
-    CorrectRoute --> Mistral
-    
-    %% Styling
-    classDef pageStyle fill:#e1f5ff,stroke:#01579b,stroke-width:3px
-    classDef uiStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef apiStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef routeStyle fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
-    classDef externalStyle fill:#ffebee,stroke:#b71c1c,stroke-width:2px
-    
-    class Page pageStyle
-    class Header,Input,Msg,Loading,Error,Empty uiStyle
-    class ClientBarrel,ChatApi,TransApi apiStyle
-    class ChatRoute,TransRoute,CorrectRoute routeStyle
-    class Mistral externalStyle
+flowchart LR
+    Message["Your message"] --> Chat["POST /api/chat"]
+    Chat --> Mistral["One Mistral completion"]
+    Mistral --> Reply["Tutor reply"]
+    Mistral --> Correction["Correction and explanations"]
+    Correction --> Diff["Changes shown in your message"]
+    Correction --> Cards["Saved flashcards"]
 ```
 
-## 🚀 Getting Started
+## Flashcards
 
-### Prerequisites
+Click **Flashcards** above the conversation to open your saved cards.
 
-- Node.js 18+ 
-- pnpm
-- Mistral AI API key
+- The front shows the incorrect or native-language word or phrase. When sentence context is needed, it shows the sentence.
+- Click the card to flip it and see the corrected text and explanation.
+- Use **Previous** and **Next** to browse, or **Remove card** to forget it.
+- Repeated word/phrase corrections appear as one card.
 
-### Installation
+Cards use the same corrections as chat. They are stored in this browser, separated by language pair, with the latest 100 saved occurrences kept across reloads. **New chat** clears the conversation and keeps cards. Deleting a message also removes its reply and associated cards. Conversation history itself clears on refresh.
 
-1. Clone the repository:
-```bash
-git clone https://github.com/Yvesei/LangBot
-cd LangBot
+## Voice calls
+
+Click the waveform icon beside Send and allow microphone access. Speak, then pause or click **Send turn**. The app records your turn, sends it to Mistral Voxtral for transcription, and submits the resulting text to the same chat flow.
+
+You can mix your two selected languages. Transcription keeps the spoken words; the chat correction handles any missing target-language words afterward. Turns stop after a pause or 30 seconds. Audio uploads are limited to 2 MiB.
+
+```mermaid
+flowchart LR
+    Mic["Microphone recording"] --> Transcribe["POST /api/transcribe"]
+    Transcribe --> Voxtral["Mistral Voxtral"]
+    Voxtral --> Text["Transcript"]
+    Text --> Chat["POST /api/chat"]
+    Chat --> Conversation["Reply, corrections, and cards"]
 ```
 
-2. Install dependencies:
-```bash
-pnpm install
-```
+The call screen shows the transcript and replies. You can mute the microphone and spoken replies independently. Closing the call releases the microphone and cancels pending transcription and playback. A chat reply already submitted can finish in the text conversation; use **Stop** there to cancel it.
 
-3. Create a `.env.local` file in the root directory:
-```env
-MISTRAL_API_KEY=your_mistral_api_key_here
-# 1 second delay test backend calls
-TEST_MIN_INTERVAL_MS=1000
-```
+Microphone access requires localhost or HTTPS. Audio stays in memory until it is uploaded to Mistral; LangBot does not save recordings. Spoken replies use available browser/system voices. You can still read replies if speech playback is unavailable.
 
-4. Run the development server:
-```bash
+## Local setup
+
+Requires Node.js 20.18.1 or newer and pnpm 9. This covers the development tools' minimum Node versions.
+
+```sh
+pnpm install --frozen-lockfile
+cp .env.example .env.local
+# Set MISTRAL_API_KEY in .env.local.
 pnpm dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
+Open http://localhost:3000.
 
-## 📖 Usage
+Environment variables:
 
-### Initial Setup
+- `MISTRAL_API_KEY`: your server-side Mistral key.
+- `MISTRAL_MODEL`: text model; defaults to `ministral-8b-latest`.
+- `MISTRAL_TRANSCRIPTION_MODEL`: audio model; defaults to `voxtral-small-latest`. Your key needs access to an audio-capable model.
 
-1. **Select Languages**: On first load, choose your native language and target language
-2. **Start Chatting**: Begin practicing your target language with the AI tutor
+For Vercel previews and production, set these variables in the Vercel project. GitHub Actions runs checks; Vercel's Git integration handles deployments.
 
-![Getting started](./imgs/getting_started.png)
+Development uses `.next-dev`, while production builds use `.next`, so building does not overwrite a running development server's files.
 
-### Features Usage
+## API
 
-#### Translation
-- Messages can be translated between target and native languages
-- Uses the language configuration set at startup
+All endpoints use POST and return `{ success: true, ... }` on success or `{ success: false, error }` on failure.
 
-![original message (before translation)](./imgs/before_translation.png)
-![Translated message (before translation)](./imgs/translation.gif)
+- `/api/chat`: JSON with `prompt`, `history`, `languageConfig`, `userLevel`, and optional `learningFocus`. Returns `reply` and `correction`.
+- `/api/correct`: JSON with `content`, `languageConfig`, and `userLevel`. Returns `correction`. This standalone route remains available; the chat UI gets corrections from `/api/chat`.
+- `/api/translate`: JSON with `content` and `languageConfig`. Returns `translation`.
+- `/api/transcribe`: raw Ogg, WebM, or MP4 audio. Set its `Content-Type`, `X-Native-Language`, and `X-Target-Language` headers. Returns `text`.
 
+Example chat request:
 
-#### Grammar Correction
-- Automatic detection of spelling and grammar mistakes
-- Returns `[CORRECT]` if no mistakes found
-
-![Original message (before correction)](./imgs/before_correction.png)
-![Corrected message (after correction)](./imgs/correction.gif)
-
-#### Corrections and Flashcards
-- Grammar mistakes, spelling mistakes, and native-language words use one correction object with an explanation for each change
-- Explained corrections become flashcards saved in this browser
-- Open **Flashcards**, click a card to flip between the original word and its correction or translation with an explanation
-- Use **Previous** and **Next** to browse; repeated corrections appear once, and cards stay separate for each language pair
-- Deleting a message removes its saved cards, and **Remove card** removes that saved correction
-
-## 🔌 API Endpoints
-
-### POST `/api/chat`
-
-Main conversation endpoint.
-
-Grammar edits and native-word replacements use the same correction object.
-
-**Request Body:**
 ```json
 {
-  "prompt": "I need une cuillère.",
+  "prompt": "I has a apple.",
   "history": [],
-  "languageConfig": {
-    "nativeLanguage": "fr",
-    "targetLanguage": "en"
-  },
-  "userLevel": "beginner",
-  "learningFocus": []
+  "languageConfig": { "nativeLanguage": "fr", "targetLanguage": "en" },
+  "userLevel": "beginner"
 }
 ```
 
-**Response:**
+Example response:
+
 ```json
 {
   "success": true,
-  "reply": "You need a spoon. What are you making?",
+  "reply": "What kind of apple do you like?",
   "correction": {
-    "correctedText": "I need a spoon.",
+    "correctedText": "I have an apple.",
     "issues": [
-      {
-        "category": "translation",
-        "explanation": "Une cuillère se dit a spoon en anglais."
-      }
+      { "category": "grammar", "explanation": "Avec « I », on utilise « have »." },
+      { "category": "grammar", "explanation": "On utilise « an » devant « apple »." }
     ]
   }
 }
 ```
 
-```mermaid
-sequenceDiagram
-  %% Language Learning Chatbot - Main Chat Flow
-  participant User as User
-  participant UI as "Next.js UI<br>(page.tsx)"
-  participant Context as "Context Store<br>(In-Memory)"
-  participant ClientLib as "Client Library<br>('@/lib/api')"
-  participant ChatAPI as "Chat Route<br>(/api/chat)"
-  participant Mistral as "Mistral AI"
+If a sentence is unchanged, its correction has no issues. If the model rewrites it without an explanation, the server returns `correction: null` and keeps the reply.
 
-  User->>UI: Type message & send
-  activate UI
+## Request limits
 
-  UI->>UI: Create user message object
-  UI->>Context: Update messages state
+The app uses an in-memory counter allowing **five requests per minute across all API routes**, configured in [limits.ts](src/lib/server/limits.ts).
 
-  UI->>ClientLib: send(prompt, history, context)
-  activate ClientLib
+On Vercel, each client IP has a separate counter. Other hosts and requests without Vercel's client IP header share one counter. Counters reset when the process restarts, and each server instance has its own counters. A voice turn normally uses two requests: transcription and chat. Translation also uses the allowance.
 
-  ClientLib->>ClientLib: Validate input
-  ClientLib->>ClientLib: Trim prompt
-  ClientLib->>ClientLib: Slice last 10 messages
+JSON bodies are limited to 32 KiB, chat messages to 2,000 characters, and history to 12 messages and 20,000 combined characters. Text and transcription calls have a 25-second provider deadline. Text calls can retry once for selected temporary provider errors.
 
-  ClientLib->>ChatAPI: POST /api/chat<br>{prompt, history, context}
-  activate ChatAPI
+## Code map
 
-  ChatAPI->>ChatAPI: Validate request
-  ChatAPI->>ChatAPI: Check MISTRAL_API_KEY
+- `src/app/chat/`: page composition, chat state, actions, and message requests.
+- `src/components/ui/chat/`: `header/`, `input/`, `message/`, and `welcome/` components.
+- `src/components/ui/review/`: flashcard `card/` and `dialog/` components plus the toolbar.
+- `src/components/ui/voice/`: the call entry point plus `dialog/`, `controls/`, `transcript/`, and `hooks/`.
+- `src/components/ui/setup/` and `feedback/`: language selection, empty state, errors, and loading.
+- `src/lib/api/`: browser requests and response validation.
+- `src/lib/chat/`: conversation history and message helpers.
+- `src/lib/learning.ts` and `src/lib/review/`: saved cards, displayed text, and grouping.
+- `src/lib/voice/`: recording, silence monitoring, transcription uploads, and cleanup.
+- `src/lib/server/`: shared prompts, provider calls, correction normalization, HTTP helpers, and limits. `transcription.ts` contains request building, the provider call, and result validation.
+- `src/lib/schemas/`: runtime validation shared by the server and client.
 
-  ChatAPI->>ChatAPI: Create contextual prompt<br>(learningLanguage, userLevel, etc.)
-  ChatAPI->>ChatAPI: Build messages array<br>(system + history + user)
+## Checks and formatting
 
-  ChatAPI->>Mistral: POST /v1/chat/completions<br>{model, messages, max_tokens, temperature}
-  activate Mistral
-
-  Mistral->>Mistral: Process request
-  Mistral->>Mistral: Generate response
-
-  Mistral-->>ChatAPI: {choices: [{message: {content}}]}
-  deactivate Mistral
-
-  ChatAPI->>ChatAPI: Extract AI message
-  ChatAPI->>ChatAPI: Validate response
-
-  ChatAPI-->>ClientLib: {success: true, message}
-  deactivate ChatAPI
-
-  ClientLib-->>UI: ChatResponse
-  deactivate ClientLib
-
-  UI->>UI: Create assistant message object
-  UI->>Context: Add assistant message
-  UI->>UI: Attach the correction to the user message
-
-  UI-->>User: Display AI response
-  deactivate UI
+```sh
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:lint
+pnpm build
 ```
 
+Use `pnpm test:unit` or `pnpm test:integration` for one group, and `pnpm test:coverage` for coverage. Integration tests call route handlers with mocked Mistral responses. They do not make paid API calls. CI runs lint, types, spacing-rule tests, unit tests, integration tests, and the build.
 
-### POST `/api/translate`
+Installing dependencies enables the Husky pre-commit hook. It runs ESLint fixes and Prettier on staged files, then checks ESLint again. Remaining lint errors block the commit. Run it manually with `pnpm lint:staged`.
 
-Translates text between configured languages.
+Keep blank lines between functions, tests, and test setup blocks. Code limits are 250 lines per file and 100 per function; Jest tests allow 400 and 150. Blank lines and comments do not count. The full rules live in [eslint.config.mjs](eslint.config.mjs).
 
-**Request Body:**
-```json
-{
-  "content": "Bonjour, comment allez-vous?",
-  "languageConfig": {
-    "targetLanguage": "fr",
-    "nativeLanguage": "en"
-  }
-}
-```
+There are no accounts or cross-device card synchronization. Automated tests use browser and provider mocks; they do not establish live speech quality or model accuracy.
 
-**Response:**
-```json
-{
-  "success": true,
-  "translation": "Hello, how are you?"
-}
-```
-
-```mermaid
-sequenceDiagram
-  %% Translation Flow
-  participant User as User
-  participant Msg as "Message<br>Component"
-  participant ClientLib as "Client Library<br>('@/lib/api')"
-  participant TransAPI as "Translate Route<br>(/api/translate)"
-  participant Mistral as "Mistral AI"
-  participant LangCfg as "@/lib/config/language<br>(getLanguageConfig)"
-
-  User->>Msg: Click translate button
-  activate Msg
-
-  Msg->>ClientLib: translateMessage(content)
-  activate ClientLib
-
-  ClientLib->>LangCfg: getLanguageConfig()
-  LangCfg-->>ClientLib: {nativeLanguage, targetLanguage}
-
-  ClientLib->>TransAPI: POST /api/translate<br>{content, languageConfig}
-  activate TransAPI
-
-  TransAPI->>TransAPI: Validate content
-  TransAPI->>TransAPI: Create translation prompt<br>"Translate from X to Y"
-
-  TransAPI->>Mistral: POST /v1/chat/completions<br>{model, messages, temperature: 0.0}
-  activate Mistral
-
-  Mistral->>Mistral: Translate text
-  Mistral-->>TransAPI: {choices: [{message: {content}}]}
-  deactivate Mistral
-
-  TransAPI-->>ClientLib: {success: true, translation}
-  deactivate TransAPI
-
-  ClientLib-->>Msg: {success: true, translation}
-  deactivate ClientLib
-
-  Msg->>Msg: Display translation
-  Msg-->>User: Show translated text
-  deactivate Msg
-```
-
-### POST `/api/correct`
-
-Corrects spelling and grammar mistakes.
-
-**Request Body:**
-```json
-{
-  "content": "I has a appel"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "correctedContent": "I have an apple"
-}
-```
-
-
-## 🎯 AI Tutor Behavior
-
-The AI tutor is designed to:
-
-- **Adapt to User Level**: Adjusts language complexity based on proficiency
-- **Encourage Expression**: Promotes natural conversation without harsh corrections
-- **Maintain Context**: Uses previous messages to continue the conversation
-- **Stay Engaging**: Asks follow-up questions to continue conversations
-- **Be Patient**: Creates a supportive learning environment
-
-
-## 🔧 Configuration
-
-### Language Configuration
-
-Set languages programmatically:
-
-```typescript
-import { setLanguageConfig } from '@/lib/prompts';
-
-setLanguageConfig({
-  nativeLanguage: 'en',
-  targetLanguage: 'fr'
-});
-```
-
-### Conversation Context
-
-```typescript
-interface ConversationContext {
-  messages: ChatMessage[];
-  learningLanguage?: string;
-  userLevel?: 'beginner' | 'intermediate' | 'advanced';
-  topicsDiscussed?: string[];
-  commonMistakes?: string[];
-}
-```
-
-## 🔐 Security
-
-- API keys stored in environment variables
-- Trimmed user inputs to prevent injection
-- Error messages don't expose sensitive information
-
-## 📊 Performance Considerations
-
-- **Message History Limit**: Last 8-10 messages sent to AI (token optimization)
-- **Max Tokens**: 500 tokens per response
-- **Temperature**: 0.7 for natural conversation, 0.0 for corrections
-- **Model**: mistral-small-latest (balance of speed and quality)
-
-## 🧪 Testing
-
-All tests are located in the `__tests__` directory, organized into **unit** and **integration** categories:
-```
-__tests__  
-├── integration  
-│   ├── chat.test.ts  
-│   ├── correct.test.ts  
-│   └── translate.test.ts  
-└── unit  
-│   ├── chat.test.ts  
-│   ├── correct.test.ts  
-│   └── translate.test.ts  
-```
-### 🧩 Test Structure
-- **Unit tests** focus on individual modules and functions.  
-- **Integration tests** validate how multiple components interact (for example, API routes or service integrations).  
-
-### 🚀 Running Tests
-You can execute tests using **pnpm** commands defined in `package.json`:
-
-- `pnpm run test` — Runs all Jest tests (passes even if no tests are found).  
-- `pnpm run test:unit` — Runs only the unit tests located in `__tests__/unit/`.  
-- `pnpm run test:integration` — Runs only the integration tests located in `__tests__/integration/`.  
-
-### ✅ Example Usage
-To run all integration tests:  
-```bash
-pnpm run test:integration  
-```
-To run a specific test file (e.g., `chat.test.ts`):  
-```bash
-pnpm run test __tests__/integration/chat.test.ts  
-```
-
-## CI/CD Pipeline
-
-This project uses GitHub Actions for continuous integration and deployment to Vercel.
-
-### Workflow Overview
-
-**On Pull Requests:**
-- Runs unit tests, builds the app, and runs integration tests
-- Deploys to Vercel preview environment
-- Posts preview URL as a PR comment for review
-
-**On Main Branch (after merge):**
-- Runs the full test suite
-- Automatically deploys to production on Vercel
-
-### Required Secrets
-
-Add these in **Settings → Secrets and variables → Actions**:
-
-- `VERCEL_TOKEN` - Authentication token from Vercel dashboard
-- `VERCEL_ORG_ID` - Found in `.vercel/project.json` after running `vercel link`
-- `VERCEL_PROJECT_ID` - Also in `.vercel/project.json`
-- `MISTRAL_API_KEY` - API key for Mistral AI
-- `TEST_MIN_INTERVAL_MS` - Minimum interval for rate-limited tests
-
-## 🗺️ Roadmap
-- [x] add tests
-- [x] CI/CD
-- [ ] user input validation and safe output parsing
-- [ ] User authentication
-- [ ] Voice input/output
+See [the cleanup decisions](REFACTOR_REPORT.md), [the completed plan](REFACTOR_PLAN.md), and [the lint rules](LINT_REPORT.md) for development context.
