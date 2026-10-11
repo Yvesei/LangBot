@@ -31,6 +31,57 @@ test('returns a reply and structured correction from one provider request', asyn
   expect(JSON.parse(sent.messages[1].content).learnerMessage).toBe(chatBody.prompt);
 });
 
+test('returns a native-word translation through the same correction object', async () => {
+  const prompt = 'I need une cuillère.';
+  const result = {
+    ...tutorResult,
+    correction: {
+      correctedText: 'I need a spoon.',
+      issues: [{ category: 'translation', explanation: 'Une cuillère se dit a spoon.' }],
+    },
+  };
+  jest.mocked(fetch).mockResolvedValue(providerResponse(result));
+  const response = await POST(request({ ...chatBody, prompt }));
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ success: true, ...result });
+  expect(fetch).toHaveBeenCalledTimes(1);
+  const sent = JSON.parse(jest.mocked(fetch).mock.calls[0][1]!.body as string);
+  expect(sent.response_format.json_schema.schema.properties).toEqual({
+    reply: expect.anything(),
+    correction: expect.anything(),
+  });
+});
+
+test('returns grammar and translated-word explanations together', async () => {
+  const correction = {
+    correctedText: 'She needs a spoon.',
+    issues: [
+      { category: 'grammar', explanation: 'Avec she, utilise needs.' },
+      { category: 'translation', explanation: 'Une cuillère se dit a spoon.' },
+    ],
+  };
+  jest.mocked(fetch).mockResolvedValue(providerResponse({ ...tutorResult, correction }));
+  const response = await POST(request({ ...chatBody, prompt: 'She need une cuillère.' }));
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ success: true, ...tutorResult, correction });
+});
+
+test('does not apply an unexplained native-word replacement', async () => {
+  jest.mocked(fetch).mockResolvedValue(
+    providerResponse({
+      ...tutorResult,
+      correction: { correctedText: 'I need a spoon.', issues: [] },
+    }),
+  );
+  const response = await POST(request({ ...chatBody, prompt: 'I need une cuillère.' }));
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({
+    success: true,
+    ...tutorResult,
+    correction: null,
+  });
+});
+
 test.each([
   null,
   { ...chatBody, prompt: 42 },

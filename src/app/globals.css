@@ -200,8 +200,44 @@ button:disabled {
   background: rgb(0 0 0 / 35%);
 }
 .review-card {
-  padding: 20px 0;
-  border-bottom: 1px solid var(--line);
+  display: block;
+  width: 100%;
+  perspective: 1000px;
+  text-align: center;
+  border-radius: 16px;
+}
+.review-card-inner {
+  display: grid;
+  min-height: 260px;
+  transform-style: preserve-3d;
+  transition: transform 350ms ease;
+}
+.review-card-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+.review-card-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  grid-area: 1 / 1;
+  padding: 28px;
+  overflow-wrap: anywhere;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  backface-visibility: hidden;
+}
+.review-card-face[hidden] {
+  visibility: hidden;
+}
+.review-card-back {
+  transform: rotateY(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .review-card-inner {
+    transition: none;
+  }
 }
 .message {
   max-width: 90%;

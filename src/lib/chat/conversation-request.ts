@@ -9,7 +9,7 @@ import type { ConversationMessage } from './conversation';
 interface ChatRequestOptions {
   content: string;
   messages: ConversationMessage[];
-  cards: Array<{ streak: number; focus: string }>;
+  cards: Array<{ focus: string }>;
   config: LanguageConfig;
   level: Level;
   retryMessageId?: string;
@@ -63,13 +63,13 @@ function getRequestSize(body: ChatRequest): number {
 export function buildChatRequest(options: ChatRequestOptions): ChatRequest {
   const { content, messages, cards, config, level, retryMessageId } = options;
   const completedMessages = getCompletedMessages(messages, retryMessageId);
-  const recentReview = cards.filter((card) => card.streak < 2).slice(-3);
+  const recentReview = cards.slice(-3);
   const body: ChatRequest = {
     prompt: content,
     history: buildHistory(completedMessages, content),
     languageConfig: config,
     userLevel: level,
-    learningFocus: recentReview.map((card) => card.focus),
+    learningFocus: recentReview.map((card) => card.focus.slice(0, 500)),
   };
 
   while (body.history.length > 0 && getRequestSize(body) > MAX_REQUEST_BYTES) {

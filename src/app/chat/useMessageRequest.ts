@@ -5,7 +5,11 @@ import {
   updateMessageStatus,
   type ConversationMessage,
 } from '@/lib/chat/conversation';
+import { createFlashcards } from '@/lib/learning';
+import type { ChatResult } from '@/lib/schemas';
 import type { ChatState } from './useChatState';
+
+const MAX_SAVED_CARDS = 100;
 
 interface SendMessageOptions {
   retryMessage?: ConversationMessage;
@@ -87,6 +91,28 @@ function handleRequestError(
   state.setError(errorMessage);
 }
 
+function saveReviewCards(
+  state: ChatState,
+  messageId: string,
+  content: string,
+  result: ChatResult,
+) {
+  const config = state.config;
+  if (!config) {
+    return;
+  }
+
+  const cards = createFlashcards(messageId, result.correction, config, content);
+  if (cards.length === 0) {
+    return;
+  }
+
+  state.setCards((current) => {
+    const retainedCards = current.filter((card) => card.sourceMessageId !== messageId);
+    return [...retainedCards, ...cards].slice(-MAX_SAVED_CARDS);
+  });
+}
+
 export function useMessageRequest(state: ChatState) {
   function cancel() {
     const pendingRequest = state.activeChatRequest.current;
@@ -101,10 +127,7 @@ export function useMessageRequest(state: ChatState) {
     state.setLoading(false);
   }
 
-  async function sendMessage(
-    retryMessage?: ConversationMessage,
-    spokenContent?: string,
-  ) {
+  async function sendMessage(retryMessage?: ConversationMessage, spokenContent?: string) {
     const config = state.config;
     if (!config || state.activeChatRequest.current || state.isSelectingLanguages) {
       return;
@@ -128,7 +151,7 @@ export function useMessageRequest(state: ChatState) {
         buildChatRequest({
           content,
           messages: state.messages,
-          cards: [],
+          cards: state.visibleCards,
           config,
           level: state.level,
           retryMessageId: retryMessage?.id,
@@ -140,6 +163,7 @@ export function useMessageRequest(state: ChatState) {
         state.setMessages((current) =>
           addAssistantReply(current, messageId, tutorResponse),
         );
+        saveReviewCards(state, messageId, content, tutorResponse);
       }
     } catch (requestError) {
       handleRequestError(state, controller, messageId, requestError);
