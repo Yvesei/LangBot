@@ -7,8 +7,20 @@ export const runtime = 'nodejs';
 export const maxDuration = 40;
 const formats = ['audio/ogg', 'audio/webm', 'audio/mp4'];
 
+function getAudioFormat(request: Request) {
+  const contentType = request.headers.get('content-type');
+
+  if (!contentType) {
+    return '';
+  }
+
+  const format = contentType.split(';')[0];
+  const trimmedFormat = format.trim();
+  return trimmedFormat.toLowerCase();
+}
+
 export const POST = guardedRoute(async (request) => {
-  const type = request.headers.get('content-type')?.split(';')[0].trim().toLowerCase();
+  const type = getAudioFormat(request);
   if (!type || !formats.includes(type)) {
     throw new ApiError(415, 'Unsupported audio format.');
   }

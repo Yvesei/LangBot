@@ -8,7 +8,8 @@ A Next.js-based AI-powered language learning application that helps users practi
 - **Multi-language Support**: Configurable native and target languages
 - **Real-time Translation**: Translate messages between target and native languages
 - **Grammar Correction**: Automatic spelling and grammar correction
-- **Topic Tracking**: Monitors conversation topics for better context
+- **Bilingual Corrections**: Explains target-language replacements for native-language words through the same correction flow
+- **Flashcards**: Click a saved word or phrase to flip it and see the correction with an explanation
 - **Conversation History**: Maintains chat history for contextual responses
 
 ## 🏗️ Architecture
@@ -57,8 +58,6 @@ A Next.js-based AI-powered language learning application that helps users practi
 │   │       │   └── Message.tsx
 │   │       ├── indicators
 │   │       │   └── LoadingIndicator.tsx
-│   │       ├── panels
-│   │       │   └── TopicsPanel.tsx
 │   │       └── states
 │   │           ├── EmptyState.tsx
 │   │           └── ErrorDisplay.tsx
@@ -66,8 +65,8 @@ A Next.js-based AI-powered language learning application that helps users practi
 │       ├── utils.ts
 │       ├── api
 │       │   ├── chat.ts
-│       │   ├── correct.ts
 │       │   ├── index.ts
+│       │   ├── request.ts
 │       │   └── translate.ts
 │       ├── config
 │       │   └── language.ts
@@ -91,7 +90,6 @@ graph TB
         Loading["LoadingIndicator"]
         Error["ErrorDisplay"]
         Empty["EmptyState"]
-        Topics["TopicsPanel"]
     end
     
     %% Client Library Layer
@@ -103,10 +101,9 @@ graph TB
         end
         
         subgraph API["API Layer (code)"]
-            ClientBarrel["@/lib/api (index.ts)<br/><br/>API Abstraction:<br/>• send()<br/>• translateMessage()<br/>• correctMessage()"]
+            ClientBarrel["@/lib/api (index.ts)<br/><br/>API Abstraction:<br/>• send()<br/>• translateMessage()"]
             ChatApi["chat.ts<br/>(send)"]
             TransApi["translate.ts<br/>(translateMessage)"]
-            CorrectApi["correct.ts<br/>(correctMessage)"]
         end
     end
     
@@ -127,11 +124,9 @@ graph TB
     
     ClientBarrel --> ChatApi
     ClientBarrel --> TransApi
-    ClientBarrel --> CorrectApi
     
     ChatApi -.-> ChatRoute
     TransApi -.-> TransRoute
-    CorrectApi -.-> CorrectRoute
     
     ChatRoute --> Mistral
     TransRoute --> Mistral
@@ -145,8 +140,8 @@ graph TB
     classDef externalStyle fill:#ffebee,stroke:#b71c1c,stroke-width:2px
     
     class Page pageStyle
-    class Header,Input,Msg,Loading,Error,Empty,Topics uiStyle
-    class ClientBarrel,ChatApi,TransApi,CorrectApi apiStyle
+    class Header,Input,Msg,Loading,Error,Empty uiStyle
+    class ClientBarrel,ChatApi,TransApi apiStyle
     class ChatRoute,TransRoute,CorrectRoute routeStyle
     class Mistral externalStyle
 ```
@@ -212,10 +207,12 @@ pnpm dev
 ![Original message (before correction)](./imgs/before_correction.png)
 ![Corrected message (after correction)](./imgs/correction.gif)
 
-#### Topic Tracking
-- Automatically detects discussion topics (food, travel, work, hobbies, family)
-- Displays topics in the sidebar
-- Helps maintain conversation context
+#### Corrections and Flashcards
+- Grammar mistakes, spelling mistakes, and native-language words use one correction object with an explanation for each change
+- Explained corrections become flashcards saved in this browser
+- Open **Flashcards**, click a card to flip between the original word and its correction or translation with an explanation
+- Use **Previous** and **Next** to browse; repeated corrections appear once, and cards stay separate for each language pair
+- Deleting a message removes its saved cards, and **Remove card** removes that saved correction
 
 ## 🔌 API Endpoints
 
@@ -223,22 +220,19 @@ pnpm dev
 
 Main conversation endpoint.
 
+Grammar edits and native-word replacements use the same correction object.
+
 **Request Body:**
 ```json
 {
-  "prompt": "Hello, how are you?",
-  "history": [
-    {
-      "role": "user",
-      "content": "Previous message"
-    }
-  ],
-  "context": {
-    "learningLanguage": "French",
-    "userLevel": "beginner",
-    "topicsDiscussed": ["food"],
-    "commonMistakes": []
-  }
+  "prompt": "I need une cuillère.",
+  "history": [],
+  "languageConfig": {
+    "nativeLanguage": "fr",
+    "targetLanguage": "en"
+  },
+  "userLevel": "beginner",
+  "learningFocus": []
 }
 ```
 
@@ -246,7 +240,16 @@ Main conversation endpoint.
 ```json
 {
   "success": true,
-  "message": "I'm doing well, thank you! How about you?"
+  "reply": "You need a spoon. What are you making?",
+  "correction": {
+    "correctedText": "I need a spoon.",
+    "issues": [
+      {
+        "category": "translation",
+        "explanation": "Une cuillère se dit a spoon en anglais."
+      }
+    ]
+  }
 }
 ```
 
@@ -302,7 +305,7 @@ sequenceDiagram
 
   UI->>UI: Create assistant message object
   UI->>Context: Add assistant message
-  UI->>UI: Update learning context<br>(topics, mistakes)
+  UI->>UI: Attach the correction to the user message
 
   UI-->>User: Display AI response
   deactivate UI
@@ -401,7 +404,7 @@ The AI tutor is designed to:
 
 - **Adapt to User Level**: Adjusts language complexity based on proficiency
 - **Encourage Expression**: Promotes natural conversation without harsh corrections
-- **Maintain Context**: References previous topics and common mistakes
+- **Maintain Context**: Uses previous messages to continue the conversation
 - **Stay Engaging**: Asks follow-up questions to continue conversations
 - **Be Patient**: Creates a supportive learning environment
 

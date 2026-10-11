@@ -1,4 +1,5 @@
-import { Check, Copy, Languages, Trash2 } from 'lucide-react';
+import { Check, Copy, Trash2 } from 'lucide-react';
+import { TranslationButton } from './TranslationButton';
 
 interface MessageActionsProps {
   user: boolean;
@@ -10,34 +11,6 @@ interface MessageActionsProps {
   onTranslate: () => void;
   onCopy: () => void;
   onDelete: () => void;
-}
-
-function getTranslationLabel(props: MessageActionsProps) {
-  if (props.translating) {
-    return 'Translating…';
-  }
-
-  return props.showTranslation ? 'Show original' : 'Translate';
-}
-
-function TranslationButton(props: MessageActionsProps) {
-  const label = getTranslationLabel(props);
-
-  return (
-    <button
-      onClick={props.onTranslate}
-      disabled={props.translating}
-      className="icon-button"
-      aria-label={label}
-      title={props.showTranslation ? 'Show original' : 'Translate'}
-      aria-pressed={props.showTranslation}
-    >
-      <Languages
-        size={15}
-        className={props.translating ? 'animate-pulse' : ''}
-      />
-    </button>
-  );
 }
 
 export function MessageActions(props: MessageActionsProps) {

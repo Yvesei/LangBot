@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { languageConfigSchema, type LanguageConfig } from '@/lib/schemas';
 import { LanguageField } from './LanguageField';
-import { SetupActions, SetupIntroduction } from './SetupContent';
+import { SetupActions } from './SetupActions';
+import { SetupIntroduction } from './SetupIntroduction';
 
 interface EmptyStateProps {
   initial: LanguageConfig | null;

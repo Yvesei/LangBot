@@ -1,8 +1,9 @@
-import { ArrowUp, RotateCcw } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 import { getListeningHint } from '@/lib/voice/messages';
 import type { LanguageConfig } from '@/lib/schemas';
 import { getCallStatusLabel, type CallState } from './voice-call-types';
 import { VoiceCallControls } from './VoiceCallControls';
+import { VoiceError } from './VoiceError';
 
 interface VoiceStageProps {
   callState: CallState;
@@ -18,29 +19,6 @@ interface VoiceStageProps {
   onToggleMicrophone: () => void;
   onToggleSpeaker: () => void;
   onClose: () => void;
-}
-
-function VoiceError(props: VoiceStageProps) {
-  if (!props.error) {
-    return null;
-  }
-  return (
-    <div
-      className="mt-4 max-w-md"
-      role="alert"
-    >
-      <p className="text-sm text-rose-300">{props.error}</p>
-      {!props.loading && (
-        <button
-          type="button"
-          onClick={props.onListenAgain}
-          className="mt-2 inline-flex items-center gap-2 text-sm underline"
-        >
-          <RotateCcw className="h-4 w-4" /> Listen again
-        </button>
-      )}
-    </div>
-  );
 }
 
 export function VoiceStage(props: VoiceStageProps) {
@@ -86,7 +64,11 @@ export function VoiceStage(props: VoiceStageProps) {
           <ArrowUp size={16} /> Send turn
         </button>
       )}
-      <VoiceError {...props} />
+      <VoiceError
+        error={props.error}
+        loading={props.loading}
+        onListenAgain={props.onListenAgain}
+      />
       <VoiceCallControls {...props} />
     </section>
   );

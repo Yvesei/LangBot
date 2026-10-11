@@ -1,17 +1,6 @@
 import type { ConversationMessage } from '@/lib/chat/conversation';
+import { saveLanguageConfigToStorage } from '@/lib/config/language';
 import type { LanguageConfig, Level } from '@/lib/schemas';
-import {
-  changeLanguages as applyLanguageChange,
-  changeLevel as applyLevelChange,
-  closeVoiceCall as applyVoiceClose,
-  deleteMessage as applyMessageDeletion,
-  selectLanguages as applyLanguageSelection,
-  startNewChat,
-} from './chat-session-actions';
-import {
-  forgetReview as applyForgetReview,
-  gradeReview as applyReviewGrade,
-} from './chat-study-actions';
 import type { ChatState } from './useChatState';
 import { useMessageRequest } from './useMessageRequest';
 
@@ -19,28 +8,76 @@ export function useChatActions(state: ChatState) {
   const request = useMessageRequest(state);
 
   function newChat() {
-    startNewChat(state, request.cancel);
+    request.cancel();
+    state.setVoiceOpen(false);
+    state.setMessages([]);
+    state.setPrompt('');
+    state.setError('');
   }
 
   function selectLanguages(config: LanguageConfig) {
-    applyLanguageSelection(state, newChat, config);
+    newChat();
+    state.setReviewOpen(false);
+    state.setConfig(config);
+    state.setIsSelectingLanguages(false);
+
+    if (!saveLanguageConfigToStorage(config, state.level)) {
+      state.setStorageWarning('Language settings could not be saved in this browser.');
+    }
   }
 
   function changeLevel(level: Level) {
-    applyLevelChange(state, level);
+    state.setLevel(level);
+
+    if (state.config && !saveLanguageConfigToStorage(state.config, level)) {
+      state.setStorageWarning('Your level could not be saved in this browser.');
+    }
+  }
+
+  function changeLanguages() {
+    request.cancel();
+    state.setVoiceOpen(false);
+    state.setReviewOpen(false);
+    state.setIsSelectingLanguages(true);
   }
 
   function deleteMessage(messageId: string) {
-    applyMessageDeletion(state, request.cancel, messageId);
+    request.cancel();
+    state.setMessages((current) =>
+      current.filter(
+        (message) => message.id !== messageId && message.replyTo !== messageId,
+      ),
+    );
+    state.setCards((current) =>
+      current.filter((card) => card.sourceMessageId !== messageId),
+    );
+    state.setError('');
   }
 
-  function openVoiceCall() {
+  function forgetReview(ids: string[]) {
+    state.setCards((current) => current.filter((card) => !ids.includes(card.id)));
+  }
+
+  function clearError() {
     state.setError('');
-    state.setVoiceOpen(true);
+  }
+
+  function send() {
+    return request.sendMessage();
   }
 
   function sendSpoken(content: string) {
     void request.sendMessage(undefined, content);
+  }
+
+  function openVoiceCall() {
+    state.setError('');
+    state.setReviewOpen(false);
+    state.setVoiceOpen(true);
+  }
+
+  function closeVoiceCall() {
+    state.setVoiceOpen(false);
   }
 
   function retry(message: ConversationMessage) {
@@ -53,15 +90,14 @@ export function useChatActions(state: ChatState) {
     selectLanguages,
     changeLevel,
     deleteMessage,
-    openVoiceCall,
-    closeVoiceCall: applyVoiceClose.bind(null, state),
-    gradeReview: applyReviewGrade.bind(null, state),
-    forgetReview: applyForgetReview.bind(null, state),
-    clearError: state.setError.bind(null, ''),
-    send: request.sendMessage.bind(null, undefined, undefined),
+    forgetReview,
+    clearError,
+    send,
     sendSpoken,
+    openVoiceCall,
+    closeVoiceCall,
     retry,
-    changeLanguages: applyLanguageChange.bind(null, state, request.cancel),
+    changeLanguages,
   };
 }
 
