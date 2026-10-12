@@ -192,7 +192,6 @@
 .correction-details {
   margin-top: 16px;
   padding-top: 14px;
-  border-top: 2px dashed var(--line);
   font-size: 16px;
 }
 .correction-details summary {
