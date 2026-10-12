@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import Page from '@/app/page';
 import { send } from '@/lib/api';
 import { tutorResult } from '../../tests/fixtures';
@@ -32,6 +32,7 @@ beforeEach(() => {
     this.removeAttribute('open');
   };
   jest.mocked(send).mockResolvedValue({ success: true, ...tutorResult });
+  jest.mocked(send).mockClear();
 });
 
 afterEach(() => {
@@ -100,4 +101,45 @@ test('opening flashcards from the drawer closes navigation and restores focus to
   fireEvent.click(within(cards).getByRole('button', { name: 'Close flashcards' }));
   expect(open).toHaveFocus();
   expect(screen.getByText(tutorResult.reply)).toBeInTheDocument();
+});
+
+test('the language button reflects saved and changed languages used by the tutor', async () => {
+  localStorage.setItem('langbot-target', 'ja');
+  const view = render(<Page />);
+  fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+  const languageButton = screen.getByRole('button', {
+    name: 'Change languages: Japanese',
+  });
+  expect(languageButton).toHaveTextContent('Japanese');
+  fireEvent.click(languageButton);
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByRole('combobox', { name: 'Language to practise' }), {
+    target: { value: 'es' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Start practising' }));
+  expect(
+    screen.getByRole('button', { name: 'Change languages: Spanish' }),
+  ).toHaveTextContent('Spanish');
+  expect(localStorage.getItem('langbot-native')).toBe('en');
+  expect(localStorage.getItem('langbot-target')).toBe('es');
+  fireEvent.change(screen.getByRole('textbox', { name: 'Your message' }), {
+    target: { value: 'Hola' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+  await waitFor(() =>
+    expect(send).toHaveBeenCalledWith(
+      {
+        prompt: 'Hola',
+        languageConfig: { nativeLanguage: 'en', targetLanguage: 'es' },
+        history: [],
+        learningFocus: [],
+      },
+      expect.anything(),
+    ),
+  );
+  view.unmount();
+  render(<Page />);
+  expect(
+    screen.getByRole('button', { name: 'Change languages: Spanish' }),
+  ).toHaveTextContent('Spanish');
 });

@@ -1,14 +1,8 @@
 import { Bot, Github, PanelLeftClose } from 'lucide-react';
-import type { LanguageConfig, Level } from '@/lib/schemas';
 import { SidebarActions, type SidebarActionsProps } from './SidebarActions';
-import { SidebarPreferences } from './SidebarPreferences';
 import { ThemeSwitcher } from './ThemeSwitcher';
 
-export interface ChatNavigationProps extends SidebarActionsProps {
-  config: LanguageConfig | null;
-  level: Level;
-  onLevelChange: (level: Level) => void;
-}
+export type ChatNavigationProps = SidebarActionsProps;
 
 interface ChatSidebarProps extends ChatNavigationProps {
   isOpen: boolean;
@@ -55,15 +49,11 @@ export function ChatSidebar(props: ChatSidebarProps) {
         </button>
       </div>
       <SidebarActions
+        config={props.config}
         onNewChat={() => navigate(props.onNewChat)}
         onChangeLanguages={() => navigate(props.onChangeLanguages)}
         reviewCount={props.reviewCount}
         onOpenReview={onOpenReview ? () => navigate(onOpenReview) : undefined}
-      />
-      <SidebarPreferences
-        config={props.config}
-        level={props.level}
-        onLevelChange={props.onLevelChange}
       />
       <div className="sidebar-footer">
         <ThemeSwitcher />

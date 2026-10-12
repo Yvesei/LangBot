@@ -45,8 +45,6 @@ export default function ChatPage() {
     <ChatLayout
       navigation={{
         config: state.config,
-        level: state.level,
-        onLevelChange: actions.changeLevel,
         onNewChat: actions.newChat,
         onChangeLanguages: actions.changeLanguages,
         reviewCount: state.reviewGroups.length,

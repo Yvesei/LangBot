@@ -55,7 +55,6 @@ button:disabled {
 .subtle-button,
 .sidebar-action,
 .starter,
-.level-select,
 .setup-select {
   border: var(--control-border);
   border-radius: var(--control-radius);

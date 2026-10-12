@@ -18,10 +18,7 @@ afterEach(() => jest.restoreAllMocks());
 
 test('returns structured corrections instead of a magic sentinel', async () => {
   const response = await POST(
-    request(
-      { content: 'I has a apple.', languageConfig, userLevel: 'beginner' },
-      'correct',
-    ),
+    request({ content: 'I has a apple.', languageConfig }, 'correct'),
   );
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ success: true, correction: corrected });
@@ -30,21 +27,15 @@ test('returns structured corrections instead of a magic sentinel', async () => {
 test('returns unchanged text explicitly when no errors are found', async () => {
   const correction = { correctedText: 'Hello.', issues: [] };
   jest.mocked(fetch).mockResolvedValue(providerResponse(correction));
-  const response = await POST(
-    request({ content: 'Hello.', languageConfig, userLevel: 'beginner' }, 'correct'),
-  );
+  const response = await POST(request({ content: 'Hello.', languageConfig }, 'correct'));
   expect(response.status).toBe(200);
   expect((await response.json()).correction).toEqual(correction);
 });
 
 test('rejects non-string content rather than throwing a 500', async () => {
-  expect(
-    (
-      await POST(
-        request({ content: 23, languageConfig, userLevel: 'beginner' }, 'correct'),
-      )
-    ).status,
-  ).toBe(400);
+  expect((await POST(request({ content: 23, languageConfig }, 'correct'))).status).toBe(
+    400,
+  );
   expect(fetch).not.toHaveBeenCalled();
 });
 
@@ -61,10 +52,7 @@ test.each([
   jest.mocked(fetch).mockResolvedValue(providerResponse(item.correction));
 
   const response = await POST(
-    request(
-      { content: 'I has a apple.', languageConfig, userLevel: 'beginner' },
-      'correct',
-    ),
+    request({ content: 'I has a apple.', languageConfig }, 'correct'),
   );
 
   expect(response.status).toBe(200);

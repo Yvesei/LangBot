@@ -1,6 +1,6 @@
 import type { ConversationMessage } from '@/lib/chat/conversation';
 import { saveLanguageConfigToStorage } from '@/lib/config/language';
-import type { LanguageConfig, Level } from '@/lib/schemas';
+import type { LanguageConfig } from '@/lib/schemas';
 import type { ChatState } from './useChatState';
 import { useMessageRequest } from './useMessageRequest';
 
@@ -21,16 +21,8 @@ export function useChatActions(state: ChatState) {
     state.setConfig(config);
     state.setIsSelectingLanguages(false);
 
-    if (!saveLanguageConfigToStorage(config, state.level)) {
+    if (!saveLanguageConfigToStorage(config)) {
       state.setStorageWarning('Language settings could not be saved in this browser.');
-    }
-  }
-
-  function changeLevel(level: Level) {
-    state.setLevel(level);
-
-    if (state.config && !saveLanguageConfigToStorage(state.config, level)) {
-      state.setStorageWarning('Your level could not be saved in this browser.');
     }
   }
 
@@ -88,7 +80,6 @@ export function useChatActions(state: ChatState) {
     cancel: request.cancel,
     newChat,
     selectLanguages,
-    changeLevel,
     deleteMessage,
     forgetReview,
     clearError,

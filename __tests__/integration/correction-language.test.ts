@@ -54,9 +54,7 @@ describe.each([
       jest.mocked(fetch).mockResolvedValue(providerResponse(output));
       const content = path === 'chat' ? { prompt: original } : { content: original };
 
-      const response = await handler(
-        request({ ...content, languageConfig, userLevel: 'beginner' }, path),
-      );
+      const response = await handler(request({ ...content, languageConfig }, path));
       const result = await response.json();
 
       expect(response.status).toBe(200);

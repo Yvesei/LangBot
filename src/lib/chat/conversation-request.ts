@@ -1,4 +1,4 @@
-import type { ChatRequest, LanguageConfig, Level } from '../schemas';
+import type { ChatRequest, LanguageConfig } from '../schemas';
 import {
   MAX_CONVERSATION_LENGTH,
   MAX_HISTORY_MESSAGES,
@@ -11,7 +11,6 @@ interface ChatRequestOptions {
   messages: ConversationMessage[];
   cards: Array<{ focus: string }>;
   config: LanguageConfig;
-  level: Level;
   retryMessageId?: string;
 }
 
@@ -61,14 +60,13 @@ function getRequestSize(body: ChatRequest): number {
 }
 
 export function buildChatRequest(options: ChatRequestOptions): ChatRequest {
-  const { content, messages, cards, config, level, retryMessageId } = options;
+  const { content, messages, cards, config, retryMessageId } = options;
   const completedMessages = getCompletedMessages(messages, retryMessageId);
   const recentReview = cards.slice(-3);
   const body: ChatRequest = {
     prompt: content,
     history: buildHistory(completedMessages, content),
     languageConfig: config,
-    userLevel: level,
     learningFocus: recentReview.map((card) => card.focus.slice(0, 500)),
   };
 

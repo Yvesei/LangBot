@@ -22,14 +22,6 @@
   letter-spacing: -0.025em;
 }
 
-:root[data-theme='original'] .level-select {
-  height: 38px;
-  padding: 8px 4px;
-  background: transparent;
-  color: var(--muted);
-  font-weight: 400;
-}
-
 :root[data-theme='original'] .chat-main {
   background-image: none;
 }

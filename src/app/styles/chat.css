@@ -17,19 +17,6 @@
   line-height: 1;
   letter-spacing: -1px;
 }
-.level-select {
-  width: 140px;
-  height: 40px;
-  padding: 6px 10px;
-  background: var(--surface);
-  color: var(--foreground);
-  font-size: 15px;
-  font-weight: 700;
-}
-.level-select option {
-  background: var(--surface);
-  color: var(--foreground);
-}
 .chat-main {
   background-image: radial-gradient(var(--grid) 1px, transparent 1px);
   background-size: 24px 24px;
@@ -284,10 +271,6 @@
 @media (max-width: 639px) {
   .brand-title {
     font-size: 24px;
-  }
-  .level-select {
-    width: 140px;
-    font-size: 15px;
   }
   .content-column {
     padding: 20px 18px 24px;

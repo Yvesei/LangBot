@@ -14,7 +14,7 @@ export const POST = route(correctionRequestSchema, async (body, signal) => {
     [
       {
         role: 'system',
-        content: correctionPrompt(body.languageConfig, body.userLevel),
+        content: correctionPrompt(body.languageConfig),
       },
       {
         role: 'user',
