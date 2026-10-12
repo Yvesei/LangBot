@@ -71,11 +71,11 @@ export function ChatSidebar(props: ChatSidebarProps) {
           href="https://github.com/Yvesei/LangBot"
           target="_blank"
           rel="noopener noreferrer"
-          className="sidebar-action"
+          className="icon-button"
           aria-label="GitHub repository"
+          title="GitHub repository"
         >
           <Github size={20} />
-          <span>GitHub</span>
         </a>
       </div>
     </aside>

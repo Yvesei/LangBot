@@ -18,10 +18,10 @@
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
-  gap: 28px;
-  width: 244px;
+  gap: 22px;
+  width: 208px;
   height: 100%;
-  padding: 24px 20px 20px;
+  padding: 20px 16px 16px;
   overflow-y: auto;
   background: var(--sidebar-background, var(--surface));
   border-right: var(--frame-border);
@@ -30,24 +30,37 @@
 .sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-height: 40px;
+  gap: 10px;
+  min-height: 34px;
 }
 
-.sidebar-navigation,
-.sidebar-footer {
+.sidebar-brand .brand-mark {
+  width: 34px;
+  height: 34px;
+}
+
+.sidebar-brand .brand-mark svg {
+  width: 23px;
+  height: 23px;
+}
+
+.sidebar-brand .brand-title {
+  font-size: 20px;
+}
+
+.sidebar-navigation {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .sidebar-action {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
-  min-height: 44px;
-  padding: 10px 12px;
+  min-height: 40px;
+  padding: 8px 10px;
   background: var(--icon-background);
   color: var(--foreground);
   font-size: 15px;
@@ -92,7 +105,7 @@
 .sidebar-preferences {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .sidebar-section-label {
@@ -122,16 +135,12 @@
 }
 
 .sidebar-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-top: auto;
-  padding-top: 20px;
+  padding-top: 16px;
   border-top: 1px solid var(--line);
-}
-
-.sidebar-value {
-  margin-left: auto;
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 400;
 }
 
 .icon-button.sidebar-toggle,
@@ -155,7 +164,7 @@
     position: fixed;
     z-index: 30;
     inset: 0 auto 0 0;
-    width: min(280px, calc(100vw - 40px));
+    width: min(240px, calc(100vw - 40px));
     visibility: hidden;
     translate: -100% 0;
     transition:

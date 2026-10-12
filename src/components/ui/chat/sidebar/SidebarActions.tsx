@@ -20,7 +20,7 @@ export function SidebarActions(props: SidebarActionsProps) {
         className="sidebar-action sidebar-new-chat"
         aria-label="New chat"
       >
-        <Plus size={21} />
+        <Plus size={19} />
         <span>New chat</span>
       </button>
       {props.onOpenReview && (
@@ -35,7 +35,7 @@ export function SidebarActions(props: SidebarActionsProps) {
         className="sidebar-action"
         aria-label="Languages"
       >
-        <Languages size={21} />
+        <Languages size={19} />
         <span>Languages</span>
       </button>
     </nav>

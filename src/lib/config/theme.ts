@@ -4,11 +4,9 @@ export const DEFAULT_THEME = 'neo';
 export const THEMES = {
   neo: {
     label: 'Neo brutalism',
-    shortLabel: 'Neo',
   },
   original: {
     label: 'Original',
-    shortLabel: 'Original',
   },
 } as const;
 

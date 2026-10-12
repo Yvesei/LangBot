@@ -12,19 +12,12 @@ export function ThemeSwitcher() {
   return (
     <button
       type="button"
-      className="sidebar-action theme-switcher"
+      className="icon-button theme-switcher"
       onClick={toggleTheme}
       aria-label={actionLabel}
       title={actionLabel}
     >
       <Palette size={20} />
-      <span aria-hidden="true">Appearance</span>
-      <span
-        className="sidebar-value"
-        aria-hidden="true"
-      >
-        {THEMES[theme].shortLabel}
-      </span>
     </button>
   );
 }

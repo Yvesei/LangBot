@@ -15,7 +15,7 @@ export function ReviewToolbar(props: ReviewToolbarProps) {
       aria-haspopup="dialog"
       title="Flashcards"
     >
-      <Layers size={21} />
+      <Layers size={19} />
       <span aria-hidden="true">Flashcards</span>
       {props.reviewCount > 0 && (
         <span
