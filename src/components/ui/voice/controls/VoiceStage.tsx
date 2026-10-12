@@ -1,4 +1,4 @@
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, AudioLines } from 'lucide-react';
 import { getListeningHint } from '@/lib/voice/messages';
 import type { LanguageConfig } from '@/lib/schemas';
 import { getCallStatusLabel, type CallState } from '../voice-call-types';
@@ -29,28 +29,33 @@ export function VoiceStage(props: VoiceStageProps) {
         data-state={props.callState}
         aria-hidden="true"
       >
-        <div />
+        <div data-theme-content="original" />
+        <AudioLines
+          data-theme-content="neo"
+          size={64}
+          strokeWidth={2.5}
+        />
       </div>
       <p
-        className="mt-8 text-lg font-medium"
+        className="voice-status mt-6 text-xl font-extrabold"
         role="status"
         aria-live="polite"
       >
         {getCallStatusLabel(props.callState)}
       </p>
       <p
-        className="mt-3 min-h-14 max-w-md text-pretty text-slate-300"
+        className="mt-3 min-h-14 max-w-md text-pretty text-base text-[var(--muted)]"
         lang={props.config.targetLanguage}
         dir="auto"
       >
         {props.interimTranscript || getListeningHint(props.callState === 'listening')}
       </p>
-      <p className="mt-2 max-w-xs text-xs leading-5 text-slate-400">
+      <p className="mt-2 max-w-sm text-sm leading-relaxed text-[var(--muted)]">
         Audio is sent to Mistral. Your words appear after each turn, in either selected
         language.
       </p>
       {!props.speakerAvailable && (
-        <p className="mt-2 text-xs text-slate-400">
+        <p className="mt-2 text-sm text-[var(--muted)]">
           Spoken playback is unavailable. Replies will appear in the transcript.
         </p>
       )}
@@ -58,7 +63,7 @@ export function VoiceStage(props: VoiceStageProps) {
         <button
           type="button"
           onClick={props.onSendTurn}
-          className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm"
+          className="primary-button mt-4 inline-flex items-center gap-2"
           aria-label="Send spoken turn"
         >
           <ArrowUp size={16} /> Send turn

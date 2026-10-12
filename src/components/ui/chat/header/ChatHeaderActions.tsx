@@ -15,9 +15,9 @@ export function ChatHeaderActions(props: ChatHeaderActionsProps) {
   return (
     <nav
       aria-label="Chat navigation"
-      className="ml-auto flex items-center gap-1 sm:gap-2"
+      className="chat-nav"
     >
-      <label className="mr-1 text-xs">
+      <label>
         <span className="sr-only">Level</span>
         <select
           value={props.level}
@@ -42,7 +42,7 @@ export function ChatHeaderActions(props: ChatHeaderActionsProps) {
         aria-label="New chat"
         title="New chat"
       >
-        <Plus size={19} />
+        <Plus size={22} />
       </button>
       <button
         onClick={props.onChangeLanguages}
@@ -50,7 +50,7 @@ export function ChatHeaderActions(props: ChatHeaderActionsProps) {
         aria-label="Languages"
         title="Change languages"
       >
-        <Languages size={19} />
+        <Languages size={22} />
       </button>
       <a
         href="https://github.com/Yvesei/LangBot"
@@ -60,7 +60,7 @@ export function ChatHeaderActions(props: ChatHeaderActionsProps) {
         aria-label="GitHub repository"
         title="GitHub"
       >
-        <Github size={18} />
+        <Github size={22} />
       </a>
     </nav>
   );

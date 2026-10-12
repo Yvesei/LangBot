@@ -28,7 +28,7 @@ export function ConversationStarters({
   onStartConversation,
 }: ConversationStartersProps) {
   return (
-    <div className="mt-8 grid w-full gap-2 text-left sm:grid-cols-3">
+    <div className="mt-7 grid w-full gap-3 text-left sm:grid-cols-3">
       {CONVERSATION_STARTERS.map(({ icon: Icon, title, prompt }) => (
         <button
           key={title}
@@ -37,13 +37,13 @@ export function ConversationStarters({
           disabled={loading}
         >
           <Icon
-            size={17}
-            strokeWidth={1.6}
+            size={23}
+            strokeWidth={2}
           />
           <span>{title}</span>
           <ArrowUpRight
-            size={14}
-            className="ml-auto opacity-40"
+            size={20}
+            className="ml-auto starter-arrow"
           />
         </button>
       ))}

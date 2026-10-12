@@ -15,24 +15,35 @@ export function ConversationWelcome({
 }: ConversationWelcomeProps) {
   return (
     <div className="welcome">
-      <span className="welcome-mark">
+      <span
+        className="welcome-mark"
+        aria-hidden="true"
+      >
         <Bot
           size={30}
-          strokeWidth={1.4}
+          strokeWidth={2.2}
         />
       </span>
-      <p className="mb-3 mt-6 text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--muted)]">
-        Your space to practise
-      </p>
-      <h2 className="text-3xl font-medium tracking-tight sm:text-[42px] sm:leading-tight">
-        A conversation away
-        <br />
-        from better {LANGUAGES[config.targetLanguage]}.
+      <p className="eyebrow">Your space to practise</p>
+      <h2 className="welcome-title">
+        <span data-theme-content="neo">
+          Let’s talk
+          <br />
+          <span className="welcome-highlight">{LANGUAGES[config.targetLanguage]}.</span>
+        </span>
+        <span data-theme-content="original">
+          A conversation away
+          <br />
+          from better {LANGUAGES[config.targetLanguage]}.
+        </span>
       </h2>
-      <p className="mx-auto mt-4 max-w-sm text-sm leading-6 text-[var(--muted)]">
-        Talk about anything. Get gentle corrections.
-        <br />
-        Build confidence, one message at a time.
+      <p className="welcome-copy">
+        <span data-theme-content="neo">Real conversations. Helpful corrections.</span>
+        <span data-theme-content="original">
+          Talk about anything. Get gentle corrections.
+          <br />
+          Build confidence, one message at a time.
+        </span>
       </p>
       <ConversationStarters
         loading={loading}

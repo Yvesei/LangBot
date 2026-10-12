@@ -40,10 +40,8 @@ export function MessageBody(props: MessageBodyProps) {
         {content}
       </div>
       {props.message.role === 'user' && props.changed && correction && (
-        <details className="mt-3 text-sm">
-          <summary className="cursor-pointer text-xs text-[var(--muted)]">
-            Why these changes?
-          </summary>
+        <details className="correction-details">
+          <summary>Why these changes?</summary>
           <ul
             className="mt-2 list-disc space-y-2 pl-5"
             lang={props.config.nativeLanguage}

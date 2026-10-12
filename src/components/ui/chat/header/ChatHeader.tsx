@@ -1,6 +1,7 @@
 import { Bot } from 'lucide-react';
 import { LANGUAGES, type LanguageConfig, type Level } from '@/lib/schemas';
 import { ChatHeaderActions } from './ChatHeaderActions';
+import { ThemeSwitcher } from './ThemeSwitcher';
 
 interface ChatHeaderProps {
   config: LanguageConfig | null;
@@ -19,28 +20,43 @@ export function ChatHeader(props: ChatHeaderProps) {
 
   return (
     <header className="chat-header flex-wrap">
-      <div className="flex items-center gap-3">
+      <div className="chat-brand flex items-center gap-3">
         <span className="brand-mark">
           <Bot
-            size={20}
-            strokeWidth={1.7}
+            size={27}
+            strokeWidth={2.3}
           />
         </span>
-        <h1 className="text-base font-semibold tracking-tight">
+        <h1 className="brand-title">
           LangBot
-          <span className="ml-2 hidden text-xs font-normal text-[var(--muted)] sm:inline">
+          <span
+            data-theme-content="original"
+            className="ml-2 hidden text-sm font-normal text-[var(--muted)] sm:inline"
+          >
             / {languageName}
           </span>
         </h1>
+        {props.config && (
+          <span
+            data-theme-content="neo"
+            className="language-chip"
+            title={languageName}
+          >
+            {languageName}
+          </span>
+        )}
       </div>
-      <ChatHeaderActions
-        level={props.level}
-        onLevelChange={props.onLevelChange}
-        onChangeLanguages={props.onChangeLanguages}
-        onNewChat={props.onNewChat}
-        reviewCount={props.reviewCount}
-        onOpenReview={props.onOpenReview}
-      />
+      <div className="header-controls">
+        <ChatHeaderActions
+          level={props.level}
+          onLevelChange={props.onLevelChange}
+          onChangeLanguages={props.onChangeLanguages}
+          onNewChat={props.onNewChat}
+          reviewCount={props.reviewCount}
+          onOpenReview={props.onOpenReview}
+        />
+        <ThemeSwitcher />
+      </div>
     </header>
   );
 }

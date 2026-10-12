@@ -20,7 +20,7 @@ function ChatNotices({
       {error && (
         <p
           role="alert"
-          className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-200"
+          className="notice-error mt-4"
         >
           {error}
         </p>
@@ -28,7 +28,7 @@ function ChatNotices({
       {storageWarning && (
         <p
           role="status"
-          className="mt-4 text-sm text-amber-700 dark:text-amber-300"
+          className="mt-4 text-base font-medium text-[var(--muted)]"
         >
           {storageWarning}
         </p>
@@ -56,8 +56,8 @@ export default function ChatPage() {
             : undefined
         }
       />
-      <main className="flex min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-3xl flex-col px-5 py-6 sm:px-6">
+      <main className="chat-main flex min-h-0 flex-1 overflow-y-auto">
+        <div className="content-column">
           <ChatConversation
             state={state}
             actions={actions}

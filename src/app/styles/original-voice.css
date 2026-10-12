@@ -1,0 +1,171 @@
+:root[data-theme='original'] .voice-dialog {
+  --background: #121713;
+  --foreground: #eff2eb;
+  --surface: #1b221c;
+  --soft: #232d24;
+  --muted: #a0b2a4;
+  --line: #ffffff1a;
+  --frame-border: 1px solid var(--line);
+  --icon-hover-background: var(--soft);
+  --icon-hover-foreground: var(--foreground);
+  --subtle-hover-background: var(--line);
+  --voice-header-padding: 0;
+  --voice-header-border: none;
+  --voice-transcript-radius: 24px;
+  --voice-heading-background: transparent;
+  --voice-heading-foreground: var(--foreground);
+  --voice-bubble-padding: 12px 16px;
+  --voice-bubble-radius: 16px 16px 16px 4px;
+  --voice-user-background: transparent;
+  --voice-user-foreground: var(--foreground);
+  --voice-user-muted: var(--muted);
+  --voice-user-padding: 0;
+  --voice-unavailable-radius: 24px;
+}
+
+:root[data-theme='original'] .voice-dialog :focus-visible {
+  outline-color: #c9e5ce;
+}
+
+:root[data-theme='original'] .voice-dialog .icon-button {
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--foreground);
+}
+
+:root[data-theme='original'] .icon-button.voice-end {
+  width: 52px;
+  height: 52px;
+  background: var(--error-background);
+  color: var(--error-foreground);
+  border: none;
+}
+
+:root[data-theme='original'] .voice-end.icon-button:hover:not(:disabled) {
+  background: #ffc1b9;
+  color: var(--error-foreground);
+}
+
+:root[data-theme='original'] .voice-transcript-header > p {
+  color: var(--muted);
+}
+
+:root[data-theme='original'] .voice-orb {
+  display: block;
+  border: none;
+  rotate: none;
+  position: relative;
+  isolation: isolate;
+  width: clamp(9rem, 24vw, 14rem);
+  aspect-ratio: 1;
+  border-radius: 46% 54% 62% 38% / 45% 42% 58% 55%;
+  background: radial-gradient(
+    circle at 32% 28%,
+    #f3f9e6 0,
+    #c9e5ce 22%,
+    #719885 58%,
+    #2e5141 100%
+  );
+  box-shadow:
+    0 0 5rem rgb(139 184 143 / 20%),
+    inset 0 0 2.5rem rgb(255 255 255 / 25%);
+  animation:
+    voice-orb-morph 7s ease-in-out infinite,
+    voice-orb-float 4s ease-in-out infinite;
+}
+
+:root[data-theme='original'] .voice-orb::before,
+:root[data-theme='original'] .voice-orb::after,
+:root[data-theme='original'] .voice-orb > div {
+  content: '';
+  position: absolute;
+  inset: 12%;
+  border-radius: inherit;
+  background: radial-gradient(circle at 65% 70%, rgb(255 255 255 / 45%), transparent 42%);
+  filter: blur(0.4rem);
+}
+
+:root[data-theme='original'] .voice-orb::after {
+  inset: -9%;
+  z-index: -1;
+  background: #8bb88f;
+  opacity: 0.2;
+  filter: blur(1.5rem);
+}
+
+:root[data-theme='original'] .voice-orb[data-state='listening'] {
+  animation-duration: 4s, 2.4s;
+  box-shadow:
+    0 0 7rem rgb(139 184 143 / 25%),
+    inset 0 0 2.5rem rgb(255 255 255 / 30%);
+}
+
+:root[data-theme='original'] .voice-orb[data-state='thinking'] {
+  filter: saturate(0.75);
+  animation-duration: 10s, 3s;
+}
+
+:root[data-theme='original'] .voice-orb[data-state='speaking'] {
+  animation:
+    voice-orb-morph 2.8s ease-in-out infinite,
+    voice-orb-speak 0.9s ease-in-out infinite alternate;
+}
+
+:root[data-theme='original'] .voice-orb[data-state='paused'],
+:root[data-theme='original'] .voice-orb[data-state='error'] {
+  filter: grayscale(0.75) brightness(0.7);
+  animation-play-state: paused;
+}
+
+@keyframes voice-orb-morph {
+  0%,
+  100% {
+    border-radius: 46% 54% 62% 38% / 45% 42% 58% 55%;
+    transform: rotate(-2deg);
+  }
+  33% {
+    border-radius: 58% 42% 40% 60% / 58% 54% 46% 42%;
+    transform: rotate(2deg);
+  }
+  66% {
+    border-radius: 42% 58% 55% 45% / 38% 60% 40% 62%;
+    transform: rotate(-1deg);
+  }
+}
+
+@keyframes voice-orb-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -0.5rem;
+  }
+}
+
+@keyframes voice-orb-speak {
+  from {
+    scale: 0.96;
+    filter: hue-rotate(-8deg) brightness(0.95);
+  }
+  to {
+    scale: 1.04;
+    filter: hue-rotate(8deg) brightness(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme='original'] .voice-orb {
+    animation: none !important;
+  }
+}
+:root[data-theme='original']
+  :is(.voice-status, .voice-title, .voice-unavailable-title, .voice-transcript-title) {
+  font-weight: 500;
+}
+:root[data-theme='original'] .voice-transcript-title {
+  font-size: 18px;
+}
+:root[data-theme='original'] .voice-unavailable-title {
+  font-size: 20px;
+}

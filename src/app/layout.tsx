@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { DEFAULT_THEME, THEME_INIT_SCRIPT } from '@/lib/config/theme';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -12,7 +13,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      data-theme={DEFAULT_THEME}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="antialiased">{children}</body>
     </html>
   );

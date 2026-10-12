@@ -15,7 +15,7 @@ export function VoiceCallControls(props: VoiceCallControlsProps) {
       <button
         type="button"
         onClick={props.onToggleMicrophone}
-        className="rounded-full border border-white/15 bg-white/10 p-4 hover:bg-white/15"
+        className="icon-button"
         aria-label={props.micEnabled ? 'Mute microphone' : 'Unmute microphone'}
       >
         {props.micEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
@@ -23,7 +23,7 @@ export function VoiceCallControls(props: VoiceCallControlsProps) {
       <button
         type="button"
         onClick={props.onClose}
-        className="rounded-full bg-rose-600 p-5 hover:bg-rose-500"
+        className="icon-button voice-end"
         aria-label="End voice call"
       >
         <PhoneOff className="h-6 w-6" />
@@ -32,7 +32,7 @@ export function VoiceCallControls(props: VoiceCallControlsProps) {
         type="button"
         onClick={props.onToggleSpeaker}
         disabled={!props.speakerAvailable}
-        className="rounded-full border border-white/15 bg-white/10 p-4 hover:bg-white/15"
+        className="icon-button"
         aria-label={props.speakerEnabled ? 'Mute spoken replies' : 'Play spoken replies'}
       >
         {props.speakerEnabled ? (

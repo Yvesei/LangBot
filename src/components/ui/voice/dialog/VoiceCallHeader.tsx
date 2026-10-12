@@ -10,15 +10,15 @@ interface VoiceCallHeaderProps {
 
 export function VoiceCallHeader({ config, closeButton, onClose }: VoiceCallHeaderProps) {
   return (
-    <header className="flex items-center justify-between gap-4">
+    <header className="voice-header">
       <div>
         <h2
           id="voice-call-title"
-          className="text-lg font-semibold"
+          className="voice-title text-xl font-extrabold tracking-tight sm:text-2xl"
         >
           Voice call with LangBot
         </h2>
-        <p className="text-sm text-slate-400">
+        <p className="mt-2 text-base text-[var(--muted)]">
           {LANGUAGES[config.nativeLanguage]} + {LANGUAGES[config.targetLanguage]} · Mix
           both as you speak
         </p>
@@ -27,7 +27,7 @@ export function VoiceCallHeader({ config, closeButton, onClose }: VoiceCallHeade
         ref={closeButton}
         type="button"
         onClick={onClose}
-        className="rounded-full border border-white/20 p-3 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+        className="icon-button"
         aria-label="End voice call"
       >
         <X className="h-5 w-5" />

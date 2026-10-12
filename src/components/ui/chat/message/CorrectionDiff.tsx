@@ -25,7 +25,7 @@ export function CorrectionDiff({
           return (
             <del
               key={index}
-              className="text-red-600 dark:text-red-400"
+              className="correction-removed"
             >
               <span className="sr-only">Removed: </span>
               {part.text}
@@ -36,7 +36,7 @@ export function CorrectionDiff({
           return (
             <ins
               key={index}
-              className="text-green-700 no-underline dark:text-green-400"
+              className="correction-added"
             >
               <span className="sr-only">Added: </span>
               {part.text}

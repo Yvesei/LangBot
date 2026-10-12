@@ -28,7 +28,7 @@ export function ChatInputField(props: ChatInputFieldProps) {
         disabled={props.disabled}
         onKeyDown={props.onKeyDown}
         placeholder="Say something. Make mistakes. Learn."
-        className="min-h-12 w-full resize-none bg-transparent px-2 py-3 text-[15px] outline-none placeholder:text-[var(--muted)]"
+        className="min-h-10 w-full resize-none bg-transparent px-1 py-2 text-base leading-relaxed outline-none placeholder:text-[var(--muted)]"
       />
     </>
   );
