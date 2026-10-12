@@ -105,6 +105,7 @@
 .sidebar-footer {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   margin-top: auto;
   padding-top: 16px;
