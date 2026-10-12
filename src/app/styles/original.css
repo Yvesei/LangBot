@@ -1,3 +1,12 @@
+:root[data-theme='original'] :is(.send-button, .primary-button, .sidebar-new-chat) {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+:root[data-theme='original'] .sidebar-new-chat:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
 :root[data-theme='original'] .send-button svg {
   width: 20px;
   height: 20px;
@@ -210,6 +219,7 @@
 }
 
 :root[data-theme='original'] .review-card-face {
+  --muted: var(--on-accent);
   padding: 28px;
   border-radius: 16px;
 }

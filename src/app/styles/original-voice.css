@@ -1,9 +1,9 @@
 :root[data-theme='original'] .voice-dialog {
-  --background: #121713;
-  --foreground: #eff2eb;
-  --surface: #1b221c;
-  --soft: #232d24;
-  --muted: #a0b2a4;
+  --background: #0d1117;
+  --foreground: #edf2f7;
+  --surface: #151b24;
+  --soft: #1c2531;
+  --muted: #a5b1c1;
   --line: #ffffff1a;
   --frame-border: 1px solid var(--line);
   --icon-hover-background: var(--soft);
@@ -24,7 +24,7 @@
 }
 
 :root[data-theme='original'] .voice-dialog :focus-visible {
-  outline-color: #c9e5ce;
+  outline-color: #7bdcf0;
 }
 
 :root[data-theme='original'] .voice-dialog .icon-button {
@@ -61,13 +61,13 @@
   border-radius: 46% 54% 62% 38% / 45% 42% 58% 55%;
   background: radial-gradient(
     circle at 32% 28%,
-    #f3f9e6 0,
-    #c9e5ce 22%,
-    #719885 58%,
-    #2e5141 100%
+    #e8fbff 0,
+    #9de7f3 22%,
+    #308b9e 58%,
+    #143c51 100%
   );
   box-shadow:
-    0 0 5rem rgb(139 184 143 / 20%),
+    0 0 5rem rgb(74 197 224 / 20%),
     inset 0 0 2.5rem rgb(255 255 255 / 25%);
   animation:
     voice-orb-morph 7s ease-in-out infinite,
@@ -88,7 +88,7 @@
 :root[data-theme='original'] .voice-orb::after {
   inset: -9%;
   z-index: -1;
-  background: #8bb88f;
+  background: #4ac5e0;
   opacity: 0.2;
   filter: blur(1.5rem);
 }
@@ -96,7 +96,7 @@
 :root[data-theme='original'] .voice-orb[data-state='listening'] {
   animation-duration: 4s, 2.4s;
   box-shadow:
-    0 0 7rem rgb(139 184 143 / 25%),
+    0 0 7rem rgb(74 197 224 / 25%),
     inset 0 0 2.5rem rgb(255 255 255 / 30%);
 }
 

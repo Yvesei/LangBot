@@ -55,11 +55,28 @@
 }
 
 :root[data-theme='original'] {
+  --background: #f7f9fc;
+  --foreground: #18212b;
+  --surface: #ffffff;
+  --soft: #edf1f5;
+  --muted: #566575;
+  --line: #dce3ea;
+  --accent: #0e7490;
+  --accent-hover: #155e75;
+  --accent-foreground: #ffffff;
+  --focus-ring: var(--accent);
+  --yellow: var(--soft);
+  --mint: var(--soft);
+  --lilac: var(--soft);
+  --on-accent: var(--foreground);
+  --error-background: #fff0f0;
+  --error-foreground: #9e3545;
+  --success-background: #e4f1ed;
+  --success-foreground: #245649;
   --sidebar-background: var(--soft);
   --sidebar-hover-background: var(--background);
   --sidebar-badge-background: var(--mint);
   --sidebar-badge-radius: 999px;
-  --line: #e8e0d4;
   --control-border: none;
   --frame-border: 1px solid var(--line);
   --control-radius: 12px;
@@ -85,8 +102,8 @@
   --send-radius: 50%;
   --primary-padding: 12px 18px;
   --subtle-radius: 9px;
-  --send-hover-background: var(--lilac);
-  --primary-hover-background: var(--lilac);
+  --send-hover-background: var(--accent-hover);
+  --primary-hover-background: var(--accent-hover);
   --subtle-hover-background: var(--line);
   --composer-shadow: 0 4px 24px #00000004;
   --brand-rotate: none;
@@ -95,6 +112,18 @@
 
 @media (prefers-color-scheme: dark) {
   :root[data-theme='original'] {
-    --line: #49473e;
+    --background: #0d1117;
+    --foreground: #edf2f7;
+    --surface: #151b24;
+    --soft: #1c2531;
+    --muted: #a5b1c1;
+    --line: #303b49;
+    --accent: #7bdcf0;
+    --accent-hover: #a0e5f3;
+    --accent-foreground: #0c1920;
+    --error-background: #36202a;
+    --error-foreground: #f2a7b1;
+    --success-background: #17342c;
+    --success-foreground: #a4d8c4;
   }
 }
