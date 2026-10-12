@@ -12,14 +12,15 @@ export function ThemeSwitcher() {
   return (
     <button
       type="button"
-      className="icon-button theme-switcher"
+      className="sidebar-action theme-switcher"
       onClick={toggleTheme}
       aria-label={actionLabel}
       title={actionLabel}
     >
       <Palette size={20} />
+      <span aria-hidden="true">Appearance</span>
       <span
-        className="hidden lg:inline"
+        className="sidebar-value"
         aria-hidden="true"
       >
         {THEMES[theme].shortLabel}

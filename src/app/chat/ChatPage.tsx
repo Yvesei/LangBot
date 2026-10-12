@@ -1,6 +1,6 @@
 'use client';
 
-import { ChatHeader } from '@/components/ui/chat/header/ChatHeader';
+import { ChatLayout } from '@/components/ui/chat/sidebar/ChatLayout';
 import { ChatInput } from '@/components/ui/chat/input/ChatInput';
 import { ReviewDialog } from '@/components/ui/review/dialog/ReviewDialog';
 import { VoiceCall } from '@/components/ui/voice/VoiceCall';
@@ -42,20 +42,20 @@ export default function ChatPage() {
   const actions = useChatActions(state);
 
   return (
-    <div className="app-shell">
-      <ChatHeader
-        config={state.config}
-        level={state.level}
-        onLevelChange={actions.changeLevel}
-        onNewChat={actions.newChat}
-        onChangeLanguages={actions.changeLanguages}
-        reviewCount={state.reviewGroups.length}
-        onOpenReview={
+    <ChatLayout
+      navigation={{
+        config: state.config,
+        level: state.level,
+        onLevelChange: actions.changeLevel,
+        onNewChat: actions.newChat,
+        onChangeLanguages: actions.changeLanguages,
+        reviewCount: state.reviewGroups.length,
+        onOpenReview:
           state.config && !state.isSelectingLanguages
             ? () => state.setReviewOpen(true)
-            : undefined
-        }
-      />
+            : undefined,
+      }}
+    >
       <main className="chat-main flex min-h-0 flex-1 overflow-y-auto">
         <div className="content-column">
           <ChatConversation
@@ -99,6 +99,6 @@ export default function ChatPage() {
           onClose={() => state.setReviewOpen(false)}
         />
       )}
-    </div>
+    </ChatLayout>
   );
 }

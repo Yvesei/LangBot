@@ -3,13 +3,6 @@
   height: 20px;
 }
 
-:root[data-theme='original'] .chat-header {
-  gap: 12px;
-  padding: 20px 28px;
-  background: transparent;
-  border: none;
-}
-
 :root[data-theme='original'] .brand-mark {
   width: 34px;
   height: 34px;
@@ -29,40 +22,12 @@
   letter-spacing: -0.025em;
 }
 
-:root[data-theme='original'] :is(.header-controls, .chat-nav) {
-  gap: 8px;
-}
-
-:root[data-theme='original'] .icon-button.theme-switcher {
-  width: auto;
-  padding: 0 10px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
 :root[data-theme='original'] .level-select {
   height: 38px;
   padding: 8px 4px;
   background: transparent;
   color: var(--muted);
   font-weight: 400;
-}
-
-:root[data-theme='original'] .icon-button.nav-flashcards {
-  width: auto;
-  padding: 0 10px;
-  font-size: 14px;
-  font-weight: 400;
-}
-
-:root[data-theme='original'] .card-count {
-  top: -3px;
-  right: -3px;
-  min-width: 20px;
-  height: 20px;
-  background: var(--mint);
-  border-radius: 999px;
-  font-weight: 600;
 }
 
 :root[data-theme='original'] .chat-main {
@@ -285,20 +250,6 @@
 }
 
 @media (max-width: 639px) {
-  :root[data-theme='original'] .chat-header {
-    padding: 14px 16px;
-  }
-
-  :root[data-theme='original'] .icon-button.theme-switcher {
-    width: 38px;
-    padding: 0;
-  }
-
-  :root[data-theme='original'] .icon-button.nav-flashcards {
-    width: 38px;
-    padding: 0;
-  }
-
   :root[data-theme='original'] .content-column {
     padding: 24px 20px;
   }

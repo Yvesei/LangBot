@@ -28,7 +28,7 @@ export function ConversationStarters({
   onStartConversation,
 }: ConversationStartersProps) {
   return (
-    <div className="mt-7 grid w-full gap-3 text-left sm:grid-cols-3">
+    <div className="conversation-starters">
       {CONVERSATION_STARTERS.map(({ icon: Icon, title, prompt }) => (
         <button
           key={title}

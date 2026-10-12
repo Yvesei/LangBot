@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import Page from '@/app/page';
-import { ThemeSwitcher } from '@/components/ui/chat/header/ThemeSwitcher';
+import { ThemeSwitcher } from '@/components/ui/chat/sidebar/ThemeSwitcher';
 import { send } from '@/lib/api';
 import { THEME_INIT_SCRIPT, THEME_STORAGE_KEY } from '@/lib/config/theme';
 import { toggleTheme } from '@/lib/theme/store';

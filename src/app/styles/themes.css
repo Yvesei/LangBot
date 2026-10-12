@@ -55,6 +55,10 @@
 }
 
 :root[data-theme='original'] {
+  --sidebar-background: var(--soft);
+  --sidebar-hover-background: var(--background);
+  --sidebar-badge-background: var(--mint);
+  --sidebar-badge-radius: 999px;
   --line: #e8e0d4;
   --control-border: none;
   --frame-border: 1px solid var(--line);

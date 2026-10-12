@@ -2,6 +2,7 @@
 
 @import './styles/themes.css';
 @import './styles/chat.css';
+@import './styles/sidebar.css';
 @import './styles/review.css';
 @import './styles/voice.css';
 @import './styles/original.css';
@@ -52,6 +53,7 @@ button:disabled {
 .send-button,
 .primary-button,
 .subtle-button,
+.sidebar-action,
 .starter,
 .level-select,
 .setup-select {
@@ -108,9 +110,14 @@ button:disabled {
   font-size: 14px;
   border-radius: var(--subtle-radius, var(--control-radius));
 }
-:is(.icon-button, .send-button, .primary-button, .subtle-button, .starter):hover:not(
-    :disabled
-  ) {
+:is(
+    .icon-button,
+    .send-button,
+    .primary-button,
+    .subtle-button,
+    .sidebar-action,
+    .starter
+  ):hover:not(:disabled) {
   translate: var(--hover-translate);
   box-shadow: var(--shadow-hover);
 }
@@ -119,9 +126,14 @@ button:disabled {
   background: var(--icon-hover-background);
   color: var(--icon-hover-foreground);
 }
-:is(.icon-button, .send-button, .primary-button, .subtle-button, .starter):active:not(
-    :disabled
-  ) {
+:is(
+    .icon-button,
+    .send-button,
+    .primary-button,
+    .subtle-button,
+    .sidebar-action,
+    .starter
+  ):active:not(:disabled) {
   translate: var(--active-translate);
   box-shadow: none;
 }
