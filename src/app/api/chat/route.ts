@@ -14,7 +14,7 @@ export const POST = route(chatRequestSchema, async (body, signal) => {
     [
       {
         role: 'system',
-        content: tutorPrompt(body.languageConfig, body.userLevel),
+        content: tutorPrompt(body.languageConfig),
       },
       ...body.history,
       {

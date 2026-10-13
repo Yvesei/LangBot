@@ -45,7 +45,7 @@ test('shares the five-request limit across text and transcription routes and res
   const correctionRoute = {
     handler: correct,
     path: 'correct',
-    body: { content: chatBody.prompt, languageConfig, userLevel: 'beginner' },
+    body: { content: chatBody.prompt, languageConfig },
     output: corrected,
   };
   const translationRoute = {

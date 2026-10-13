@@ -4,7 +4,7 @@ A Next.js-based AI-powered language learning application that helps users practi
 
 ## 🌟 Features
 
-- **Interactive Chat Interface**: Practice through natural conversations, with starter suggestions and a selectable beginner, intermediate, or advanced level
+- **Interactive Chat Interface**: Practice through natural conversations with starter suggestions and a compact sidebar showing your selected learning language
 - **Multi-language Support**: Choose your native and target languages from 12 supported languages
 - **Translation**: Translate replies into your native language and toggle back to the original
 - **Inline Corrections**: See grammar, spelling, and punctuation changes inside your message, with explanations in your native language
@@ -221,8 +221,9 @@ Development uses `.next-dev`; production builds use `.next` so a build does not 
 ### Initial Setup
 
 1. **Select Languages**: Choose your native language and a different target language.
-2. **Choose Your Level**: Use the header selector for beginner, intermediate, or advanced replies.
-3. **Start Chatting**: Type a message or choose a conversation starter. Send with Enter or the send button; Shift+Enter adds a line.
+2. **Start Chatting**: Type a message or choose a conversation starter. Send with Enter or the send button; Shift+Enter adds a line.
+
+The language button in the sidebar displays the language you are practising. Click it to change your language pair.
 
 ![Getting started](./imgs/getting_started.png)
 
@@ -307,7 +308,6 @@ Main conversation endpoint. The tutor reply, grammar edits, and native-word repl
     "nativeLanguage": "fr",
     "targetLanguage": "en"
   },
-  "userLevel": "beginner",
   "learningFocus": []
 }
 ```
@@ -345,7 +345,7 @@ sequenceDiagram
     UI->>UI: Add pending user message
     UI->>UI: Bound history and build request
     UI->>Client: send(body, signal)
-    Client->>API: POST prompt, history, languages, level, focus
+    Client->>API: POST prompt, history, languages, focus
     API->>API: Check limit and validate request
     API->>Mistral: One schema-constrained completion
     Mistral-->>API: Reply and correction
@@ -415,8 +415,7 @@ Standalone correction endpoint. The chat UI already receives corrections from `/
   "languageConfig": {
     "nativeLanguage": "fr",
     "targetLanguage": "en"
-  },
-  "userLevel": "beginner"
+  }
 }
 ```
 
@@ -497,14 +496,13 @@ sequenceDiagram
 
 The AI tutor is designed to:
 
-- **Adapt to User Level**: Adjust its replies for beginner, intermediate, or advanced practice without rewriting valid learner text to match that level
 - **Encourage Expression**: Continue natural conversation and explain corrections in the learner's native language
 - **Preserve Meaning**: Fix demonstrable errors and clear native-word gaps while preserving valid wording, tone, names, and formatting
 - **Maintain Context**: Use bounded recent history and saved correction explanations for useful follow-up practice
 - **Stay Engaging**: Ask a relevant follow-up question
 - **Be Patient**: Support practice without grading the learner
 
-Corrections and transcripts are model-generated suggestions. The learner selects their level; the app does not measure CEFR proficiency or guarantee linguistic accuracy.
+Corrections and transcripts are model-generated suggestions; the app does not guarantee linguistic accuracy.
 
 ## 🔧 Configuration
 
@@ -516,17 +514,17 @@ Corrections and transcripts are model-generated suggestions. The learner selects
 
 ### Language Configuration
 
-Select languages and level through the UI. The supported pair and level are validated before settings are saved in browser storage.
+Select languages through the UI. The supported pair is validated before settings are saved in browser storage.
 
 ```typescript
 import { saveLanguageConfigToStorage } from '@/lib/config/language';
 
-saveLanguageConfigToStorage({ nativeLanguage: 'en', targetLanguage: 'fr' }, 'beginner');
+saveLanguageConfigToStorage({ nativeLanguage: 'en', targetLanguage: 'fr' });
 ```
 
 ### Conversation Context
 
-Recent completed messages and the selected languages and level are included in chat requests. Pending or failed turns are excluded from history. The browser trims history to fit the server's character and byte limits.
+Recent completed messages and the selected languages are included in chat requests. Pending or failed turns are excluded from history. The browser trims history to fit the server's character and byte limits.
 
 ```typescript
 import type { ChatRequest } from '@/lib/schemas';
@@ -538,7 +536,6 @@ const request: ChatRequest = {
     { role: 'assistant', content: 'Bonjour ! Comment vas-tu ?' },
   ],
   languageConfig: { nativeLanguage: 'en', targetLanguage: 'fr' },
-  userLevel: 'beginner',
   learningFocus: [],
 };
 ```
@@ -555,7 +552,7 @@ const request: ChatRequest = {
 ## 🔐 Security
 
 - API keys stay on the server in environment variables
-- Zod validates request fields, language and level values, history roles, and provider output
+- Zod validates request fields, language values, history roles, and provider output
 - JSON bodies are limited to 32 KiB with a five-second read deadline; audio bodies are limited to 2 MiB
 - Unknown request fields and client-supplied system messages are rejected
 - Requests with a different Origin are rejected; shared route helpers enforce usage limits

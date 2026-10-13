@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ConversationMessage } from '@/lib/chat/conversation';
-import { getLanguageConfigFromStorage, getLevelFromStorage } from '@/lib/config/language';
+import { getLanguageConfigFromStorage } from '@/lib/config/language';
 import { loadCards, sameLanguages, saveCards, type StudyCard } from '@/lib/learning';
 import { groupReviewCards } from '@/lib/review';
-import type { LanguageConfig, Level } from '@/lib/schemas';
+import type { LanguageConfig } from '@/lib/schemas';
 
 interface ActiveChatRequest {
   controller: AbortController;
@@ -20,7 +20,6 @@ function getVisibleCards(cards: StudyCard[], config: LanguageConfig | null) {
 
 export function useChatState() {
   const [config, setConfig] = useState<LanguageConfig | null>(null);
-  const [level, setLevel] = useState<Level>('beginner');
   const [isReady, setIsReady] = useState(false);
   const [isSelectingLanguages, setIsSelectingLanguages] = useState(false);
   const [prompt, setPrompt] = useState('');
@@ -40,7 +39,6 @@ export function useChatState() {
     const savedCards = loadCards();
 
     setConfig(savedConfig);
-    setLevel(getLevelFromStorage());
     setCards(savedCards);
     setIsReady(true);
 
@@ -69,8 +67,6 @@ export function useChatState() {
   return {
     config,
     setConfig,
-    level,
-    setLevel,
     isReady,
     setIsReady,
     isSelectingLanguages,

@@ -1,9 +1,4 @@
-import {
-  languageConfigSchema,
-  levelSchema,
-  type LanguageConfig,
-  type Level,
-} from '../schemas';
+import { languageConfigSchema, type LanguageConfig } from '../schemas';
 
 export function getLanguageConfigFromStorage(): LanguageConfig | null {
   if (typeof window === 'undefined') {
@@ -24,23 +19,11 @@ export function getLanguageConfigFromStorage(): LanguageConfig | null {
   }
 }
 
-export function getLevelFromStorage(): Level {
-  try {
-    return levelSchema.parse(localStorage.getItem('langbot-level'));
-  } catch {
-    return 'beginner';
-  }
-}
-
-export function saveLanguageConfigToStorage(
-  config: LanguageConfig,
-  level: Level,
-): boolean {
+export function saveLanguageConfigToStorage(config: LanguageConfig): boolean {
   const parsed = languageConfigSchema.parse(config);
   try {
     localStorage.setItem('langbot-native', parsed.nativeLanguage);
     localStorage.setItem('langbot-target', parsed.targetLanguage);
-    localStorage.setItem('langbot-level', level);
     return true;
   } catch {
     return false;

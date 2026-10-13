@@ -17,7 +17,7 @@ export function route<Schema extends z.ZodType>(
     if (!parsed.success) {
       throw new ApiError(
         400,
-        'Invalid request. Check the languages, level, text length, and conversation.',
+        'Invalid request. Check the languages, text length, and conversation.',
       );
     }
 
