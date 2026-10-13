@@ -61,7 +61,7 @@
   width: 100%;
   min-height: 40px;
   padding: 8px 10px;
-  background: var(--icon-background);
+  background: var(--sidebar-control-background, var(--icon-background));
   color: var(--foreground);
   font-size: 15px;
   font-weight: var(--control-weight);
@@ -110,6 +110,10 @@
   margin-top: auto;
   padding-top: 16px;
   border-top: 1px solid var(--line);
+}
+
+.chat-sidebar .sidebar-footer .icon-button {
+  background: var(--sidebar-control-background, var(--icon-background));
 }
 
 .icon-button.sidebar-toggle,

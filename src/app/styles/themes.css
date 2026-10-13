@@ -14,6 +14,8 @@
   --mint: #c8e9bc;
   --lilac: #d8c4ff;
   --on-accent: #202020;
+  --sidebar-background: var(--soft);
+  --sidebar-control-background: var(--background);
   --error-background: #ffe1db;
   --error-foreground: #8b2529;
   --success-background: #d7edc7;
@@ -74,6 +76,7 @@
   --success-background: #e4f1ed;
   --success-foreground: #245649;
   --sidebar-background: var(--soft);
+  --sidebar-control-background: transparent;
   --sidebar-hover-background: var(--background);
   --sidebar-badge-background: var(--mint);
   --sidebar-badge-radius: 999px;
