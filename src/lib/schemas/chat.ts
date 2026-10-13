@@ -5,7 +5,7 @@ import {
   MAX_MESSAGE_LENGTH,
 } from '../config/limits';
 import { correctionSchema } from './correction';
-import { languageConfigSchema, levelSchema } from './language';
+import { languageConfigSchema } from './language';
 
 const historyMessageSchema = z
   .object({
@@ -34,7 +34,6 @@ export const chatRequestSchema = z
     prompt: z.string().trim().min(1).max(MAX_MESSAGE_LENGTH),
     history: z.array(historyMessageSchema).max(MAX_HISTORY_MESSAGES).default([]),
     languageConfig: languageConfigSchema,
-    userLevel: levelSchema,
     learningFocus: z.array(z.string().min(1).max(500)).max(3).default([]),
   })
   .strict()

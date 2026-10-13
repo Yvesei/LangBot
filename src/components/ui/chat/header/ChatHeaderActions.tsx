@@ -1,10 +1,7 @@
 import { Github, Languages, Plus } from 'lucide-react';
-import type { Level } from '@/lib/schemas';
 import { ReviewToolbar } from '@/components/ui/review/ReviewToolbar';
 
 interface ChatHeaderActionsProps {
-  level: Level;
-  onLevelChange: (level: Level) => void;
   onChangeLanguages: () => void;
   onNewChat: () => void;
   reviewCount: number;
@@ -17,19 +14,6 @@ export function ChatHeaderActions(props: ChatHeaderActionsProps) {
       aria-label="Chat navigation"
       className="ml-auto flex items-center gap-1 sm:gap-2"
     >
-      <label className="mr-1 text-xs">
-        <span className="sr-only">Level</span>
-        <select
-          value={props.level}
-          onChange={(event) => props.onLevelChange(event.target.value as Level)}
-          className="level-select"
-          title="Practice level"
-        >
-          <option value="beginner">Beginner</option>
-          <option value="intermediate">Intermediate</option>
-          <option value="advanced">Advanced</option>
-        </select>
-      </label>
       {props.onOpenReview && (
         <ReviewToolbar
           reviewCount={props.reviewCount}

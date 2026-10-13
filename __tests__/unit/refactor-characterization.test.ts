@@ -186,7 +186,6 @@ test('chat history drops pending/failed turns and stops at the first oversized r
     messages,
     cards: [],
     config: languageConfig,
-    level: 'beginner',
   });
   expect(request.history).toEqual([{ role: 'user', content: 'Recent' }]);
 });
@@ -200,7 +199,6 @@ test('chat history respects UTF-8 request size and retry cutoffs', () => {
     messages,
     cards: [],
     config: languageConfig,
-    level: 'beginner' as const,
   };
   const request = buildChatRequest(options);
   expect(

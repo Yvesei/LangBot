@@ -21,7 +21,6 @@ export const tutorResult = {
 export const chatBody: ChatRequest = {
   prompt: 'I has a apple.',
   languageConfig,
-  userLevel: 'beginner',
   history: [],
   learningFocus: [],
 };

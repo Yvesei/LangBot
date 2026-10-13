@@ -32,8 +32,6 @@ export const LANGUAGES: Record<LanguageCode, string> = {
   hi: 'Hindi',
 };
 
-export const levelSchema = z.enum(['beginner', 'intermediate', 'advanced']);
-
 interface LanguagePair {
   nativeLanguage: LanguageCode;
   targetLanguage: LanguageCode;
@@ -52,4 +50,3 @@ export const languageConfigSchema = z
   .refine(hasDifferentLanguages, 'Choose two different languages.');
 
 export type LanguageConfig = z.infer<typeof languageConfigSchema>;
-export type Level = z.infer<typeof levelSchema>;

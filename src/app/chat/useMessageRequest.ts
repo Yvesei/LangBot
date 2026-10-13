@@ -159,7 +159,6 @@ export function useMessageRequest(state: ChatState) {
           messages: state.messages,
           cards: state.visibleCards,
           config,
-          level: state.level,
           retryMessageId: retryMessage?.id,
         }),
         controller.signal,

@@ -1,11 +1,9 @@
 import { Bot } from 'lucide-react';
-import { LANGUAGES, type LanguageConfig, type Level } from '@/lib/schemas';
+import { LANGUAGES, type LanguageConfig } from '@/lib/schemas';
 import { ChatHeaderActions } from './ChatHeaderActions';
 
 interface ChatHeaderProps {
   config: LanguageConfig | null;
-  level: Level;
-  onLevelChange: (level: Level) => void;
   onChangeLanguages: () => void;
   onNewChat: () => void;
   reviewCount: number;
@@ -34,8 +32,6 @@ export function ChatHeader(props: ChatHeaderProps) {
         </h1>
       </div>
       <ChatHeaderActions
-        level={props.level}
-        onLevelChange={props.onLevelChange}
         onChangeLanguages={props.onChangeLanguages}
         onNewChat={props.onNewChat}
         reviewCount={props.reviewCount}

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { MAX_MESSAGE_LENGTH } from '../config/limits';
-import { languageConfigSchema, levelSchema } from './language';
+import { languageConfigSchema } from './language';
 
 const correctionIssueSchema = z
   .object({
@@ -20,7 +20,6 @@ export const correctionRequestSchema = z
   .object({
     content: z.string().trim().min(1).max(MAX_MESSAGE_LENGTH),
     languageConfig: languageConfigSchema,
-    userLevel: levelSchema,
   })
   .strict();
 
