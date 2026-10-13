@@ -136,7 +136,7 @@ test('keeps both sides readable, shows a correction, and speaks the new reply', 
   const assistant = {
     id: 'assistant-1',
     role: 'assistant' as const,
-    content: 'What fruit do you like?',
+    content: 'What **fruit** do you like?',
     timestamp: new Date(),
     status: 'complete' as const,
     replyTo: user.id,
@@ -151,7 +151,10 @@ test('keeps both sides readable, shows a correction, and speaks the new reply', 
   expect(userMessage?.querySelector('del')).toBeInTheDocument();
   expect(userMessage?.querySelector('ins')).toBeInTheDocument();
   expect(screen.queryByText('I has a apple.')).not.toBeInTheDocument();
-  expect(screen.getByText('What fruit do you like?')).toBeInTheDocument();
+  expect(screen.getByText('fruit').tagName).toBe('STRONG');
+  expect(screen.getByText('fruit').closest('p')).toHaveTextContent(
+    'What fruit do you like?',
+  );
   expect(screen.queryByText('Suggested correction')).not.toBeInTheDocument();
   expect(speak).toHaveBeenCalledTimes(1);
   expect((speak.mock.calls[0][0] as FakeUtterance).text).toBe('What fruit do you like?');

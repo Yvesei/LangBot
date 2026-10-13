@@ -1,4 +1,5 @@
 import type { LanguageConfig } from '@/lib/schemas';
+import { BoldText } from '@/components/ui/text/BoldText';
 
 interface ReviewAnswerProps {
   text: string;
@@ -25,7 +26,7 @@ export function ReviewAnswer({ text, explanation, config, flipped }: ReviewAnswe
         lang={config.nativeLanguage}
         dir="auto"
       >
-        {explanation}
+        <BoldText text={explanation} />
       </span>
       <span className="mt-6 text-sm text-[var(--muted)]">Click to flip back</span>
     </span>

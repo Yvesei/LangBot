@@ -2,6 +2,7 @@ import type { ChatMessage } from '@/lib/types';
 import type { LanguageConfig } from '@/lib/schemas';
 import { CorrectionDiff } from './CorrectionDiff';
 import { CorrectionExplanation } from './CorrectionExplanation';
+import { BoldText } from '@/components/ui/text/BoldText';
 
 interface MessageBodyProps {
   message: ChatMessage;
@@ -16,6 +17,10 @@ export function MessageBody(props: MessageBodyProps) {
     props.message.role === 'user' && props.changed ? props.message.correction : null;
   const text = props.showTranslation ? props.translation : props.message.content;
   let content: React.ReactNode = text;
+
+  if (props.message.role === 'assistant') {
+    content = <BoldText text={text ?? ''} />;
+  }
 
   if (correction) {
     content = (
