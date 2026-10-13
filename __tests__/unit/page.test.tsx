@@ -207,7 +207,9 @@ test('English-native Spanish learners see English explanations in chat and flash
     }),
     expect.anything(),
   );
+  fireEvent.click(screen.getByRole('button', { name: 'Explain correction' }));
   expect(screen.getByText(explanation).closest('ul')).toHaveAttribute('lang', 'en');
+  fireEvent.click(screen.getByRole('button', { name: 'Close explanation' }));
   expect(JSON.parse(localStorage.getItem(STUDY_KEY)!)[0].focus).toBe(explanation);
 
   fireEvent.click(screen.getByRole('button', { name: 'Flashcards · 1' }));

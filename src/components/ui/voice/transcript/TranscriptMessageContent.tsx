@@ -1,20 +1,21 @@
 import { CorrectionDiff } from '@/components/ui/chat/message/CorrectionDiff';
-import type { LanguageCode } from '@/lib/schemas';
+import { CorrectionExplanation } from '@/components/ui/chat/message/CorrectionExplanation';
+import type { LanguageConfig } from '@/lib/schemas';
 import type { VoiceMessage } from '../voice-call-types';
 
 interface TranscriptMessageContentProps {
   message: VoiceMessage;
-  language: LanguageCode;
+  config: LanguageConfig;
 }
 
 export function TranscriptMessageContent({
   message,
-  language,
+  config,
 }: TranscriptMessageContentProps) {
+  const language = config.targetLanguage;
+  const correction = message.correction;
   const changed =
-    message.role === 'user' &&
-    message.correction &&
-    message.correction.correctedText !== message.content;
+    message.role === 'user' && correction && correction.correctedText !== message.content;
 
   return (
     <div
@@ -27,14 +28,20 @@ export function TranscriptMessageContent({
       dir="auto"
     >
       <p className="whitespace-pre-wrap">
-        {changed && message.correction ? (
+        {changed ? (
           <CorrectionDiff
             original={message.content}
-            corrected={message.correction.correctedText}
+            corrected={correction.correctedText}
             language={language}
           />
         ) : (
           message.content
+        )}
+        {changed && (
+          <CorrectionExplanation
+            issues={correction.issues}
+            language={config.nativeLanguage}
+          />
         )}
       </p>
       {message.role === 'user' && message.correction === null && (

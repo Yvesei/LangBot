@@ -1,10 +1,10 @@
-import type { LanguageCode } from '@/lib/schemas';
+import type { LanguageConfig } from '@/lib/schemas';
 import type { VoiceMessage } from '../voice-call-types';
 import { TranscriptMessageContent } from './TranscriptMessageContent';
 
 interface TranscriptMessageProps {
   message: VoiceMessage;
-  language: LanguageCode;
+  config: LanguageConfig;
   loading: boolean;
   onRetry: (message: VoiceMessage) => void;
 }
@@ -20,7 +20,7 @@ export function TranscriptMessage(props: TranscriptMessageProps) {
       </p>
       <TranscriptMessageContent
         message={message}
-        language={props.language}
+        config={props.config}
       />
       {message.status === 'failed' && (
         <button

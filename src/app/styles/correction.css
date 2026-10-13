@@ -1,0 +1,117 @@
+.correction-help,
+.correction-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+.correction-help {
+  margin-inline-start: 6px;
+}
+.correction-help:hover,
+.correction-help[aria-expanded='true'],
+.correction-close:hover {
+  background: var(--soft);
+  color: var(--foreground);
+}
+.correction-popover {
+  --heading-background: var(--yellow, var(--soft));
+  --heading-foreground: var(--on-accent, var(--foreground));
+  position: fixed;
+  z-index: 80;
+  width: min(336px, calc(100vw - 32px));
+  background: var(--surface);
+  color: var(--foreground);
+  border: var(--frame-border, 1px solid var(--line));
+  border-radius: var(--control-radius, 16px);
+  box-shadow: var(--shadow-dialog, 0 16px 40px rgb(0 0 0 / 20%));
+  font-size: 16px;
+  line-height: 1.6;
+  white-space: normal;
+}
+.correction-popover::before {
+  content: '';
+  position: absolute;
+  left: var(--pointer-left);
+  width: 14px;
+  height: 14px;
+  rotate: 45deg;
+}
+.correction-popover[data-side='below']::before {
+  top: -8px;
+  background: var(--heading-background);
+  border-top: var(--frame-border, 1px solid var(--line));
+  border-left: var(--frame-border, 1px solid var(--line));
+}
+.correction-popover[data-side='above']::before {
+  bottom: -8px;
+  background: var(--surface);
+  border-right: var(--frame-border, 1px solid var(--line));
+  border-bottom: var(--frame-border, 1px solid var(--line));
+}
+.correction-popover-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--heading-background);
+  color: var(--heading-foreground);
+  border-bottom: 1px solid var(--line);
+  border-radius: inherit;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.correction-popover-header h3 {
+  flex: 1;
+  font-weight: 600;
+}
+.correction-popover-header .correction-close {
+  color: inherit;
+}
+.correction-popover-header .correction-close:hover {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+.correction-mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: var(--accent);
+  color: var(--accent-foreground, var(--on-accent, var(--background)));
+  border-radius: 8px;
+}
+.correction-notes {
+  max-height: var(--note-height, 300px);
+  padding: 16px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+.correction-notes li + li {
+  margin-top: 16px;
+}
+.correction-category {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.correction-notes p {
+  margin-top: 5px;
+}
+:root[data-theme='original'] .correction-popover {
+  --heading-background: var(--soft);
+  --heading-foreground: var(--foreground);
+  border-radius: 16px;
+  box-shadow:
+    0 16px 40px rgb(0 0 0 / 20%),
+    0 3px 10px rgb(0 0 0 / 10%);
+}
