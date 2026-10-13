@@ -16,11 +16,17 @@ export function ChatInputControls(props: ChatInputControlsProps) {
         type="button"
         onClick={props.onVoiceCall}
         disabled={props.disabled || props.loading}
-        className="icon-button"
+        className="icon-button voice-trigger"
         aria-label="Voice call"
         title="Start a voice call"
       >
-        <AudioLines size={21} />
+        <AudioLines size={23} />
+        <span
+          data-theme-content="neo"
+          className="hidden sm:inline"
+        >
+          Talk
+        </span>
       </button>
       <SendButton
         prompt={props.prompt}

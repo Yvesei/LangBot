@@ -44,7 +44,7 @@ export function ReviewDialog(props: ReviewDialogProps) {
         onClose={props.onClose}
       />
       {groups.length === 0 && (
-        <p className="py-10 text-sm">
+        <p className="py-10 text-lg">
           Corrections and words you ask about will appear here.
         </p>
       )}
@@ -67,7 +67,7 @@ export function ReviewDialog(props: ReviewDialogProps) {
             >
               Previous
             </button>
-            <span className="text-sm text-[var(--muted)]">
+            <span className="text-base text-[var(--muted)]">
               {activeIndex + 1} / {groups.length}
             </span>
             <button
@@ -81,7 +81,7 @@ export function ReviewDialog(props: ReviewDialogProps) {
           </nav>
           <button
             type="button"
-            className="mt-4 text-xs text-[var(--muted)] underline"
+            className="mt-5 text-sm font-semibold text-[var(--muted)] underline underline-offset-4"
             onClick={() => props.onForget(group.ids)}
           >
             Remove card

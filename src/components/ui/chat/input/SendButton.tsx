@@ -21,6 +21,7 @@ export function SendButton(props: SendButtonProps) {
           size={16}
           fill="currentColor"
         />
+        <span data-theme-content="neo">Stop</span>
       </button>
     );
   }
@@ -33,7 +34,8 @@ export function SendButton(props: SendButtonProps) {
       aria-label="Send"
       title="Send message"
     >
-      <ArrowUp size={20} />
+      <ArrowUp size={23} />
+      <span data-theme-content="neo">Send</span>
     </button>
   );
 }

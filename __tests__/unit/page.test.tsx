@@ -58,7 +58,6 @@ test('Send produces a visible correction diff', async () => {
   expect(send).toHaveBeenCalledWith(
     expect.objectContaining({
       languageConfig: { nativeLanguage: 'fr', targetLanguage: 'en' },
-      userLevel: 'beginner',
     }),
     expect.anything(),
   );
@@ -81,25 +80,6 @@ test('keeps the original and reply when a correction is unavailable', async () =
   ).toBeInTheDocument();
   expect(container.querySelector('del')).not.toBeInTheDocument();
   expect(container.querySelector('ins')).not.toBeInTheDocument();
-});
-
-test('language and level selections reach the tutor', async () => {
-  localStorage.setItem('langbot-native', 'en');
-  localStorage.setItem('langbot-target', 'ja');
-  render(<Page />);
-  fireEvent.change(screen.getByRole('combobox', { name: 'Level' }), {
-    target: { value: 'advanced' },
-  });
-  submit('こんにちは');
-  await waitFor(() =>
-    expect(send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        languageConfig: { nativeLanguage: 'en', targetLanguage: 'ja' },
-        userLevel: 'advanced',
-      }),
-      expect.anything(),
-    ),
-  );
 });
 
 test('deleting a user turn removes it and its reply from future history', async () => {

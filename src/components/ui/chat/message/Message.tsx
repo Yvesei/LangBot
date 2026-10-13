@@ -60,7 +60,7 @@ export function Message({ message, config, onDelete, onRetry, busy }: MessagePro
       {error && (
         <p
           role="alert"
-          className="mt-2 text-sm text-red-700 dark:text-red-300"
+          className="text-error mt-3 text-base"
         >
           {error}
         </p>

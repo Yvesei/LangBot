@@ -15,13 +15,13 @@ export function MessageNotices({ message, busy, onRetry }: MessageNoticesProps) 
       {user && message.status === 'pending' && (
         <p
           role="status"
-          className="mt-2 text-xs text-gray-500"
+          className="mt-2 text-sm text-[var(--muted)]"
         >
           Writing a reply and checking your sentence…
         </p>
       )}
       {user && message.correction === null && (
-        <p className="mt-2 text-xs text-[var(--muted)]">
+        <p className="mt-2 text-sm text-[var(--muted)]">
           Correction unavailable for this message.
         </p>
       )}
@@ -30,13 +30,11 @@ export function MessageNotices({ message, busy, onRetry }: MessageNoticesProps) 
           className="mt-3"
           role="status"
         >
-          <p className="text-sm text-red-700 dark:text-red-300">
-            Reply and correction weren’t completed.
-          </p>
+          <p className="text-error text-base">Reply and correction weren’t completed.</p>
           <button
             onClick={onRetry}
             disabled={busy}
-            className="mt-2 inline-flex items-center gap-2 text-xs disabled:opacity-40"
+            className="subtle-button mt-3 inline-flex items-center gap-2"
           >
             <RotateCcw size={14} /> Retry message
           </button>

@@ -20,8 +20,8 @@ export function TranscriptMessageContent({
     <div
       className={
         message.role === 'user'
-          ? 'py-3 [&_del]:text-red-400 [&_ins]:text-green-400'
-          : 'rounded-2xl rounded-bl-sm bg-white/5 px-4 py-3'
+          ? 'transcript-bubble transcript-user'
+          : 'transcript-bubble'
       }
       lang={language}
       dir="auto"
@@ -38,12 +38,12 @@ export function TranscriptMessageContent({
         )}
       </p>
       {message.role === 'user' && message.correction === null && (
-        <p className="mt-2 text-xs text-slate-400">
+        <p className="mt-2 text-sm text-[var(--muted)]">
           Correction unavailable for this message.
         </p>
       )}
       {message.status === 'pending' && (
-        <p className="mt-2 text-xs text-blue-100">Checking your sentence…</p>
+        <p className="mt-2 text-sm text-[var(--muted)]">Checking your sentence…</p>
       )}
     </div>
   );

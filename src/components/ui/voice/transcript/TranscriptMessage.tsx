@@ -15,7 +15,7 @@ export function TranscriptMessage(props: TranscriptMessageProps) {
     <article
       className={message.role === 'user' ? 'ml-auto max-w-[88%]' : 'mr-auto max-w-[88%]'}
     >
-      <p className="mb-1 text-xs text-slate-500">
+      <p className="mb-2 text-sm font-semibold text-[var(--muted)]">
         {message.role === 'user' ? 'You said' : 'LangBot said'}
       </p>
       <TranscriptMessageContent
@@ -27,7 +27,7 @@ export function TranscriptMessage(props: TranscriptMessageProps) {
           type="button"
           disabled={props.loading}
           onClick={() => props.onRetry(message)}
-          className="mt-2 text-xs text-rose-300 underline disabled:opacity-40"
+          className="subtle-button mt-3"
         >
           Retry this turn
         </button>

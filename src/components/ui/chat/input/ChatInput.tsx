@@ -41,7 +41,7 @@ export function ChatInput(props: ChatInputProps) {
       onSubmit={handleSubmit}
       className="composer-wrap"
     >
-      <div className="mx-auto max-w-3xl">
+      <div className="composer-column mx-auto max-w-[852px]">
         <div className="composer">
           <ChatInputField
             inputRef={inputRef}
@@ -52,7 +52,7 @@ export function ChatInput(props: ChatInputProps) {
           />
           <ChatInputControls {...props} />
         </div>
-        <p className="mt-3 text-center text-[11px] text-[var(--muted)]">
+        <p className="mt-3 text-center text-sm text-[var(--muted)]">
           AI suggestions can make mistakes.{' '}
           <span className="hidden sm:inline">Shift + Enter for a new line.</span>
         </p>

@@ -1,7 +1,7 @@
 export function ReviewFooter({ onClose }: { onClose: () => void }) {
   return (
-    <footer className="mt-6 flex items-center justify-between gap-4">
-      <p className="text-xs text-[var(--muted)]">Saved in this browser.</p>
+    <footer className="mt-7 flex flex-wrap items-center justify-between gap-4">
+      <p className="text-sm text-[var(--muted)]">Saved in this browser.</p>
       <button
         type="button"
         onClick={onClose}

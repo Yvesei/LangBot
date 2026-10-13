@@ -14,20 +14,20 @@ export function ReviewAnswer({ text, explanation, config, flipped }: ReviewAnswe
       hidden={!flipped}
     >
       <span
-        className="whitespace-pre-wrap text-3xl font-medium"
+        className="review-answer-text whitespace-pre-wrap text-3xl font-extrabold tracking-tight"
         lang={config.targetLanguage}
         dir="auto"
       >
         {text}
       </span>
       <span
-        className="mt-5 whitespace-pre-wrap text-sm text-[var(--muted)]"
+        className="mt-5 whitespace-pre-wrap text-base leading-relaxed text-[var(--muted)]"
         lang={config.nativeLanguage}
         dir="auto"
       >
         {explanation}
       </span>
-      <span className="mt-6 text-xs text-[var(--muted)]">Click to flip back</span>
+      <span className="mt-6 text-sm text-[var(--muted)]">Click to flip back</span>
     </span>
   );
 }
