@@ -36,7 +36,7 @@ export function ChatSidebar(props: ChatSidebarProps) {
         >
           <Logo />
         </span>
-        <h1 className="brand-title">LangBot</h1>
+        <h1 className="brand-title">Languify</h1>
         <button
           type="button"
           className="icon-button sidebar-close"

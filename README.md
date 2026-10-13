@@ -1,4 +1,4 @@
-# LangBot
+# Languify
 
 A Next.js-based AI-powered language learning application that helps users practice their target language through natural conversation with an intelligent tutor.
 
@@ -278,7 +278,7 @@ flowchart LR
 - The call shows an animated status orb, your transcript, and tutor replies. Transcripts appear after each recorded turn.
 - Mute the microphone and spoken replies independently. Playback uses available browser/system voices; replies remain readable if playback is unavailable.
 - **End voice call** returns to the text conversation and releases the microphone. It cancels pending transcription and playback; an already submitted chat reply can still finish. Use **Stop** in text chat to cancel that reply.
-- Use localhost or HTTPS for microphone access. Audio stays in memory and is uploaded to Mistral; LangBot does not save recordings.
+- Use localhost or HTTPS for microphone access. Audio stays in memory and is uploaded to Mistral; Languify does not save recordings.
 
 #### Conversation Controls
 

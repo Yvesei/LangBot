@@ -46,8 +46,8 @@ const STATUS_LABELS: Record<CallState, string> = {
   starting: 'Starting microphone…',
   listening: 'Listening…',
   transcribing: 'Transcribing your words…',
-  thinking: 'LangBot is thinking…',
-  speaking: 'LangBot is speaking…',
+  thinking: 'Languify is thinking…',
+  speaking: 'Languify is speaking…',
   paused: 'Microphone paused',
   error: 'Voice paused',
 };

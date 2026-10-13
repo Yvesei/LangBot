@@ -5,7 +5,7 @@ import {
   type UITheme,
 } from '@/lib/config/theme';
 
-const THEME_CHANGE_EVENT = 'langbot-theme-change';
+const THEME_CHANGE_EVENT = 'languify-theme-change';
 
 export function getTheme(): UITheme {
   return resolveTheme(document.documentElement.dataset.theme);

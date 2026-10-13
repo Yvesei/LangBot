@@ -1,8 +1,8 @@
 import Image from 'next/image';
 
 const LOGOS = {
-  neo: '/branding/langbot-neo-green.png',
-  original: '/branding/langbot-original.png',
+  neo: '/branding/languify-neo-green.png',
+  original: '/branding/languify-original.png',
 };
 
 export function Logo() {

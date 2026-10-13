@@ -16,7 +16,7 @@ export function VoiceCallHeader({ config, closeButton, onClose }: VoiceCallHeade
           id="voice-call-title"
           className="voice-title text-xl font-extrabold tracking-tight sm:text-2xl"
         >
-          Voice call with LangBot
+          Voice call with Languify
         </h2>
         <p className="mt-2 text-base text-[var(--muted)]">
           {LANGUAGES[config.nativeLanguage]} + {LANGUAGES[config.targetLanguage]} · Mix

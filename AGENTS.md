@@ -1,6 +1,6 @@
-# Working in LangBot
+# Working in Languify
 
-LangBot is a Next.js App Router application written in TypeScript, with React,
+Languify is a Next.js App Router application written in TypeScript, with React,
 Tailwind CSS, and Mistral AI. Use pnpm for application commands.
 
 ## Repository map
