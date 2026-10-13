@@ -215,14 +215,7 @@ The screenshots and GIFs below show an earlier layout; the current correction di
 - Deleting a message removes its saved cards; **Remove card** removes that grouped correction.
 - The latest 100 saved occurrences are kept across reloads and new chats. Review is opened manually.
 
-```mermaid
-flowchart LR
-    Correction["Explained correction"] --> Save["Save in browser storage"]
-    Save --> Group["Group repeated word/phrase edits"]
-    Group --> Front["Original word or phrase"]
-    Front -->|Click| Back["Correction and explanation"]
-    Back -->|Click| Front
-```
+![Flashcard flow: explained corrections are saved in browser storage, repeated edits are grouped, and clicking a card flips between the original phrase and its correction with an explanation.](./imgs/flashcards-flow.svg)
 
 #### Voice Conversations
 
