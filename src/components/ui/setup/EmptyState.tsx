@@ -35,26 +35,30 @@ export function EmptyState({ initial, onLanguageSelect, onCancel }: EmptyStatePr
       className="setup-form"
       onSubmit={handleSubmit}
     >
-      <SetupIntroduction isChanging={Boolean(initial)} />
-      <LanguageField
-        label="Your native language"
-        value={nativeLanguage}
-        onChange={setNative}
-      />
-      <LanguageField
-        label="Language to practise"
-        value={targetLanguage}
-        onChange={setTarget}
-      />
-      {error && (
-        <p
-          role="alert"
-          className="text-red-600"
-        >
-          {error}
-        </p>
-      )}
-      <SetupActions onCancel={onCancel} />
+      <div className="setup-introduction">
+        <SetupIntroduction isChanging={Boolean(initial)} />
+      </div>
+      <div className="setup-fields">
+        <LanguageField
+          label="Your native language"
+          value={nativeLanguage}
+          onChange={setNative}
+        />
+        <LanguageField
+          label="Language to practise"
+          value={targetLanguage}
+          onChange={setTarget}
+        />
+        {error && (
+          <p
+            role="alert"
+            className="notice-error"
+          >
+            {error}
+          </p>
+        )}
+        <SetupActions onCancel={onCancel} />
+      </div>
     </form>
   );
 }

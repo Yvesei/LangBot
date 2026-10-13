@@ -8,7 +8,7 @@ interface LanguageFieldProps {
 
 export function LanguageField({ label, value, onChange }: LanguageFieldProps) {
   return (
-    <label className="block text-xs font-medium text-[var(--muted)]">
+    <label className="setup-label block text-base font-bold">
       {label}
       <select
         value={value}

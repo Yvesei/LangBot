@@ -14,11 +14,11 @@ export function ReviewHeader(props: ReviewHeaderProps) {
       <div>
         <h2
           id="review-title"
-          className="text-xl font-medium"
+          className="review-title text-2xl font-extrabold tracking-tight sm:text-3xl"
         >
           Your flashcards
         </h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
+        <p className="mt-2 text-base text-[var(--muted)]">
           {LANGUAGES[props.config.nativeLanguage]} →{' '}
           {LANGUAGES[props.config.targetLanguage]}
         </p>

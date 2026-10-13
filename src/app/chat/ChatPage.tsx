@@ -1,6 +1,6 @@
 'use client';
 
-import { ChatHeader } from '@/components/ui/chat/header/ChatHeader';
+import { ChatLayout } from '@/components/ui/chat/sidebar/ChatLayout';
 import { ChatInput } from '@/components/ui/chat/input/ChatInput';
 import { ReviewDialog } from '@/components/ui/review/dialog/ReviewDialog';
 import { VoiceCall } from '@/components/ui/voice/VoiceCall';
@@ -20,7 +20,7 @@ function ChatNotices({
       {error && (
         <p
           role="alert"
-          className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-200"
+          className="notice-error mt-4"
         >
           {error}
         </p>
@@ -28,7 +28,7 @@ function ChatNotices({
       {storageWarning && (
         <p
           role="status"
-          className="mt-4 text-sm text-amber-700 dark:text-amber-300"
+          className="mt-4 text-base font-medium text-[var(--muted)]"
         >
           {storageWarning}
         </p>
@@ -42,22 +42,20 @@ export default function ChatPage() {
   const actions = useChatActions(state);
 
   return (
-    <div className="app-shell">
-      <ChatHeader
-        config={state.config}
-        level={state.level}
-        onLevelChange={actions.changeLevel}
-        onNewChat={actions.newChat}
-        onChangeLanguages={actions.changeLanguages}
-        reviewCount={state.reviewGroups.length}
-        onOpenReview={
+    <ChatLayout
+      navigation={{
+        config: state.config,
+        onNewChat: actions.newChat,
+        onChangeLanguages: actions.changeLanguages,
+        reviewCount: state.reviewGroups.length,
+        onOpenReview:
           state.config && !state.isSelectingLanguages
             ? () => state.setReviewOpen(true)
-            : undefined
-        }
-      />
-      <main className="flex min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-3xl flex-col px-5 py-6 sm:px-6">
+            : undefined,
+      }}
+    >
+      <main className="chat-main flex min-h-0 flex-1 overflow-y-auto">
+        <div className="content-column">
           <ChatConversation
             state={state}
             actions={actions}
@@ -99,6 +97,6 @@ export default function ChatPage() {
           onClose={() => state.setReviewOpen(false)}
         />
       )}
-    </div>
+    </ChatLayout>
   );
 }

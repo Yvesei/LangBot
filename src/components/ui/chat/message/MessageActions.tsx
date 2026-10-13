@@ -40,7 +40,7 @@ export function MessageActions(props: MessageActionsProps) {
         <Trash2 size={15} />
       </button>
       <time
-        className="ml-2 text-[10px] text-[var(--muted)]"
+        className="ml-2 text-sm text-[var(--muted)]"
         dateTime={props.timestamp.toISOString()}
       >
         {props.timestamp.toLocaleTimeString([], {
