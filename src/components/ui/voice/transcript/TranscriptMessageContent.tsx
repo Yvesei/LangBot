@@ -1,5 +1,6 @@
 import { CorrectionDiff } from '@/components/ui/chat/message/CorrectionDiff';
 import { CorrectionExplanation } from '@/components/ui/chat/message/CorrectionExplanation';
+import { BoldText } from '@/components/ui/text/BoldText';
 import type { LanguageConfig } from '@/lib/schemas';
 import type { VoiceMessage } from '../voice-call-types';
 
@@ -16,6 +17,11 @@ export function TranscriptMessageContent({
   const correction = message.correction;
   const changed =
     message.role === 'user' && correction && correction.correctedText !== message.content;
+  let content: React.ReactNode = message.content;
+
+  if (message.role === 'assistant') {
+    content = <BoldText text={message.content} />;
+  }
 
   return (
     <div
@@ -35,7 +41,7 @@ export function TranscriptMessageContent({
             language={language}
           />
         ) : (
-          message.content
+          content
         )}
         {changed && (
           <CorrectionExplanation
