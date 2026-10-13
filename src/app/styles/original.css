@@ -31,7 +31,7 @@
   letter-spacing: -0.025em;
 }
 
-:root[data-theme='original'] .chat-main {
+:root[data-theme='original'] .chat-workspace {
   background-image: none;
 }
 

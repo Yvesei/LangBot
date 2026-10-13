@@ -17,7 +17,7 @@
   line-height: 1;
   letter-spacing: -1px;
 }
-.chat-main {
+.chat-workspace {
   background-image: radial-gradient(var(--grid) 1px, transparent 1px);
   background-size: 24px 24px;
 }
@@ -119,8 +119,6 @@
 .composer-wrap {
   flex-shrink: 0;
   padding: 12px 24px max(14px, env(safe-area-inset-bottom));
-  background: var(--background);
-  border-top: var(--frame-border);
 }
 .composer {
   padding: 8px 12px;

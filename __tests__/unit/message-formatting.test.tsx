@@ -21,7 +21,7 @@ test('formats AI emphasis while keeping user text, line breaks, and HTML literal
   window.HTMLElement.prototype.scrollIntoView = jest.fn();
   jest.mocked(send).mockResolvedValue({
     success: true,
-    reply: 'Try **apples** and **pears**.\n<img src=x> **unfinished',
+    reply: 'Try **apples**, *pears*, and ***oranges***.\n<img src=x> **unfinished',
     correction: null,
   });
   const { container } = render(<Page />);
@@ -30,9 +30,13 @@ test('formats AI emphasis while keeping user text, line breaks, and HTML literal
   });
   fireEvent.click(screen.getByRole('button', { name: 'Send' }));
   expect((await screen.findByText('apples')).tagName).toBe('STRONG');
-  expect(screen.getByText('pears').tagName).toBe('STRONG');
+  expect(screen.getByText('pears').tagName).toBe('EM');
+  expect(screen.getByText('oranges').closest('strong')).toBeInTheDocument();
+  expect(screen.getByText('oranges').tagName).toBe('EM');
   const reply = container.querySelector('.message-assistant');
-  expect(reply?.textContent).toContain('Try apples and pears.\n<img src=x> **unfinished');
+  expect(reply?.textContent).toContain(
+    'Try apples, pears, and oranges.\n<img src=x> **unfinished',
+  );
   expect(reply?.querySelector('img')).not.toBeInTheDocument();
   expect(screen.getByText('**My example**')).toBeInTheDocument();
   expect(container.querySelector('.message-user strong')).not.toBeInTheDocument();
