@@ -2,7 +2,7 @@
 
 A Next.js-based AI-powered language learning application that helps users practice their target language through natural conversation with an intelligent tutor.
 
-## 🌟 Features
+## Features
 
 - **Interactive Chat Interface**: Practice through natural conversations with starter suggestions and a compact sidebar showing your selected learning language
 - **Multi-language Support**: Choose your native and target languages from 12 supported languages
@@ -14,7 +14,7 @@ A Next.js-based AI-powered language learning application that helps users practi
 - **Conversation Controls**: Start a new chat, retry failed messages, stop a pending reply, or delete a message and its reply
 - **Conversation History**: Send recent messages to the tutor for context; keep language settings and flashcards across reloads
 
-## 🏗️ Architecture
+## Architecture
 
 ### Tech Stack
 
@@ -67,10 +67,12 @@ A Next.js-based AI-powered language learning application that helps users practi
 │   │   ├── layout.tsx
 │   │   └── page.tsx
 │   ├── components/ui/
+│   │   ├── brand/              # Theme-specific logos
 │   │   ├── chat/
 │   │   │   ├── header/
 │   │   │   ├── input/
 │   │   │   ├── message/
+│   │   │   ├── sidebar/
 │   │   │   └── welcome/
 │   │   ├── feedback/           # Error and loading displays
 │   │   ├── setup/              # Language selection
@@ -95,67 +97,20 @@ A Next.js-based AI-powered language learning application that helps users practi
 │       ├── review/             # Card text and repeated-edit grouping
 │       ├── schemas/            # Shared runtime contracts
 │       ├── server/             # Prompts, provider calls, HTTP helpers, and limits
+│       ├── theme/              # Theme persistence and switching
 │       ├── types/
 │       └── voice/              # Recording, monitoring, transcription, and cleanup
 ```
 
-```mermaid
-graph TB
-    Page["ChatPage<br/>State, actions, and message requests"]
+### Application Flow
 
-    subgraph UI["UI Components Layer"]
-        Header["Header and language setup"]
-        Msg["Messages and correction diffs"]
-        Cards["Flashcard dialog"]
-        Voice["Voice call"]
-    end
+![Languify architecture: browser chat, storage, and voice features connect through Next.js API routes and shared server helpers to Mistral text and transcription models.](./imgs/architecture.svg)
 
-    subgraph ClientLib["Client Library"]
-        API["Chat, translation, and transcription requests"]
-        Storage["Browser storage<br/>Language settings and flashcards"]
-        Recorder["Microphone recording"]
-    end
+The browser sends chat, translation, and transcription requests to the Next.js API routes.
+The server validates requests and calls Mistral through shared provider helpers.
+`/api/correct` is also available as a standalone endpoint; the chat UI receives corrections from `/api/chat`.
 
-    subgraph Routes["API Routes"]
-        ChatRoute["/api/chat"]
-        TransRoute["/api/translate"]
-        CorrectRoute["/api/correct<br/>Standalone correction route"]
-        AudioRoute["/api/transcribe"]
-    end
-
-    Server["Shared schemas, prompts,<br/>provider helpers, and in-memory limits"]
-    Mistral["Mistral text model"]
-    Voxtral["Mistral Voxtral"]
-
-    Page --> UI
-    Page --> API
-    Page <--> Storage
-    Voice --> Recorder
-    Recorder --> API
-    API --> ChatRoute
-    API --> TransRoute
-    API --> AudioRoute
-    ChatRoute --> Server
-    TransRoute --> Server
-    CorrectRoute --> Server
-    AudioRoute --> Server
-    Server --> Mistral
-    Server --> Voxtral
-
-    classDef pageStyle fill:#e1f5ff,stroke:#01579b,stroke-width:3px
-    classDef uiStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef apiStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef routeStyle fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
-    classDef externalStyle fill:#ffebee,stroke:#b71c1c,stroke-width:2px
-
-    class Page pageStyle
-    class Header,Msg,Cards,Voice uiStyle
-    class API,Storage,Recorder apiStyle
-    class ChatRoute,TransRoute,CorrectRoute,AudioRoute,Server routeStyle
-    class Mistral,Voxtral externalStyle
-```
-
-## 🚀 Getting Started
+## Getting Started
 
 ### AI harness setup
 
@@ -216,7 +171,7 @@ pnpm dev
 
 Development uses `.next-dev`; production builds use `.next` so a build does not overwrite the running development server's files.
 
-## 📖 Usage
+## Usage
 
 ### Initial Setup
 
@@ -244,7 +199,7 @@ The screenshots and GIFs below show an earlier layout; the current correction di
 
 - The tutor reply and correction arrive together in one AI completion.
 - Green additions and red struck-through deletions show changes inside your original message.
-- Open **Why these changes?** for explanations, or use **Copy corrected** for the clean sentence.
+- Click the question-mark button beside a correction to open its explanation in your native language. Use **Copy corrected** for the clean sentence.
 - Unchanged text has an empty issues array. An unexplained rewrite returns `correction: null`, keeping the original visible with a correction-unavailable notice.
 
 ![Original message (before correction)](./imgs/before_correction.png)
@@ -254,7 +209,7 @@ The screenshots and GIFs below show an earlier layout; the current correction di
 
 - Grammar mistakes, spelling mistakes, and native-language words use one correction object with an explanation for each change.
 - Explained corrections become flashcards saved in this browser.
-- Open **Flashcards** using the stacked-cards icon in the header. Its badge shows the number of grouped cards.
+- Open **Flashcards** in the sidebar. Its badge shows the number of grouped cards. On small screens, open the navigation menu first.
 - Click a card to flip between the original word or phrase and its correction or translation with an explanation. Sentence context is shown when needed.
 - Use **Previous** and **Next** to browse. Repeated word/phrase corrections appear once, and cards stay separate for each language pair.
 - Deleting a message removes its saved cards; **Remove card** removes that grouped correction.
@@ -288,7 +243,7 @@ flowchart LR
 - Delete a user message to remove it, its direct reply, and its associated cards.
 - Conversation history clears on refresh. Saved settings and cards remain in this browser.
 
-## 🔌 API Endpoints
+## API Endpoints
 
 All endpoints accept POST. Text endpoints require `Content-Type: application/json`. Successful responses use `{ success: true, ... }`; failures use `{ success: false, error }` with an appropriate HTTP status.
 
@@ -492,7 +447,7 @@ sequenceDiagram
     Browser-->>User: Show transcript and speak reply when available
 ```
 
-## 🎯 AI Tutor Behavior
+## AI Tutor Behavior
 
 The AI tutor is designed to:
 
@@ -504,7 +459,7 @@ The AI tutor is designed to:
 
 Corrections and transcripts are model-generated suggestions; the app does not guarantee linguistic accuracy.
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -549,7 +504,7 @@ const request: ChatRequest = {
 - Flashcards and language settings use browser storage; chat history lives in memory
 - Cards stay in the current browser, without accounts or cross-device synchronization
 
-## 🔐 Security
+## Security
 
 - API keys stay on the server in environment variables
 - Zod validates request fields, language values, history roles, and provider output
@@ -560,7 +515,7 @@ const request: ChatRequest = {
 - Trimming normalizes input; prompt instructions reduce unwanted behavior but do not guarantee protection from prompt injection
 - Error responses hide internal details; logs record operational metadata without chat content or API keys
 
-## 📊 Performance Considerations
+## Performance Considerations
 
 - **Message History Limit**: Up to 12 messages, with 20,000 combined prompt/history characters
 - **Chat Input Limit**: 2,000 characters; history is also trimmed to the 32 KiB JSON request budget
@@ -571,7 +526,7 @@ const request: ChatRequest = {
 - **Voice Limits**: 30 seconds and 2 MiB per recorded turn
 - **Translation Cache**: Toggling an already loaded translation does not make another request
 
-## 🧪 Testing
+## Testing
 
 Application tests are organized into **unit** and **integration** groups. The custom lint rule has separate Node tests.
 
@@ -598,14 +553,14 @@ tests/
 └── lint/function-spacing.test.mjs
 ```
 
-### 🧩 Test Structure
+### Test Structure
 
 - **Unit tests** cover UI interactions, correction diffs, card persistence and grouping, request handling, provider failures, and recording cleanup.
 - **Integration tests** call API route handlers with mocked Mistral responses, including limits and transcription. They do not start a server or spend API credits.
 - **Lint rule tests** check blank-line detection and fixes for functions, methods, tests, and setup blocks.
 - Browser and provider mocks do not test physical microphones, installed speech voices, or live model quality.
 
-### 🚀 Running Tests
+### Running Tests
 
 Commands are defined in `package.json`:
 
@@ -618,7 +573,7 @@ Commands are defined in `package.json`:
 - `pnpm typecheck` — Check TypeScript types
 - `pnpm build` — Build the production application
 
-### ✅ Example Usage
+### Example Usage
 
 To run all integration tests:
 
@@ -632,7 +587,7 @@ To run a specific test file:
 pnpm test __tests__/integration/chat.test.ts
 ```
 
-### 🧹 Linting and Formatting
+### Linting and Formatting
 
 Installing dependencies enables the Husky pre-commit hook. It fixes staged JavaScript/TypeScript with ESLint, formats them with Prettier, then checks ESLint again. Other supported staged files are formatted with Prettier. Remaining lint errors block the commit.
 
@@ -670,7 +625,7 @@ Set `MISTRAL_API_KEY` in the Vercel project's preview and production environment
 
 The GitHub Actions workflow uses mocked provider responses and does not require Mistral or Vercel deployment secrets.
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] Unit and mocked API integration tests
 - [x] CI checks and Vercel deployment integration
