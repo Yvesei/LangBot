@@ -26,7 +26,7 @@ export function AvailableVoiceCall({ state, props, actions }: VoiceCallViewProps
       <VoiceTranscript
         messages={sessionMessages}
         interimTranscript={state.interimTranscript}
-        language={props.config.targetLanguage}
+        config={props.config}
         loading={props.loading}
         transcriptEnd={state.transcriptEnd}
         onRetry={props.onRetry}

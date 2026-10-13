@@ -1,6 +1,7 @@
 import type { ChatMessage } from '@/lib/types';
 import type { LanguageConfig } from '@/lib/schemas';
 import { CorrectionDiff } from './CorrectionDiff';
+import { CorrectionExplanation } from './CorrectionExplanation';
 
 interface MessageBodyProps {
   message: ChatMessage;
@@ -11,12 +12,12 @@ interface MessageBodyProps {
 }
 
 export function MessageBody(props: MessageBodyProps) {
-  const correction = props.message.correction;
-  let content: React.ReactNode = props.showTranslation
-    ? props.translation
-    : props.message.content;
+  const correction =
+    props.message.role === 'user' && props.changed ? props.message.correction : null;
+  const text = props.showTranslation ? props.translation : props.message.content;
+  let content: React.ReactNode = text;
 
-  if (props.message.role === 'user' && props.changed && correction) {
+  if (correction) {
     content = (
       <CorrectionDiff
         original={props.message.content}
@@ -38,23 +39,13 @@ export function MessageBody(props: MessageBodyProps) {
         }
       >
         {content}
+        {correction && (
+          <CorrectionExplanation
+            issues={correction.issues}
+            language={props.config.nativeLanguage}
+          />
+        )}
       </div>
-      {props.message.role === 'user' && props.changed && correction && (
-        <details className="mt-3 text-sm">
-          <summary className="cursor-pointer text-xs text-[var(--muted)]">
-            Why these changes?
-          </summary>
-          <ul
-            className="mt-2 list-disc space-y-2 pl-5"
-            lang={props.config.nativeLanguage}
-            dir="auto"
-          >
-            {correction.issues.map((issue, index) => (
-              <li key={index}>{issue.explanation}</li>
-            ))}
-          </ul>
-        </details>
-      )}
     </>
   );
 }

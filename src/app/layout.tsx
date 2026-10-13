@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { DEFAULT_THEME, THEME_INIT_SCRIPT } from '@/lib/config/theme';
 import './globals.css';
+import './styles/correction.css';
 
 export const metadata: Metadata = {
   title: 'LangBot',

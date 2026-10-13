@@ -1,11 +1,11 @@
-import type { LanguageCode } from '@/lib/schemas';
+import type { LanguageConfig } from '@/lib/schemas';
 import type { VoiceMessage } from '../voice-call-types';
 import { TranscriptMessage } from './TranscriptMessage';
 
 interface VoiceTranscriptProps {
   messages: VoiceMessage[];
   interimTranscript: string;
-  language: LanguageCode;
+  config: LanguageConfig;
   loading: boolean;
   transcriptEnd: React.RefObject<HTMLDivElement | null>;
   onRetry: (message: VoiceMessage) => void;
@@ -17,12 +17,6 @@ export function VoiceTranscript(props: VoiceTranscriptProps) {
       className="voice-transcript"
       aria-label="Call transcript"
     >
-      <div className="voice-transcript-header">
-        <h3 className="voice-transcript-title text-xl font-extrabold">Live transcript</h3>
-        <p className="mt-1 text-sm">
-          Your words, inline corrections, and LangBot’s replies.
-        </p>
-      </div>
       <div
         className="flex-1 space-y-4 overflow-y-auto p-5"
         aria-live="polite"
@@ -36,7 +30,7 @@ export function VoiceTranscript(props: VoiceTranscriptProps) {
           <TranscriptMessage
             key={message.id}
             message={message}
-            language={props.language}
+            config={props.config}
             loading={props.loading}
             onRetry={props.onRetry}
           />
@@ -48,7 +42,7 @@ export function VoiceTranscript(props: VoiceTranscriptProps) {
             </p>
             <p
               className="py-3 italic"
-              lang={props.language}
+              lang={props.config.targetLanguage}
               dir="auto"
             >
               {props.interimTranscript}
