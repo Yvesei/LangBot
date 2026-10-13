@@ -1,4 +1,4 @@
-import { Bot } from 'lucide-react';
+import { Logo } from '@/components/ui/brand/Logo';
 import { ConversationStarters } from './ConversationStarters';
 import { LANGUAGES, type LanguageConfig } from '@/lib/schemas';
 
@@ -19,10 +19,7 @@ export function ConversationWelcome({
         className="welcome-mark"
         aria-hidden="true"
       >
-        <Bot
-          size={30}
-          strokeWidth={2.2}
-        />
+        <Logo />
       </span>
       <p className="eyebrow">Your space to practise</p>
       <h2 className="welcome-title">

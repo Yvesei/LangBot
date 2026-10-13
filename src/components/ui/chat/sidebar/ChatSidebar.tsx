@@ -1,4 +1,5 @@
-import { Bot, Github, PanelLeftClose } from 'lucide-react';
+import { Github, PanelLeftClose } from 'lucide-react';
+import { Logo } from '@/components/ui/brand/Logo';
 import { SidebarActions, type SidebarActionsProps } from './SidebarActions';
 import { ThemeSwitcher } from './ThemeSwitcher';
 
@@ -33,10 +34,7 @@ export function ChatSidebar(props: ChatSidebarProps) {
           className="brand-mark"
           aria-hidden="true"
         >
-          <Bot
-            size={27}
-            strokeWidth={2.3}
-          />
+          <Logo />
         </span>
         <h1 className="brand-title">LangBot</h1>
         <button
