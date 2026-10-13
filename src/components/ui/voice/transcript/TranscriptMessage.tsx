@@ -16,7 +16,7 @@ export function TranscriptMessage(props: TranscriptMessageProps) {
       className={message.role === 'user' ? 'ml-auto max-w-[88%]' : 'mr-auto max-w-[88%]'}
     >
       <p className="mb-2 text-sm font-semibold text-[var(--muted)]">
-        {message.role === 'user' ? 'You said' : 'LangBot said'}
+        {message.role === 'user' ? 'You said' : 'Languify said'}
       </p>
       <TranscriptMessageContent
         message={message}

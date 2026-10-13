@@ -280,7 +280,7 @@ test('spoken turns use the same correction and flashcards, which open manually a
 
   render(<Page />);
   fireEvent.click(screen.getByRole('button', { name: 'Voice call' }));
-  const call = screen.getByRole('dialog', { name: 'Voice call with LangBot' });
+  const call = screen.getByRole('dialog', { name: 'Voice call with Languify' });
 
   act(() => {
     recognition.onresult?.({

@@ -4,7 +4,7 @@ import './globals.css';
 import './styles/correction.css';
 
 export const metadata: Metadata = {
-  title: 'LangBot',
+  title: 'Languify',
   description: 'practice your language skills with AI',
 };
 
