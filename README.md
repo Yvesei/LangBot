@@ -83,7 +83,9 @@ flowchart TB
         Translate["/api/translate"]
         Transcribe["/api/transcribe"]
         Correct["/api/correct: standalone"]
-        Helpers["Validation, prompts, limits, provider helpers"]
+        Helpers["Shared HTTP guards and validation"]
+        TextRequest["Text completion and correction normalization"]
+        AudioRequest["Audio completion and transcript validation"]
 
         Chat --> Helpers
         Translate --> Helpers
@@ -99,8 +101,10 @@ flowchart TB
     Client --> Chat
     Client --> Translate
     Client --> Transcribe
-    Helpers --> Text
-    Helpers --> Audio
+    Helpers -->|Chat, translation, correction| TextRequest
+    Helpers -->|Transcription| AudioRequest
+    TextRequest --> Text
+    AudioRequest --> Audio
 ```
 
 ## Implementation
@@ -114,6 +118,29 @@ flowchart TB
 | Context assembly     | Exclude pending/failed turns, trim history by count and encoded size, and include up to three saved correction explanations. [Request builder](src/lib/chat/conversation-request.ts)   |
 | Audio lifecycle      | `MediaRecorder` format negotiation, Web Audio silence detection, generation checks, and track/timer cleanup. [Voice modules](src/lib/voice)                                            |
 | Observability        | Structured completion logs include model, latency, usage, and attempts; API errors include request IDs and status. [Provider metrics](src/lib/server/mistral.ts)                       |
+
+### Chat request lifecycle
+
+```mermaid
+sequenceDiagram
+    participant UI as Chat state
+    participant API as Next.js API
+    participant AI as Mistral
+
+    UI->>UI: Create controller and pending message
+    UI->>UI: Build bounded history and learning focus
+    UI->>API: POST /api/chat with abort signal
+    API->>API: Check origin, rate, body size, and schema
+    API->>AI: Request reply and correction using JSON Schema
+    AI-->>API: Completion
+    API->>API: Validate payload and normalize correction
+    API-->>UI: Reply and correction
+    alt Request is still active
+        UI->>UI: Apply reply and save explained corrections
+    else Request was cancelled or replaced
+        UI->>UI: Ignore late result
+    end
+```
 
 ### API contract
 
@@ -158,6 +185,35 @@ Example chat request:
 
 Body limits are enforced during stream reads, including without `Content-Length`. Requests with a different `Origin` are rejected. Rate counters are in-memory per server instance; a voice turn normally uses two requests.
 
+### Voice pipeline
+
+```mermaid
+flowchart TB
+    subgraph Capture["Browser capture"]
+        Mic["getUserMedia"] --> Recorder["MediaRecorder and audio monitor"]
+        Recorder -->|Pause, Send turn, or duration limit| Blob["Audio blob; release microphone"]
+    end
+
+    subgraph Transcription["Server transcription"]
+        Upload["POST /api/transcribe"] --> Voxtral["Voxtral: audio and selected languages"]
+        Voxtral --> Validate["Validate text and detected languages"]
+    end
+
+    subgraph Conversation["Shared conversation flow"]
+        Submit["Submit transcript to /api/chat"] --> Render["Display reply and correction; save flashcards"]
+        Render --> Playback{"Speech enabled and available?"}
+        Playback -->|Yes| Speak["speechSynthesis"]
+        Playback -->|No| Next["Ready for the next turn"]
+        Speak --> Next
+    end
+
+    Blob --> Upload
+    Validate --> Submit
+    Next -->|Call open and microphone enabled| Mic
+```
+
+Closing a call aborts recording and transcription, cancels playback, and clears audio resources. An already-submitted chat request can still finish in the text conversation.
+
 ### State and persistence
 
 | Data                    | Storage                         | Lifecycle                                               |
@@ -169,8 +225,10 @@ Body limits are enforced during stream reads, including without `Content-Length`
 ```mermaid
 flowchart LR
     Result["Validated correction"] --> Cards["createFlashcards"]
-    Cards --> Store["saveCards: localStorage"]
-    Store --> Filter["Filter by language pair"]
+    Cards --> State["React card state"]
+    State --> Store["saveCards: localStorage"]
+    Store -->|Restore on mount| State
+    State --> Filter["Filter by language pair"]
     Filter --> Groups["groupReviewCards"]
     Groups --> Review["ReviewDialog"]
 ```
