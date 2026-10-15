@@ -299,4 +299,18 @@ pnpm dev
 
 Open [localhost:3000](http://localhost:3000). Voice recording requires localhost or HTTPS. Development output uses `.next-dev`; production builds use `.next`.
 
+### Docker
+
+Requires Docker with Compose. Create `.env.local` from `.env.example` and set your Mistral API key, then:
+
+```bash
+docker compose up --build -d
+docker compose logs -f app
+docker compose down
+```
+
+Open [localhost:3000](http://localhost:3000). Credentials are loaded at runtime; `.env` files are excluded from the build context.
+
+The multi-stage image uses [Next.js standalone output](https://nextjs.org/docs/app/api-reference/config/next-config-js/output) and runs as a non-root user.
+
 [Graphify setup and code navigation](docs/graphify.md)
