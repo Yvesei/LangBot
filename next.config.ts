@@ -6,5 +6,6 @@ export default function nextConfig(phase: string): NextConfig {
 
   return {
     distDir: isDevelopment ? '.next-dev' : '.next',
+    output: 'standalone',
   };
 }
