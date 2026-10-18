@@ -124,6 +124,20 @@ test('rejects cross-origin requests', async () => {
   expect(fetch).not.toHaveBeenCalled();
 });
 
+test('accepts the browser origin when the runtime URL uses the container host', async () => {
+  const req = new Request('http://0.0.0.0:3000/api/chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Host: 'localhost:3000',
+      Origin: 'http://localhost:3000',
+    },
+    body: JSON.stringify(chatBody),
+  });
+
+  expect((await POST(req)).status).toBe(200);
+});
+
 test.each([
   { ...tutorResult, correction: { correctedText: 123 } },
   {
