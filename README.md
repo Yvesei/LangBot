@@ -322,8 +322,6 @@ The multi-stage image uses [Next.js standalone output](https://nextjs.org/docs/a
 
 Auth is optional: without the variables below the app stays in guest mode with no login UI.
 
-The checked-in `vercel.json` explicitly installs the pinned pnpm version so deployment does not depend on automatic detection of pnpm 12's lockfile format. The Node.js engine is pinned to 22 to match CI and Docker.
-
 1. Create a project at [supabase.com](https://supabase.com) and note its URL and anon key.
 2. Enable **Google** under _Auth → Providers_. In [Google Cloud console](https://console.cloud.google.com/apis/credentials), create an OAuth 2.0 web client and add your Supabase project's callback URL, `https://<project-ref>.supabase.co/auth/v1/callback`, as an authorized redirect URI.
 3. In Supabase _Auth → URL Configuration_, add `http://localhost:3000/auth/callback` and, for production, `https://<your-domain>/auth/callback` as allowed redirect URLs.
