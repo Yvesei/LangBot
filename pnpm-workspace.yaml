@@ -1,0 +1,6 @@
+strictDepBuilds: true
+
+allowBuilds:
+  '@tailwindcss/oxide@4.1.13': true
+  esbuild@0.14.47: true
+  unrs-resolver@1.11.1 || 1.12.2: true

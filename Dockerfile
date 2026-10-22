@@ -5,7 +5,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 FROM base AS dependencies
 RUN npm install --global pnpm@12.14.0
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN HUSKY=0 pnpm install --frozen-lockfile
 
 FROM dependencies AS builder
