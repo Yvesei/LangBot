@@ -276,7 +276,7 @@ pnpm build             # Production build
 
 ## Run locally
 
-**Requires:** Node.js 20.18.1+, pnpm 9, and a Mistral API key.
+**Requires:** Node.js 22+ and pnpm 12 — corepack picks up the pinned version from the `packageManager` field. The Supabase SDK requires Node.js 22 or later.
 
 ```bash
 git clone https://github.com/Yvesei/LangBot.git languify
@@ -285,12 +285,15 @@ pnpm install --frozen-lockfile
 cp .env.example .env.local
 ```
 
-Set `.env.local` (`MISTRAL_API_KEY` is required; model variables override the defaults):
+Set `.env.local` (`MISTRAL_API_KEY` is required; model variables override the defaults; Supabase variables are optional and enable Google sign-in):
 
 ```env
 MISTRAL_API_KEY=your_mistral_api_key_here
 MISTRAL_MODEL=ministral-8b-latest
 MISTRAL_TRANSCRIPTION_MODEL=voxtral-small-latest
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_GUEST_MESSAGE_LIMIT=5
 ```
 
 ```bash
@@ -304,13 +307,42 @@ Open [localhost:3000](http://localhost:3000). Voice recording requires localhost
 Requires Docker with Compose. Create `.env.local` from `.env.example` and set your Mistral API key, then:
 
 ```bash
-docker compose up --build -d
+docker compose --env-file .env.local up --build -d
 docker compose logs -f app
 docker compose down
 ```
 
-Open [localhost:3000](http://localhost:3000). Credentials are loaded at runtime; `.env` files are excluded from the build context.
+`--env-file` also feeds the Supabase build args (next section); without it auth compiles out and the container still runs guest-mode.
+
+Open [localhost:3000](http://localhost:3000). Mistral credentials are loaded at runtime; the public Supabase URL/key are passed as build args. `.env` files are excluded from the build context.
 
 The multi-stage image uses [Next.js standalone output](https://nextjs.org/docs/app/api-reference/config/next-config-js/output) and runs as a non-root user.
+
+### Optional sign-in (Supabase Auth)
+
+Auth is optional: without the variables below the app stays in guest mode with no login UI.
+
+1. Create a project at [supabase.com](https://supabase.com) and note its URL and anon key.
+2. Enable **Google** under _Auth → Providers_. In [Google Cloud console](https://console.cloud.google.com/apis/credentials), create an OAuth 2.0 web client and add your Supabase project's callback URL, `https://<project-ref>.supabase.co/auth/v1/callback`, as an authorized redirect URI.
+3. In Supabase _Auth → URL Configuration_, add `http://localhost:3000/auth/callback` and, for production, `https://<your-domain>/auth/callback` as allowed redirect URLs.
+4. Set `.env.local` (or Vercel project env vars):
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon/public key>
+# Optional server-only key for shared rate limits across serverless instances.
+# Never prefix this key with NEXT_PUBLIC_.
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+Newer Supabase projects issue the public key as `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; either variable name works.
+
+Google sign-in does not require application database tables; chats and flashcards currently remain in browser state/storage.
+
+Shared rate limiting requires a separately provisioned, service-role-only `register_rate_limit_hit(p_identity_key text, p_window_seconds integer, p_max_hits integer)` RPC that returns exactly one row with `allowed boolean` and `retry_after_seconds integer`. Set `SUPABASE_SERVICE_ROLE_KEY` only after provisioning this RPC. If that configured service is unavailable, API requests return 503 until it recovers. Without the service key, the app uses a per-instance in-memory limit.
+
+On Vercel you can alternatively install the [Supabase integration](https://vercel.com/integrations/supabase) and link the project, which injects these variables automatically. If the integration also supplies `SUPABASE_SERVICE_ROLE_KEY`, leave it unset until the rate-limit RPC is provisioned. Signed-in learners get their own rate-limit bucket; guests keep the shared anonymous limits.
+
+The browser prompts guests to sign in after five completed chat messages. This allowance is stored in localStorage and synchronizes across tabs; it is a UI prompt, not a server-enforced access quota. The API rate limit applies independently. Change `NEXT_PUBLIC_GUEST_MESSAGE_LIMIT` to adjust the allowance. The setting is included in the client bundle, so rebuild and redeploy after changing it.
 
 [Graphify setup and code navigation](docs/graphify.md)

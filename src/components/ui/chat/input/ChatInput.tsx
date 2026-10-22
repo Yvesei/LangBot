@@ -25,6 +25,9 @@ export function ChatInput(props: ChatInputProps) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     props.onSend();
+    if (!props.disabled) {
+      inputRef.current?.focus();
+    }
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -47,7 +50,7 @@ export function ChatInput(props: ChatInputProps) {
             inputRef={inputRef}
             prompt={props.prompt}
             setPrompt={props.setPrompt}
-            disabled={props.disabled || props.loading}
+            disabled={props.disabled}
             onKeyDown={handleKeyDown}
           />
           <ChatInputControls {...props} />
