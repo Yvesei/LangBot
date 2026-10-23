@@ -1,7 +1,8 @@
 import { Github, PanelLeftClose } from 'lucide-react';
 import { Logo } from '@/components/ui/brand/Logo';
-import { SidebarActions, type SidebarActionsProps } from './SidebarActions';
+import { AuthMenu } from '../header/AuthMenu';
 import { ThemeSwitcher } from './ThemeSwitcher';
+import { SidebarActions, type SidebarActionsProps } from './SidebarActions';
 
 export type ChatNavigationProps = SidebarActionsProps;
 
@@ -65,6 +66,7 @@ export function ChatSidebar(props: ChatSidebarProps) {
         >
           <Github size={20} />
         </a>
+        <AuthMenu />
       </div>
     </aside>
   );

@@ -1,0 +1,217 @@
+.settings-dialog {
+  width: min(480px, calc(100vw - 40px));
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  color: var(--foreground);
+  background: var(--background);
+  border: var(--frame-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-dialog);
+}
+
+.settings-dialog::backdrop {
+  background: rgb(0 0 0 / 60%);
+}
+
+.settings-body {
+  max-height: calc(100dvh - 48px);
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.settings-section {
+  margin-top: 16px;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.settings-section-label {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.settings-account-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin-bottom: 12px;
+}
+
+.settings-figure {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--icon-background);
+  font-weight: 600;
+}
+
+.settings-figure img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.settings-account-identity {
+  min-width: 0;
+}
+
+.settings-account-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-account-email {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  word-break: break-all;
+  line-height: 1.35;
+}
+
+.settings-signout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border: var(--control-border);
+  border-radius: var(--control-radius, 10px);
+  background: transparent;
+  color: var(--foreground);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.settings-signout:hover {
+  background: var(--icon-hover-background);
+}
+
+.settings-signout:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.settings-error {
+  margin: 10px 0 0;
+  color: var(--error, #b42318);
+  font-size: 13px;
+}
+
+.auth-menu-entry {
+  position: relative;
+}
+
+.auth-menu-error {
+  position: absolute;
+  z-index: 40;
+  right: 0;
+  bottom: calc(100% + 8px);
+  width: min(260px, calc(100vw - 32px));
+  padding: 8px 10px;
+  border: var(--control-border);
+  border-radius: var(--control-radius, 10px);
+  background: var(--background);
+  color: var(--error, #b42318);
+  box-shadow: var(--shadow-dialog);
+  font-size: 12px;
+}
+
+.guest-message-limit {
+  position: absolute;
+  z-index: 45;
+  right: 16px;
+  bottom: 112px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: min(620px, calc(100% - 32px));
+  padding: 16px 18px;
+  transform: translateX(-50%);
+  color: var(--foreground);
+  background: var(--surface);
+  border: var(--frame-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-dialog);
+}
+
+.guest-message-limit-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.guest-message-limit-description {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.guest-limit-auth-entry {
+  flex-shrink: 0;
+  width: min(220px, 44%);
+}
+
+.guest-limit-auth-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  color: var(--foreground);
+  background: var(--background);
+  border: var(--control-border);
+  border-radius: var(--control-radius, 10px);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.guest-limit-auth-button:hover {
+  background: var(--icon-hover-background);
+}
+
+.guest-limit-auth-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.guest-limit-auth-entry .auth-menu-error {
+  position: static;
+  width: auto;
+  margin-top: 8px;
+  box-shadow: none;
+}
+
+@media (max-width: 600px) {
+  .guest-message-limit {
+    bottom: 116px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .guest-limit-auth-entry {
+    width: 100%;
+  }
+}

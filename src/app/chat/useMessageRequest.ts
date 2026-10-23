@@ -6,7 +6,8 @@ import {
   type ConversationMessage,
 } from '@/lib/chat/conversation';
 import { createFlashcards } from '@/lib/learning';
-import type { ChatResult } from '@/lib/schemas';
+import type { ChatResult, LanguageConfig } from '@/lib/schemas';
+import { GUEST_MESSAGE_LIMIT } from '@/lib/auth/guest-message-limit';
 import type { ChatState } from './useChatState';
 
 const MAX_SAVED_CARDS = 100;
@@ -14,6 +15,14 @@ const MAX_SAVED_CARDS = 100;
 interface SendMessageOptions {
   retryMessage?: ConversationMessage;
   spokenContent?: string;
+}
+
+interface SuccessfulResponseOptions {
+  controller: AbortController;
+  messageId: string;
+  content: string;
+  result: ChatResult;
+  isGuestMessage: boolean;
 }
 
 function getMessageContent(state: ChatState, options: SendMessageOptions) {
@@ -59,6 +68,19 @@ function isCurrentRequest(state: ChatState, controller: AbortController) {
   return (
     !controller.signal.aborted &&
     state.activeChatRequest.current?.controller === controller
+  );
+}
+
+function canStartMessage(
+  state: ChatState,
+): state is ChatState & { config: LanguageConfig } {
+  return (
+    Boolean(state.config) &&
+    state.isReady &&
+    !state.activeChatRequest.current &&
+    !state.isSelectingLanguages &&
+    !state.auth.isLoading &&
+    !state.isGuestLimitReached
   );
 }
 
@@ -113,6 +135,21 @@ function saveReviewCards(
   });
 }
 
+function handleSuccessfulResponse(state: ChatState, options: SuccessfulResponseOptions) {
+  if (!isCurrentRequest(state, options.controller)) {
+    return;
+  }
+
+  state.setMessages((current) =>
+    addAssistantReply(current, options.messageId, options.result),
+  );
+  const guestMessageCount = options.isGuestMessage ? state.recordGuestMessage() : null;
+  if (guestMessageCount !== null && guestMessageCount >= GUEST_MESSAGE_LIMIT) {
+    state.setVoiceOpen(false);
+  }
+  saveReviewCards(state, options.messageId, options.content, options.result);
+}
+
 export function useMessageRequest(state: ChatState) {
   function cancel() {
     const pendingRequest = state.activeChatRequest.current;
@@ -128,10 +165,12 @@ export function useMessageRequest(state: ChatState) {
   }
 
   async function sendMessage(retryMessage?: ConversationMessage, spokenContent?: string) {
-    const config = state.config;
-    if (!config || state.activeChatRequest.current || state.isSelectingLanguages) {
+    if (!canStartMessage(state)) {
       return;
     }
+
+    const config = state.config;
+    const isGuestMessage = state.auth.isConfigured && !state.auth.session;
 
     const options = {
       retryMessage,
@@ -164,12 +203,13 @@ export function useMessageRequest(state: ChatState) {
         controller.signal,
       );
 
-      if (isCurrentRequest(state, controller)) {
-        state.setMessages((current) =>
-          addAssistantReply(current, messageId, tutorResponse),
-        );
-        saveReviewCards(state, messageId, content, tutorResponse);
-      }
+      handleSuccessfulResponse(state, {
+        controller,
+        messageId,
+        content,
+        result: tutorResponse,
+        isGuestMessage,
+      });
     } catch (requestError) {
       handleRequestError(state, controller, messageId, requestError);
     } finally {

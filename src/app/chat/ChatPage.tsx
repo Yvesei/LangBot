@@ -1,12 +1,23 @@
 'use client';
 
 import { ChatLayout } from '@/components/ui/chat/sidebar/ChatLayout';
+import { GuestMessageLimitPrompt } from '@/components/ui/chat/GuestMessageLimitPrompt';
 import { ChatInput } from '@/components/ui/chat/input/ChatInput';
 import { ReviewDialog } from '@/components/ui/review/dialog/ReviewDialog';
 import { VoiceCall } from '@/components/ui/voice/VoiceCall';
 import { ChatConversation } from './ChatConversation';
 import { useChatActions } from './useChatActions';
-import { useChatState } from './useChatState';
+import { useChatState, type ChatState } from './useChatState';
+
+function isChatInputDisabled(state: ChatState) {
+  return (
+    !state.isReady ||
+    !state.config ||
+    state.isSelectingLanguages ||
+    state.auth.isLoading ||
+    state.isGuestLimitReached
+  );
+}
 
 function ChatNotices({
   error,
@@ -74,9 +85,10 @@ export default function ChatPage() {
         onSend={actions.send}
         onCancel={actions.cancel}
         onVoiceCall={actions.openVoiceCall}
-        disabled={!state.isReady || !state.config || state.isSelectingLanguages}
+        disabled={isChatInputDisabled(state)}
       />
-      {state.config && state.voiceOpen && (
+      {state.isGuestLimitReached && <GuestMessageLimitPrompt />}
+      {state.config && state.voiceOpen && !isChatInputDisabled(state) && (
         <VoiceCall
           open
           config={state.config}

@@ -4,6 +4,11 @@ import { getLanguageConfigFromStorage } from '@/lib/config/language';
 import { loadCards, sameLanguages, saveCards, type StudyCard } from '@/lib/learning';
 import { groupReviewCards } from '@/lib/review';
 import type { LanguageConfig } from '@/lib/schemas';
+import {
+  GUEST_MESSAGE_LIMIT,
+  useGuestMessageCount,
+} from '@/lib/auth/guest-message-limit';
+import { useAuthSession } from '@/lib/auth/client';
 
 interface ActiveChatRequest {
   controller: AbortController;
@@ -19,6 +24,8 @@ function getVisibleCards(cards: StudyCard[], config: LanguageConfig | null) {
 }
 
 export function useChatState() {
+  const auth = useAuthSession();
+  const { guestMessageCount, recordGuestMessage } = useGuestMessageCount();
   const [config, setConfig] = useState<LanguageConfig | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isSelectingLanguages, setIsSelectingLanguages] = useState(false);
@@ -63,8 +70,23 @@ export function useChatState() {
   }, [messages]);
 
   const visibleCards = getVisibleCards(cards, config);
+  const isGuestLimitReached =
+    auth.isConfigured &&
+    !auth.isLoading &&
+    !auth.session &&
+    guestMessageCount >= GUEST_MESSAGE_LIMIT;
+
+  useEffect(() => {
+    if (isGuestLimitReached) {
+      setVoiceOpen(false);
+    }
+  }, [isGuestLimitReached]);
 
   return {
+    auth,
+    isGuestLimitReached,
+    guestMessageCount,
+    recordGuestMessage,
     config,
     setConfig,
     isReady,
