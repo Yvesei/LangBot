@@ -235,6 +235,130 @@ flowchart LR
 
 Cards retain their `sourceMessageId`; deleting a turn removes its associated cards. Review groups retain occurrence IDs so removing a group deletes all its occurrences.
 
+### Database schema (planned)
+
+Planned tables for Supabase/Postgres. `auth_users` represents Supabase's `auth.users`; the other tables belong to `public`.
+
+UUID IDs and numeric identity IDs are generated on insert. `profiles.id` uses the existing Auth user ID, and `rate_limits.identity_key` is supplied by the server. Creation timestamps and initial `updated_at` values default to `now()`; subsequent updates must set `updated_at` in application code.
+
+```mermaid
+erDiagram
+    auth_users {
+        uuid id PK
+    }
+
+    profiles {
+        uuid id PK, FK
+        text display_name
+        text ui_language
+        text ui_theme
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    conversations {
+        uuid id PK
+        uuid user_id FK
+        text native_language
+        text target_language
+        text title
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    messages {
+        uuid id PK
+        uuid conversation_id FK
+        uuid user_id FK
+        text role
+        text content
+        text origin
+        timestamptz created_at
+    }
+
+    corrections {
+        uuid id PK
+        uuid user_id FK
+        uuid message_id FK
+        text original_text
+        text corrected_text
+        timestamptz created_at
+    }
+
+    correction_issues {
+        uuid id PK
+        uuid user_id FK
+        uuid correction_id FK
+        text category
+        text explanation
+    }
+
+    study_cards {
+        uuid id PK
+        uuid user_id FK
+        uuid message_id FK
+        uuid correction_id FK
+        text native_language
+        text target_language
+        text original_text
+        text corrected_text
+        text focus
+        text status
+        smallint box
+        timestamptz due_at
+        integer review_count
+        integer lapse_count
+        timestamptz last_reviewed_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    card_reviews {
+        bigint id PK
+        uuid user_id FK
+        uuid card_id FK
+        smallint outcome
+        smallint box_after
+        timestamptz due_next
+        timestamptz reviewed_at
+    }
+
+    rate_limits {
+        text identity_key PK
+        integer hits
+        timestamptz window_expires
+    }
+
+    api_usage {
+        bigint id PK
+        uuid user_id FK
+        text route
+        text model
+        integer input_tokens
+        integer output_tokens
+        integer latency_ms
+        smallint attempts
+        text status
+        text error_code
+        timestamptz created_at
+    }
+
+    auth_users ||--o| profiles : id
+    auth_users ||..o{ conversations : user_id
+    conversations ||..o{ messages : conversation_id
+    auth_users ||..o{ messages : user_id
+    auth_users ||..o{ corrections : user_id
+    messages ||..o{ corrections : message_id
+    auth_users ||..o{ correction_issues : user_id
+    corrections ||..o{ correction_issues : correction_id
+    auth_users ||..o{ study_cards : user_id
+    messages |o..o{ study_cards : message_id
+    corrections |o..o{ study_cards : correction_id
+    auth_users ||..o{ card_reviews : user_id
+    study_cards ||..o{ card_reviews : card_id
+    auth_users |o..o{ api_usage : user_id
+```
+
 ## Testing & delivery
 
 ```bash
