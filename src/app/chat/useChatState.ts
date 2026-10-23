@@ -4,9 +4,11 @@ import { getLanguageConfigFromStorage } from '@/lib/config/language';
 import { loadCards, sameLanguages, saveCards, type StudyCard } from '@/lib/learning';
 import { groupReviewCards } from '@/lib/review';
 import type { LanguageConfig } from '@/lib/schemas';
-import { GUEST_MESSAGE_LIMIT } from '@/lib/auth/guest-message-limit';
-import { useGuestMessageCount } from '@/lib/auth/use-guest-message-count';
-import { useAuthSession } from '@/lib/auth/use-session';
+import {
+  GUEST_MESSAGE_LIMIT,
+  useGuestMessageCount,
+} from '@/lib/auth/guest-message-limit';
+import { useAuthSession } from '@/lib/auth/client';
 
 interface ActiveChatRequest {
   controller: AbortController;

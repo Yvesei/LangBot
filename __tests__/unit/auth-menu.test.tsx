@@ -14,8 +14,8 @@ const authApi = {
   listener: null as null | ((event: string, session: unknown) => void),
 };
 
-jest.mock('@/lib/auth/browser', () => ({
-  getSupabaseBrowserClient: () => ({
+jest.mock('@supabase/ssr', () => ({
+  createBrowserClient: () => ({
     auth: {
       getSession: authApi.getSession,
 

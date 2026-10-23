@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { SettingsDialog } from '@/components/ui/settings/SettingsDialog';
 import { accountDetails } from '@/lib/auth/account';
-import { getSupabaseBrowserClient } from '@/lib/auth/browser';
-import { useAuthSession } from '@/lib/auth/use-session';
+import { getSupabaseBrowserClient, useAuthSession } from '@/lib/auth/client';
 import { SignInButton } from './SignInButton';
 
 // Optional account entry point: guests get the Google sign-in button; signed-in

@@ -2,7 +2,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { Session } from '@supabase/supabase-js';
 
-import { useAuthSession } from '@/lib/auth/use-session';
+import { useAuthSession } from '@/lib/auth/client';
 
 let mockConfigured = true;
 const mockGetSession = jest.fn();
@@ -13,8 +13,8 @@ jest.mock('@/lib/auth/config', () => ({
   isSupabaseConfigured: () => mockConfigured,
 }));
 
-jest.mock('@/lib/auth/browser', () => ({
-  getSupabaseBrowserClient: () =>
+jest.mock('@supabase/ssr', () => ({
+  createBrowserClient: () =>
     mockConfigured
       ? {
           auth: {

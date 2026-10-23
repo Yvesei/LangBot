@@ -1,8 +1,17 @@
 import { useEffect, useState } from 'react';
-import type { Session } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
+import type { Session, SupabaseClient } from '@supabase/supabase-js';
 
-import { getSupabaseBrowserClient } from './browser';
-import { isSupabaseConfigured } from './config';
+import { isSupabaseConfigured, SUPABASE_ANON_KEY, SUPABASE_URL } from './config';
+
+export function getSupabaseBrowserClient(): SupabaseClient | null {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  // createBrowserClient caches its instance, so repeated calls stay cheap.
+  return createBrowserClient(SUPABASE_URL!, SUPABASE_ANON_KEY!);
+}
 
 export interface AuthSessionState {
   session: Session | null;

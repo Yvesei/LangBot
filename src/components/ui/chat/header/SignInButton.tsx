@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { GoogleMark } from '@/components/ui/brand/GoogleMark';
-import { getSupabaseBrowserClient } from '@/lib/auth/browser';
+import { getSupabaseBrowserClient } from '@/lib/auth/client';
 
 interface SignInButtonProps {
   variant?: 'icon' | 'call-to-action';

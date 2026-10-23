@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { LogOut } from 'lucide-react';
 
-import { getSupabaseBrowserClient } from '@/lib/auth/browser';
+import { getSupabaseBrowserClient } from '@/lib/auth/client';
 import { accountDetails } from '@/lib/auth/account';
 
 interface SettingsAccountSectionProps {

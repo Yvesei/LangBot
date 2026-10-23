@@ -8,11 +8,14 @@ import {
   GUEST_MESSAGE_COUNT_STORAGE_KEY,
   GUEST_MESSAGE_LIMIT,
 } from '@/lib/auth/guest-message-limit';
-import { useAuthSession } from '@/lib/auth/use-session';
+import { useAuthSession } from '@/lib/auth/client';
 import { tutorResult } from '../../tests/fixtures';
 
 jest.mock('@/lib/api', () => ({ send: jest.fn(), translateMessage: jest.fn() }));
-jest.mock('@/lib/auth/use-session', () => ({ useAuthSession: jest.fn() }));
+jest.mock('@/lib/auth/client', () => ({
+  ...jest.requireActual('@/lib/auth/client'),
+  useAuthSession: jest.fn(),
+}));
 jest.mock('@/components/ui/voice/VoiceCall', () => ({
   VoiceCall: () => (
     <div
