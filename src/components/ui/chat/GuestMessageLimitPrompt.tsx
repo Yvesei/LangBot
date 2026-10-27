@@ -1,12 +1,11 @@
-import { GUEST_MESSAGE_LIMIT } from '@/lib/auth/guest-message-limit';
 import { SignInButton } from './header/SignInButton';
 
-function getLimitMessage() {
-  const messageLabel = GUEST_MESSAGE_LIMIT === 1 ? 'message' : 'messages';
-  return `You've used your ${GUEST_MESSAGE_LIMIT} free ${messageLabel}.`;
+function getLimitMessage(limit: number) {
+  const messageLabel = limit === 1 ? 'message' : 'messages';
+  return `You've used your ${limit} free ${messageLabel}.`;
 }
 
-export function GuestMessageLimitPrompt() {
+export function GuestMessageLimitPrompt({ limit }: { limit: number }) {
   return (
     <section
       className="guest-message-limit"
@@ -19,7 +18,7 @@ export function GuestMessageLimitPrompt() {
           id="guest-message-limit-title"
           className="guest-message-limit-title"
         >
-          {getLimitMessage()}
+          {getLimitMessage(limit)}
         </h2>
         <p
           id="guest-message-limit-description"

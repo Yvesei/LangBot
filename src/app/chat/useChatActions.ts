@@ -1,5 +1,4 @@
 import type { ConversationMessage } from '@/lib/chat/conversation';
-import { saveLanguageConfigToStorage } from '@/lib/config/language';
 import type { LanguageConfig } from '@/lib/schemas';
 import type { ChatState } from './useChatState';
 import { useMessageRequest } from './useMessageRequest';
@@ -20,10 +19,6 @@ export function useChatActions(state: ChatState) {
     state.setReviewOpen(false);
     state.setConfig(config);
     state.setIsSelectingLanguages(false);
-
-    if (!saveLanguageConfigToStorage(config)) {
-      state.setStorageWarning('Language settings could not be saved in this browser.');
-    }
   }
 
   function changeLanguages() {

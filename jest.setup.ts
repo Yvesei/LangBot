@@ -9,7 +9,6 @@ delete process.env.NEXT_PUBLIC_SUPABASE_URL;
 delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 delete process.env.SUPABASE_SERVICE_ROLE_KEY;
-delete process.env.NEXT_PUBLIC_GUEST_MESSAGE_LIMIT;
 
 // Minimal <dialog> shim for jsdom builds without showModal support: the review
 // and settings dialogs mount through the native element in component tests.

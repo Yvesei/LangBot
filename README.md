@@ -216,11 +216,11 @@ Closing a call aborts recording and transcription, cancels playback, and clears 
 
 ### State and persistence
 
-| Data                    | Storage                         | Lifecycle                                               |
-| ----------------------- | ------------------------------- | ------------------------------------------------------- |
-| Conversation            | React state                     | Cleared on reload or new chat                           |
-| Language pair and theme | `localStorage`                  | Restored on reload                                      |
-| Flashcards              | Schema-validated `localStorage` | Latest 100 occurrences; no account or cross-device sync |
+| Data                    | Storage                                                     | Lifecycle                                                 |
+| ----------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
+| Conversation            | React state                                                 | Cleared on reload or new chat                             |
+| Language pair and theme | Supabase `profiles` for accounts; `localStorage` for guests | Restored per account; guest settings stay in this browser |
+| Flashcards              | Schema-validated `localStorage`                             | Latest 100 occurrences; no account or cross-device sync   |
 
 ```mermaid
 flowchart LR
@@ -234,6 +234,150 @@ flowchart LR
 ```
 
 Cards retain their `sourceMessageId`; deleting a turn removes its associated cards. Review groups retain occurrence IDs so removing a group deletes all its occurrences.
+
+### Database schema
+
+`app_settings` and `profiles` back the current settings flow. The remaining tables describe planned chat and learning persistence. `auth_users` represents Supabase's `auth.users`; the other tables belong to `public`.
+
+| Setting                   | Guest storage                    | Account/shared database column     |
+| ------------------------- | -------------------------------- | ---------------------------------- |
+| Preferred native language | `localStorage`: `langbot-native` | `profiles.native_language`         |
+| Preferred target language | `localStorage`: `langbot-target` | `profiles.target_language`         |
+| Theme                     | `localStorage`: `langbot-theme`  | `profiles.ui_theme`                |
+| Guest message allowance   | Loaded from the server           | `app_settings.guest_message_limit` |
+
+The app restores account preferences through `GET /api/settings` and saves changes through `PATCH /api/settings`. Profile language preferences stay empty until setup is completed. Guest settings remain separate in browser storage and are restored on sign-out. Drafts, dialogs, and active voice-call state remain in React.
+
+`app_settings.guest_message_limit` defaults to five completed messages before sign-in. The guest's consumed-message count stays in browser storage for now; it is separate from this setting and the per-minute API rate limit.
+
+UUID IDs and numeric identity IDs are generated on insert. `profiles.id` uses the existing Auth user ID, and `rate_limits.identity_key` is supplied by the server. Creation timestamps and initial `updated_at` values default to `now()`; subsequent updates must set `updated_at` in application code.
+
+```mermaid
+erDiagram
+    auth_users {
+        uuid id PK
+    }
+
+    app_settings {
+        text id PK
+        integer guest_message_limit
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    profiles {
+        uuid id PK, FK
+        text display_name
+        text native_language
+        text target_language
+        text ui_language
+        text ui_theme
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    conversations {
+        uuid id PK
+        uuid user_id FK
+        text native_language
+        text target_language
+        text title
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    messages {
+        uuid id PK
+        uuid conversation_id FK
+        uuid user_id FK
+        text role
+        text content
+        text origin
+        timestamptz created_at
+    }
+
+    corrections {
+        uuid id PK
+        uuid user_id FK
+        uuid message_id FK
+        text original_text
+        text corrected_text
+        timestamptz created_at
+    }
+
+    correction_issues {
+        uuid id PK
+        uuid user_id FK
+        uuid correction_id FK
+        text category
+        text explanation
+    }
+
+    study_cards {
+        uuid id PK
+        uuid user_id FK
+        uuid message_id FK
+        uuid correction_id FK
+        text native_language
+        text target_language
+        text original_text
+        text corrected_text
+        text focus
+        text status
+        smallint box
+        timestamptz due_at
+        integer review_count
+        integer lapse_count
+        timestamptz last_reviewed_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    card_reviews {
+        bigint id PK
+        uuid user_id FK
+        uuid card_id FK
+        smallint outcome
+        smallint box_after
+        timestamptz due_next
+        timestamptz reviewed_at
+    }
+
+    rate_limits {
+        text identity_key PK
+        integer hits
+        timestamptz window_expires
+    }
+
+    api_usage {
+        bigint id PK
+        uuid user_id FK
+        text route
+        text model
+        integer input_tokens
+        integer output_tokens
+        integer latency_ms
+        smallint attempts
+        text status
+        text error_code
+        timestamptz created_at
+    }
+
+    auth_users ||--o| profiles : id
+    auth_users ||..o{ conversations : user_id
+    conversations ||..o{ messages : conversation_id
+    auth_users ||..o{ messages : user_id
+    auth_users ||..o{ corrections : user_id
+    messages ||..o{ corrections : message_id
+    auth_users ||..o{ correction_issues : user_id
+    corrections ||..o{ correction_issues : correction_id
+    auth_users ||..o{ study_cards : user_id
+    messages |o..o{ study_cards : message_id
+    corrections |o..o{ study_cards : correction_id
+    auth_users ||..o{ card_reviews : user_id
+    study_cards ||..o{ card_reviews : card_id
+    auth_users |o..o{ api_usage : user_id
+```
 
 ## Testing & delivery
 
@@ -293,7 +437,6 @@ MISTRAL_MODEL=ministral-8b-latest
 MISTRAL_TRANSCRIPTION_MODEL=voxtral-small-latest
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_GUEST_MESSAGE_LIMIT=5
 ```
 
 ```bash
@@ -312,37 +455,10 @@ docker compose logs -f app
 docker compose down
 ```
 
-`--env-file` also feeds the Supabase build args (next section); without it auth compiles out and the container still runs guest-mode.
+`--env-file` also feeds the Supabase build args; without it auth compiles out and the container still runs guest-mode.
 
 Open [localhost:3000](http://localhost:3000). Mistral credentials are loaded at runtime; the public Supabase URL/key are passed as build args. `.env` files are excluded from the build context.
 
 The multi-stage image uses [Next.js standalone output](https://nextjs.org/docs/app/api-reference/config/next-config-js/output) and runs as a non-root user.
-
-### Optional sign-in (Supabase Auth)
-
-Auth is optional: without the variables below the app stays in guest mode with no login UI.
-
-1. Create a project at [supabase.com](https://supabase.com) and note its URL and anon key.
-2. Enable **Google** under _Auth → Providers_. In [Google Cloud console](https://console.cloud.google.com/apis/credentials), create an OAuth 2.0 web client and add your Supabase project's callback URL, `https://<project-ref>.supabase.co/auth/v1/callback`, as an authorized redirect URI.
-3. In Supabase _Auth → URL Configuration_, add `http://localhost:3000/auth/callback` and, for production, `https://<your-domain>/auth/callback` as allowed redirect URLs.
-4. Set `.env.local` (or Vercel project env vars):
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon/public key>
-# Optional server-only key for shared rate limits across serverless instances.
-# Never prefix this key with NEXT_PUBLIC_.
-SUPABASE_SERVICE_ROLE_KEY=
-```
-
-Newer Supabase projects issue the public key as `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; either variable name works.
-
-Google sign-in does not require application database tables; chats and flashcards currently remain in browser state/storage.
-
-Shared rate limiting requires a separately provisioned, service-role-only `register_rate_limit_hit(p_identity_key text, p_window_seconds integer, p_max_hits integer)` RPC that returns exactly one row with `allowed boolean` and `retry_after_seconds integer`. Set `SUPABASE_SERVICE_ROLE_KEY` only after provisioning this RPC. If that configured service is unavailable, API requests return 503 until it recovers. Without the service key, the app uses a per-instance in-memory limit.
-
-On Vercel you can alternatively install the [Supabase integration](https://vercel.com/integrations/supabase) and link the project, which injects these variables automatically. If the integration also supplies `SUPABASE_SERVICE_ROLE_KEY`, leave it unset until the rate-limit RPC is provisioned. Signed-in learners get their own rate-limit bucket; guests keep the shared anonymous limits.
-
-The browser prompts guests to sign in after five completed chat messages. This allowance is stored in localStorage and synchronizes across tabs; it is a UI prompt, not a server-enforced access quota. The API rate limit applies independently. Change `NEXT_PUBLIC_GUEST_MESSAGE_LIMIT` to adjust the allowance. The setting is included in the client bundle, so rebuild and redeploy after changing it.
 
 [Graphify setup and code navigation](docs/graphify.md)

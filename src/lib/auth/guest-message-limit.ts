@@ -3,18 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 export const DEFAULT_GUEST_MESSAGE_LIMIT = 5;
 export const GUEST_MESSAGE_COUNT_STORAGE_KEY = 'languify:guest-message-count';
 
-function getConfiguredGuestMessageLimit() {
-  const configuredLimit = process.env.NEXT_PUBLIC_GUEST_MESSAGE_LIMIT?.trim();
-  if (!configuredLimit) {
-    return DEFAULT_GUEST_MESSAGE_LIMIT;
-  }
-
-  const limit = Number(configuredLimit);
-  return Number.isSafeInteger(limit) && limit >= 0 ? limit : DEFAULT_GUEST_MESSAGE_LIMIT;
-}
-
-export const GUEST_MESSAGE_LIMIT = getConfiguredGuestMessageLimit();
-
 export function loadGuestMessageCount() {
   if (typeof window === 'undefined') {
     return 0;
