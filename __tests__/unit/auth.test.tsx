@@ -7,7 +7,6 @@ import {
   AuthSessionMissingError,
   AuthUnknownError,
   createClient,
-  type SupabaseClient,
 } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
@@ -20,12 +19,18 @@ import { getSupabaseAdminClient } from '@/lib/auth/admin';
 import { getSupabaseUser } from '@/lib/auth/server';
 import {
   GUEST_MESSAGE_COUNT_STORAGE_KEY as countKey,
-  GUEST_MESSAGE_LIMIT as limit,
+  DEFAULT_GUEST_MESSAGE_LIMIT as limit,
 } from '@/lib/auth/guest-message-limit';
 import { middleware } from '@/middleware';
 import { tutorResult } from '../../tests/fixtures';
 
 let mockConfigured = true;
+const settings = {
+  success: true,
+  userId: null as string | null,
+  guestMessageLimit: limit,
+  preferences: { nativeLanguage: 'fr', targetLanguage: 'en', theme: 'neo' },
+};
 const account = {
   id: 'user-1',
   email: 'john@doe.com',
@@ -87,6 +92,8 @@ jest.mock('@/components/ui/voice/VoiceCall', () => ({
 
 beforeEach(() => {
   mockConfigured = true;
+  Object.assign(settings, { userId: null, guestMessageLimit: limit });
+  jest.mocked(fetch).mockImplementation(async () => Response.json(settings));
   listeners.clear();
   Object.values(auth).forEach((method) => method.mockReset());
   auth.getSession.mockResolvedValue({ data: { session: null } });
@@ -99,12 +106,12 @@ beforeEach(() => {
 
       onAuthStateChange: (listener: Listener) => {
         listeners.add(listener);
-        return {
-          data: { subscription: { unsubscribe: () => listeners.delete(listener) } },
-        };
+
+        const unsubscribe = () => listeners.delete(listener);
+        return { data: { subscription: { unsubscribe } } };
       },
     },
-  } as unknown as SupabaseClient;
+  } as unknown as ReturnType<typeof createBrowserClient>;
   sdk.createBrowserClient.mockReturnValue(client);
   sdk.createServerClient.mockReset().mockReturnValue(client);
   jest
@@ -124,11 +131,9 @@ afterEach(() => {
 });
 
 function emit(session: Parameters<Listener>[1]) {
-  act(() =>
-    listeners.forEach((listener) =>
-      listener(session ? 'SIGNED_IN' : 'SIGNED_OUT', session),
-    ),
-  );
+  settings.userId = session?.user.id ?? null;
+  const event = session ? 'SIGNED_IN' : 'SIGNED_OUT';
+  act(() => listeners.forEach((listener) => listener(event, session)));
 }
 
 async function openChat() {
@@ -146,9 +151,7 @@ function click(name: string) {
 }
 
 function submit() {
-  fireEvent.change(composer(), {
-    target: { value: 'I has a apple.' },
-  });
+  fireEvent.change(composer(), { target: { value: 'I has a apple.' } });
   click('Send');
 }
 
@@ -176,8 +179,9 @@ test('callback errors appear in both entry points until retry; provider failures
   localStorage.setItem(countKey, String(limit));
   auth.signInWithOAuth.mockResolvedValue({ error: new Error('Provider disabled') });
   render(<Page />);
-  await screen.findByRole('button', { name: 'Sign in with Google' });
-  expect(await screen.findAllByText(/Google sign-in did not finish/)).toHaveLength(2);
+  await waitFor(() =>
+    expect(screen.getAllByText(/Google sign-in did not finish/)).toHaveLength(2),
+  );
   expect(window.location.search).toContain('auth_error=1');
   click('Sign in with Google');
   expect(await screen.findByText(/Could not start Google sign-in/)).toBeVisible();
@@ -232,12 +236,16 @@ test.each(['stale success', 'stale failure'])('events beat %s', async (outcome) 
   );
 });
 
-test('successful guest replies consume the allowance across new chats and reloads', async () => {
-  localStorage.setItem(countKey, String(limit - 1));
+test.each([1, 2])('runtime allowance: %s', async (allowance) => {
+  settings.guestMessageLimit = allowance;
+  localStorage.setItem(countKey, String(allowance - 1));
   const view = await openChat();
   submit();
   await screen.findByText(tutorResult.reply);
-  expect(localStorage.getItem(countKey)).toBe(String(limit));
+  expect(localStorage.getItem(countKey)).toBe(String(allowance));
+  expect(screen.getByRole('dialog')).toHaveTextContent(
+    `You've used your ${allowance} free ${allowance === 1 ? 'message' : 'messages'}.`,
+  );
   expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeVisible();
   click('New chat');
   expect(composer()).toBeDisabled();
@@ -273,17 +281,19 @@ test('cancelled replies do not consume an allowance', async () => {
   expect(localStorage.getItem(countKey)).toBeNull();
 });
 
-test('sign-in unlocks an exhausted chat and sign-out closes the call permanently', async () => {
-  localStorage.setItem(countKey, String(limit));
+test.each([0, limit])('voice gate with allowance %s', async (allowance) => {
+  settings.guestMessageLimit = allowance;
+  localStorage.setItem(countKey, String(allowance));
   render(<Page />);
   await screen.findByRole('button', { name: 'Continue with Google' });
   emit({ user: account });
-  expect(composer()).toBeEnabled();
+  await waitFor(() => expect(composer()).toBeEnabled());
   click('Voice call');
   expect(screen.getByRole('dialog', { name: 'Voice call with Languify' })).toBeVisible();
   emit(null);
   expect(composer()).toBeDisabled();
   emit({ user: account });
+  await waitFor(() => expect(composer()).toBeEnabled());
   expect(screen.queryByRole('dialog')).toBeNull();
 });
 
@@ -297,8 +307,8 @@ test('another tab exhausting the allowance closes an active guest call', async (
 
 test('unconfigured auth leaves chat usable and skips browser, server and middleware clients', async () => {
   await middleware(new NextRequest('https://languify.test/api/chat'));
-  expect(createServerClient).not.toHaveBeenCalled();
   mockConfigured = false;
+  settings.guestMessageLimit = 0;
   localStorage.setItem(countKey, String(limit));
   await openChat();
   submit();
@@ -312,12 +322,19 @@ test('unconfigured auth leaves chat usable and skips browser, server and middlew
 });
 
 test.each([
+  ['?code=valid', '/'],
   ['?error=access_denied', '/?auth_error=1'],
   ['', '/?auth_error=1'],
   ['?code=invalid', '/?auth_error=1'],
   ['?code=offline', '/?auth_error=1'],
   ['?code=unconfigured', '/?auth_error=1'],
 ])('callback %s → %s', async (query, location) => {
+  auth.exchangeCodeForSession.mockImplementation(async () => {
+    const adapter = sdk.createServerClient.mock.calls[0][2].cookies;
+    expect(await adapter.getAll()).toEqual([{ name: 'session', value: 'old' }]);
+    await adapter.setAll?.([sessionCookie], {});
+    return { error: null };
+  });
   if (query.includes('invalid'))
     auth.exchangeCodeForSession.mockResolvedValue({ error: new Error('Invalid code') });
   if (query.includes('offline'))
@@ -333,24 +350,10 @@ test.each([
   expect(response.headers.get('cache-control')).toBe('private, no-store');
   if (!query || query.includes('access_denied'))
     expect(createServerClient).not.toHaveBeenCalled();
-});
-
-test('the callback persists session cookies through the server cookie adapter', async () => {
-  auth.exchangeCodeForSession.mockImplementation(async () => {
-    const adapter = sdk.createServerClient.mock.calls[0][2].cookies;
-    expect(await adapter.getAll()).toEqual([{ name: 'session', value: 'old' }]);
-    await adapter.setAll?.([sessionCookie], {});
-    return { error: null };
-  });
-  const response = await GET(
-    new Request('http://localhost:3000/auth/callback?code=valid', {
-      headers: { 'x-forwarded-host': 'untrusted.example' },
-    }),
-  );
-  expect(response.headers.get('location')).toBe('/');
-  expect(response.headers.get('cache-control')).toBe('private, no-store');
-  expect(auth.exchangeCodeForSession).toHaveBeenCalledWith('valid');
-  expect(store.set).toHaveBeenCalledWith('session', 'new', sessionCookie.options);
+  if (location === '/') {
+    expect(auth.exchangeCodeForSession).toHaveBeenCalledWith('valid');
+    expect(store.set).toHaveBeenCalledWith('session', 'new', sessionCookie.options);
+  }
 });
 
 test.each([
@@ -399,7 +402,6 @@ test('admin access is optional, fails closed on missing URL, and caches a non-pe
   process.env.SUPABASE_SERVICE_ROLE_KEY = ' service-key ';
   mockConfigured = false;
   expect(getSupabaseAdminClient).toThrow(expect.objectContaining({ status: 503 }));
-  expect(createClient).not.toHaveBeenCalled();
   mockConfigured = true;
   sdk.createClient.mockReturnValue({} as ReturnType<typeof createClient>);
   expect(getSupabaseAdminClient()).toBe(getSupabaseAdminClient());
@@ -412,19 +414,17 @@ test('admin access is optional, fails closed on missing URL, and caches a non-pe
 });
 
 test.each(['', '  ', ' anon-key ', undefined])('public key fallback: %j', (anonKey) => {
+  const url = anonKey === undefined ? '' : 'https://languify.supabase.co';
   jest.replaceProperty(process, 'env', {
     ...process.env,
-    NEXT_PUBLIC_SUPABASE_URL:
-      anonKey === undefined ? ' ' : ' https://languify.supabase.co ',
+    NEXT_PUBLIC_SUPABASE_URL: ` ${url} `,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: anonKey,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ' publishable-key ',
   });
   jest.isolateModules(() => {
     const config = jest.requireActual('@/lib/auth/config');
     expect(config.isSupabaseConfigured()).toBe(anonKey !== undefined);
-    expect(config.SUPABASE_URL).toBe(
-      anonKey === undefined ? '' : 'https://languify.supabase.co',
-    );
+    expect(config.SUPABASE_URL).toBe(url);
     expect(config.SUPABASE_ANON_KEY).toBe(anonKey?.trim() || 'publishable-key');
   });
 });

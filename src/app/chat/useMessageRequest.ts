@@ -7,7 +7,6 @@ import {
 } from '@/lib/chat/conversation';
 import { createFlashcards } from '@/lib/learning';
 import type { ChatResult, LanguageConfig } from '@/lib/schemas';
-import { GUEST_MESSAGE_LIMIT } from '@/lib/auth/guest-message-limit';
 import type { ChatState } from './useChatState';
 
 const MAX_SAVED_CARDS = 100;
@@ -144,7 +143,7 @@ function handleSuccessfulResponse(state: ChatState, options: SuccessfulResponseO
     addAssistantReply(current, options.messageId, options.result),
   );
   const guestMessageCount = options.isGuestMessage ? state.recordGuestMessage() : null;
-  if (guestMessageCount !== null && guestMessageCount >= GUEST_MESSAGE_LIMIT) {
+  if (guestMessageCount !== null && guestMessageCount >= state.guestMessageLimit) {
     state.setVoiceOpen(false);
   }
   saveReviewCards(state, options.messageId, options.content, options.result);

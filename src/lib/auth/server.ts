@@ -35,8 +35,9 @@ export function getSupabaseServerClient(): SupabaseClient | null {
  * Reads the session cookies; returns null when auth is not configured.
  */
 
-export async function getSupabaseUser(): Promise<User | null> {
-  const client = getSupabaseServerClient();
+export async function getSupabaseUser(
+  client = getSupabaseServerClient(),
+): Promise<User | null> {
   if (!client) {
     return null;
   }

@@ -19,30 +19,32 @@ function isChatInputDisabled(state: ChatState) {
   );
 }
 
-function ChatNotices({
-  error,
-  storageWarning,
-}: {
-  error: string;
-  storageWarning: string;
-}) {
+function ChatNotices({ state }: { state: ChatState }) {
   return (
     <>
-      {error && (
+      {state.error && (
         <p
           role="alert"
           className="notice-error mt-4"
         >
-          {error}
+          {state.error}
         </p>
       )}
-      {storageWarning && (
+      {state.storageWarning && (
         <p
           role="status"
           className="mt-4 text-base font-medium text-[var(--muted)]"
         >
-          {storageWarning}
+          {state.storageWarning}
         </p>
+      )}
+      {state.hasPreferenceSaveError && (
+        <button
+          type="button"
+          onClick={state.retrySavePreferences}
+        >
+          Retry saving preferences
+        </button>
       )}
     </>
   );
@@ -71,10 +73,7 @@ export default function ChatPage() {
             state={state}
             actions={actions}
           />
-          <ChatNotices
-            error={state.error}
-            storageWarning={state.storageWarning}
-          />
+          <ChatNotices state={state} />
           <div ref={state.messagesEndRef} />
         </div>
       </main>
@@ -87,7 +86,9 @@ export default function ChatPage() {
         onVoiceCall={actions.openVoiceCall}
         disabled={isChatInputDisabled(state)}
       />
-      {state.isGuestLimitReached && <GuestMessageLimitPrompt />}
+      {state.isGuestLimitReached && (
+        <GuestMessageLimitPrompt limit={state.guestMessageLimit} />
+      )}
       {state.config && state.voiceOpen && !isChatInputDisabled(state) && (
         <VoiceCall
           open
