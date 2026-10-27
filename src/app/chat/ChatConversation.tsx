@@ -37,6 +37,19 @@ function Messages({ state, actions }: ChatConversationProps) {
 
 export function ChatConversation({ state, actions }: ChatConversationProps) {
   if (!state.isReady) {
+    if (state.preferencesError) {
+      return (
+        <div>
+          <p role="alert">{state.preferencesError}</p>
+          <button
+            type="button"
+            onClick={state.retryPreferences}
+          >
+            Retry loading settings
+          </button>
+        </div>
+      );
+    }
     return <p role="status">Loading your preferences…</p>;
   }
   if (!state.config || state.isSelectingLanguages) {
