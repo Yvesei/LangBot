@@ -3,7 +3,7 @@ import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import Page from '@/app/page';
 import { send } from '@/lib/api';
-import { tutorResult } from '../../tests/fixtures';
+import { tutorResult } from '../fixtures';
 
 jest.mock('@/lib/api', () => ({
   send: jest.fn(),

@@ -18,7 +18,6 @@ coverage
 graphify-out
 docs
 imgs
-__tests__
 tests
 *.tsbuildinfo
 *.log

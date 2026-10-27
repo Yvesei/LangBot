@@ -2,7 +2,7 @@
 import { createFlashcards, loadCards, saveCards, STUDY_KEY } from '@/lib/learning';
 import { groupReviewCards } from '@/lib/review';
 import { getReviewText } from '@/lib/review/text';
-import { corrected, languageConfig } from '../../tests/fixtures';
+import { corrected, languageConfig } from '../fixtures';
 
 beforeEach(() => localStorage.clear());
 

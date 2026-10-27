@@ -1,6 +1,6 @@
 import { wordDiff } from '@/lib/diff';
 import { validateCorrection } from '@/lib/schemas';
-import { corrected } from '../../tests/fixtures';
+import { corrected } from '../fixtures';
 
 describe('correction diff', () => {
   test.each([

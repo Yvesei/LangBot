@@ -2,12 +2,7 @@ import { z } from 'zod';
 import { parseCompletionResponse } from '@/lib/server/mistral-response';
 import { getRetryDelay, waitForRetry } from '@/lib/server/retry';
 import { readBytes } from '@/lib/server/http';
-import {
-  providerResponse,
-  corrected,
-  languageConfig,
-  tutorResult,
-} from '../../tests/fixtures';
+import { providerResponse, corrected, languageConfig, tutorResult } from '../fixtures';
 import { wordDiff } from '@/lib/diff';
 import { addAssistantReply, buildChatRequest } from '@/lib/chat/conversation';
 import { MAX_REQUEST_BYTES } from '@/lib/config/limits';

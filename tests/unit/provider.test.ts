@@ -1,6 +1,6 @@
 import { complete } from '@/lib/server/mistral';
 import { translationOutputSchema } from '@/lib/schemas';
-import { providerResponse } from '../../tests/fixtures';
+import { providerResponse } from '../fixtures';
 const messages = [{ role: 'user' as const, content: 'Hello' }];
 
 beforeEach(() => {

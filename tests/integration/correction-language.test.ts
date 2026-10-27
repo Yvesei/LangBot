@@ -2,7 +2,7 @@ import { POST as chat } from '@/app/api/chat/route';
 import { POST as correct } from '@/app/api/correct/route';
 import { createFlashcards } from '@/lib/learning';
 import { LANGUAGES } from '@/lib/schemas';
-import { providerResponse, request } from '../../tests/fixtures';
+import { providerResponse, request } from '../fixtures';
 
 jest.mock('@/lib/server/limits', () => ({
   enforceLimits: jest.fn().mockResolvedValue(undefined),
