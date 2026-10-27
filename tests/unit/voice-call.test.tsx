@@ -4,7 +4,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import * as voice from '@/lib/voice/recognition';
 import type { LanguageConfig } from '@/lib/schemas';
 import { VoiceCall } from '@/components/ui/voice/VoiceCall';
-import { corrected, languageConfig } from '../../tests/fixtures';
+import { corrected, languageConfig } from '../fixtures';
 
 jest.mock('@/lib/voice/recognition', () => ({
   canRecord: jest.fn(),

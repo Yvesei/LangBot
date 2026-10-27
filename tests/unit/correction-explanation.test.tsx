@@ -3,7 +3,7 @@ import '@testing-library/jest-dom';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { CorrectionExplanation } from '@/components/ui/chat/message/CorrectionExplanation';
 import { TranscriptMessageContent } from '@/components/ui/voice/transcript/TranscriptMessageContent';
-import { corrected, languageConfig } from '../../tests/fixtures';
+import { corrected, languageConfig } from '../fixtures';
 
 test('opens native-language notes and restores focus when closed', () => {
   render(

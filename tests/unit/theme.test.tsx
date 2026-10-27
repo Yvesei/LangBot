@@ -6,7 +6,7 @@ import { ThemeSwitcher } from '@/components/ui/chat/sidebar/ThemeSwitcher';
 import { send } from '@/lib/api';
 import { THEME_INIT_SCRIPT, THEME_STORAGE_KEY } from '@/lib/config/theme';
 import { toggleTheme } from '@/lib/theme/store';
-import { tutorResult } from '../../tests/fixtures';
+import { tutorResult } from '../fixtures';
 
 jest.mock('@/lib/api', () => ({
   send: jest.fn(),

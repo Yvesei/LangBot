@@ -1,5 +1,5 @@
 import type { ChatRequest } from '@/lib/schemas';
-import { apiUrl } from '../__tests__/helpers/api';
+import { apiUrl } from './helpers/api';
 
 export const languageConfig = {
   nativeLanguage: 'fr' as const,
