@@ -455,46 +455,10 @@ docker compose logs -f app
 docker compose down
 ```
 
-`--env-file` also feeds the Supabase build args (next section); without it auth compiles out and the container still runs guest-mode.
+`--env-file` also feeds the Supabase build args; without it auth compiles out and the container still runs guest-mode.
 
 Open [localhost:3000](http://localhost:3000). Mistral credentials are loaded at runtime; the public Supabase URL/key are passed as build args. `.env` files are excluded from the build context.
 
 The multi-stage image uses [Next.js standalone output](https://nextjs.org/docs/app/api-reference/config/next-config-js/output) and runs as a non-root user.
-
-### Optional sign-in (Supabase Auth)
-
-Auth is optional: without the variables below the app stays in guest mode with no login UI.
-
-1. Create a project at [supabase.com](https://supabase.com) and note its URL and anon key.
-2. Enable **Google** under _Auth → Providers_. In [Google Cloud console](https://console.cloud.google.com/apis/credentials), create an OAuth 2.0 web client and add your Supabase project's callback URL, `https://<project-ref>.supabase.co/auth/v1/callback`, as an authorized redirect URI.
-3. In Supabase _Auth → URL Configuration_, add `http://localhost:3000/auth/callback` and, for production, `https://<your-domain>/auth/callback` as allowed redirect URLs.
-4. Run [the settings migration](supabase/migrations/20261024000000_settings.sql) in the Supabase SQL Editor, or apply it through your Supabase migration workflow. It creates the settings/profile tables, seeds the five-message allowance, and restricts profile access to its owner.
-5. Set `.env.local` (or Vercel project env vars):
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon/public key>
-# Optional server-only key for shared rate limits across serverless instances.
-# Never prefix this key with NEXT_PUBLIC_.
-SUPABASE_SERVICE_ROLE_KEY=
-```
-
-Newer Supabase projects issue the public key as `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; either variable name works.
-
-Settings require the migration above. If settings cannot be loaded, the app shows a retry action and waits before accepting chat messages. Failed preference saves also show a retry action. Chats and flashcards currently remain in browser state/storage.
-
-Shared rate limiting requires a separately provisioned, service-role-only `register_rate_limit_hit(p_identity_key text, p_window_seconds integer, p_max_hits integer)` RPC that returns exactly one row with `allowed boolean` and `retry_after_seconds integer`. Set `SUPABASE_SERVICE_ROLE_KEY` only after provisioning this RPC. If that configured service is unavailable, API requests return 503 until it recovers. Without the service key, the app uses a per-instance in-memory limit.
-
-On Vercel you can alternatively install the [Supabase integration](https://vercel.com/integrations/supabase) and link the project, which injects these variables automatically. If the integration also supplies `SUPABASE_SERVICE_ROLE_KEY`, leave it unset until the rate-limit RPC is provisioned. Signed-in learners get their own rate-limit bucket; guests keep the shared anonymous limits.
-
-The browser prompts guests to sign in after the completed-message allowance in `app_settings.guest_message_limit` (initially five). The consumed-message count stays in localStorage and synchronizes across tabs; the API rate limit applies independently. Update the setting in Supabase and reload the page to use the new allowance, without rebuilding:
-
-```sql
-update public.app_settings
-set guest_message_limit = 5, updated_at = now()
-where id = 'default';
-```
-
-The allowance accepts zero to require sign-in immediately. It remains a browser-side sign-in prompt; clearing browser storage resets the consumed-message count.
 
 [Graphify setup and code navigation](docs/graphify.md)
