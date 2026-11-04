@@ -20,7 +20,7 @@ export function MessageNotices({ message, busy, onRetry }: MessageNoticesProps) 
           Writing a reply and checking your sentence…
         </p>
       )}
-      {user && message.correction === null && (
+      {user && message.status === 'complete' && message.correction === null && (
         <p className="mt-2 text-sm text-[var(--muted)]">
           Correction unavailable for this message.
         </p>

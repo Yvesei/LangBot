@@ -1,4 +1,5 @@
 import { send } from '@/lib/api';
+import { sendSavedChat } from '@/lib/chat/saved';
 import {
   addAssistantReply,
   buildChatRequest,
@@ -22,6 +23,48 @@ interface SuccessfulResponseOptions {
   content: string;
   result: ChatResult;
   isGuestMessage: boolean;
+}
+
+interface TutorRequestOptions {
+  config: LanguageConfig;
+  content: string;
+  retryMessage?: ConversationMessage;
+  spokenContent?: string;
+  controller: AbortController;
+  messageId: string;
+}
+
+function requestTutorResponse(state: ChatState, options: TutorRequestOptions) {
+  const { config, content, retryMessage, spokenContent, controller, messageId } = options;
+  if (state.auth.session) {
+    return sendSavedChat(
+      {
+        conversationId: state.history.noteStarted(
+          state.history.id ?? crypto.randomUUID(),
+          config,
+          !retryMessage,
+        ),
+        messageId,
+        prompt: content,
+        languageConfig: config,
+        learningFocus: state.visibleCards
+          .slice(-3)
+          .map((card) => card.focus.slice(0, 500)),
+        origin: retryMessage?.origin ?? (spokenContent === undefined ? 'text' : 'voice'),
+      },
+      controller.signal,
+    );
+  }
+  return send(
+    buildChatRequest({
+      content,
+      messages: state.messages,
+      cards: state.visibleCards,
+      config,
+      retryMessageId: retryMessage?.id,
+    }),
+    controller.signal,
+  );
 }
 
 function getMessageContent(state: ChatState, options: SendMessageOptions) {
@@ -59,6 +102,7 @@ function addPendingMessage(
       content,
       timestamp: new Date(),
       status: 'pending',
+      origin: options.spokenContent === undefined ? 'text' : 'voice',
     },
   ]);
 }
@@ -77,6 +121,7 @@ function canStartMessage(
     Boolean(state.config) &&
     state.isReady &&
     !state.activeChatRequest.current &&
+    !state.messages.some((message) => message.status === 'pending') &&
     !state.isSelectingLanguages &&
     !state.auth.isLoading &&
     !state.isGuestLimitReached
@@ -157,9 +202,11 @@ export function useMessageRequest(state: ChatState) {
     }
     pendingRequest.controller.abort();
     state.activeChatRequest.current = null;
-    state.setMessages((current) =>
-      updateMessageStatus(current, pendingRequest.messageId, 'failed'),
-    );
+    if (!state.auth.session) {
+      state.setMessages((current) =>
+        updateMessageStatus(current, pendingRequest.messageId, 'failed'),
+      );
+    }
     state.setLoading(false);
   }
 
@@ -191,17 +238,18 @@ export function useMessageRequest(state: ChatState) {
     addPendingMessage(state, messageId, content, options);
 
     try {
-      const tutorResponse = await send(
-        buildChatRequest({
-          content,
-          messages: state.messages,
-          cards: state.visibleCards,
-          config,
-          retryMessageId: retryMessage?.id,
-        }),
-        controller.signal,
-      );
+      const tutorResponse = await requestTutorResponse(state, {
+        config,
+        content,
+        retryMessage,
+        spokenContent,
+        controller,
+        messageId,
+      });
 
+      if (state.auth.session) {
+        state.history.reloadChats();
+      }
       handleSuccessfulResponse(state, {
         controller,
         messageId,

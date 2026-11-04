@@ -36,7 +36,33 @@ function Messages({ state, actions }: ChatConversationProps) {
 }
 
 export function ChatConversation({ state, actions }: ChatConversationProps) {
+  async function showOlder() {
+    const container = state.messagesEndRef.current?.closest('main');
+    const previousHeight = container?.scrollHeight ?? 0;
+    state.preserveScrollRef.current = true;
+    await state.history.loadOlder();
+    requestAnimationFrame(() => {
+      state.preserveScrollRef.current = false;
+      if (container) {
+        container.scrollTop += container.scrollHeight - previousHeight;
+      }
+    });
+  }
+
   if (!state.isReady) {
+    if (state.history.error) {
+      return (
+        <div>
+          <p role="alert">{state.history.error}</p>
+          <button
+            type="button"
+            onClick={state.history.retry}
+          >
+            Retry loading chats
+          </button>
+        </div>
+      );
+    }
     if (state.preferencesError) {
       return (
         <div>
@@ -50,7 +76,7 @@ export function ChatConversation({ state, actions }: ChatConversationProps) {
         </div>
       );
     }
-    return <p role="status">Loading your preferences…</p>;
+    return <p role="status">Loading your chat…</p>;
   }
   if (!state.config || state.isSelectingLanguages) {
     return (
@@ -63,9 +89,19 @@ export function ChatConversation({ state, actions }: ChatConversationProps) {
   }
 
   return (
-    <Messages
-      state={state}
-      actions={actions}
-    />
+    <>
+      {state.history.hasOlder && (
+        <button
+          type="button"
+          onClick={() => void showOlder()}
+        >
+          Load earlier messages
+        </button>
+      )}
+      <Messages
+        state={state}
+        actions={actions}
+      />
+    </>
   );
 }

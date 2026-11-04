@@ -22,7 +22,7 @@ import {
   DEFAULT_GUEST_MESSAGE_LIMIT as limit,
 } from '@/lib/auth/guest-message-limit';
 import { middleware } from '@/middleware';
-import { tutorResult } from '../fixtures';
+import { mockSettingsAndChats, tutorResult } from '../fixtures';
 
 let mockConfigured = true;
 const settings = {
@@ -93,7 +93,7 @@ jest.mock('@/components/ui/voice/VoiceCall', () => ({
 beforeEach(() => {
   mockConfigured = true;
   Object.assign(settings, { userId: null, guestMessageLimit: limit });
-  jest.mocked(fetch).mockImplementation(async () => Response.json(settings));
+  mockSettingsAndChats(settings);
   listeners.clear();
   Object.values(auth).forEach((method) => method.mockReset());
   auth.getSession.mockResolvedValue({ data: { session: null } });
