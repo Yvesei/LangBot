@@ -170,3 +170,36 @@
     transition: none;
   }
 }
+
+.saved-chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.saved-chat-heading {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.saved-chat-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.saved-chat-open {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: 7px 4px;
+  color: var(--foreground);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-chat-open[aria-current='page'] {
+  background: var(--sidebar-hover-background, var(--mint));
+}

@@ -146,12 +146,15 @@ sequenceDiagram
 
 All routes use the Node.js runtime. Text requests use `application/json`; transcription accepts raw audio bytes.
 
-| POST endpoint     | Input                                                                  | Result fields         |
-| ----------------- | ---------------------------------------------------------------------- | --------------------- |
-| `/api/chat`       | `prompt`, `languageConfig`, optional `history` and `learningFocus`     | `reply`, `correction` |
-| `/api/correct`    | `content`, `languageConfig`                                            | `correction`          |
-| `/api/translate`  | `content`, `languageConfig`                                            | `translation`         |
-| `/api/transcribe` | Ogg/WebM/MP4 body; `X-Native-Language` and `X-Target-Language` headers | `text`                |
+| POST endpoint     | Input                                                                  | Result fields               |
+| ----------------- | ---------------------------------------------------------------------- | --------------------------- |
+| `/api/chat`       | `prompt`, `languageConfig`, optional `history` and `learningFocus`     | `reply`, `correction`       |
+| `/api/saved-chat` | `conversationId`, `messageId`, `prompt`, `languageConfig`, `origin`    | Saved `reply`, `correction` |
+| `/api/correct`    | `content`, `languageConfig`                                            | `correction`                |
+| `/api/translate`  | `content`, `languageConfig`                                            | `translation`               |
+| `/api/transcribe` | Ogg/WebM/MP4 body; `X-Native-Language` and `X-Target-Language` headers | `text`                      |
+
+Signed-in clients use `GET /api/conversations` to list or reopen their chats, and `DELETE /api/conversations` to remove a chat or turn. These routes require a verified Supabase session.
 
 Example chat request:
 
@@ -218,9 +221,30 @@ Closing a call aborts recording and transcription, cancels playback, and clears 
 
 | Data                    | Storage                                                     | Lifecycle                                                 |
 | ----------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| Conversation            | React state                                                 | Cleared on reload or new chat                             |
+| Guest conversation      | React state                                                 | Cleared on reload or new chat                             |
+| Signed-in conversations | Supabase `conversations` and `chat_turns`                   | Reopen across devices; corrections and retry state saved  |
 | Language pair and theme | Supabase `profiles` for accounts; `localStorage` for guests | Restored per account; guest settings stay in this browser |
 | Flashcards              | Schema-validated `localStorage`                             | Latest 100 occurrences; no account or cross-device sync   |
+
+Signed-in requests use the saved-chat path. A retry reuses the turn ID, so a completed reply is returned without asking the model again. The server reads prior turns from the database; the browser does not supply chat history for this path.
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant API as Saved-chat API
+    participant DB as Supabase
+    participant AI as Mistral
+    Browser->>API: POST conversation ID, turn ID, prompt
+    API->>DB: Verify owner and reserve turn
+    API->>DB: Read recent completed turns
+    API->>AI: Generate reply and correction
+    AI-->>API: Validated result
+    API->>DB: Complete turn with reply and correction
+    API-->>Browser: Saved result
+    Browser->>API: GET conversations or a saved chat
+    API->>DB: Read account-owned chats
+    API-->>Browser: Reopen messages after reload
+```
 
 ```mermaid
 flowchart LR
@@ -237,45 +261,28 @@ Cards retain their `sourceMessageId`; deleting a turn removes its associated car
 
 ### Database schema
 
-`app_settings` and `profiles` back the current settings flow. The remaining tables describe planned chat and learning persistence. `auth_users` represents Supabase's `auth.users`; the other tables belong to `public`.
-
-| Setting                   | Guest storage                    | Account/shared database column     |
-| ------------------------- | -------------------------------- | ---------------------------------- |
-| Preferred native language | `localStorage`: `langbot-native` | `profiles.native_language`         |
-| Preferred target language | `localStorage`: `langbot-target` | `profiles.target_language`         |
-| Theme                     | `localStorage`: `langbot-theme`  | `profiles.ui_theme`                |
-| Guest message allowance   | Loaded from the server           | `app_settings.guest_message_limit` |
-
-The app restores account preferences through `GET /api/settings` and saves changes through `PATCH /api/settings`. Profile language preferences stay empty until setup is completed. Guest settings remain separate in browser storage and are restored on sign-out. Drafts, dialogs, and active voice-call state remain in React.
-
-`app_settings.guest_message_limit` defaults to five completed messages before sign-in. The guest's consumed-message count stays in browser storage for now; it is separate from this setting and the per-minute API rate limit.
-
-UUID IDs and numeric identity IDs are generated on insert. `profiles.id` uses the existing Auth user ID, and `rate_limits.identity_key` is supplied by the server. Creation timestamps and initial `updated_at` values default to `now()`; subsequent updates must set `updated_at` in application code.
+The app uses `app_settings` for the guest allowance, `profiles` for account preferences, and `rate_limits` for request throttling. Signed-in chats use `conversations` and `chat_turns`; each turn keeps the learner message, assistant reply, correction, and retry state together. `auth_users` below represents Supabase's `auth.users`.
 
 ```mermaid
 erDiagram
     auth_users {
         uuid id PK
     }
-
+    profiles {
+        uuid id PK, FK
+        text native_language
+        text target_language
+        text ui_theme
+    }
     app_settings {
         text id PK
         integer guest_message_limit
-        timestamptz created_at
-        timestamptz updated_at
     }
-
-    profiles {
-        uuid id PK, FK
-        text display_name
-        text native_language
-        text target_language
-        text ui_language
-        text ui_theme
-        timestamptz created_at
-        timestamptz updated_at
+    rate_limits {
+        text identity_key PK
+        integer hits
+        timestamptz window_expires
     }
-
     conversations {
         uuid id PK
         uuid user_id FK
@@ -285,99 +292,24 @@ erDiagram
         timestamptz created_at
         timestamptz updated_at
     }
-
-    messages {
+    chat_turns {
         uuid id PK
         uuid conversation_id FK
-        uuid user_id FK
-        text role
-        text content
+        text prompt
+        text reply
+        jsonb correction
         text origin
-        timestamptz created_at
-    }
-
-    corrections {
-        uuid id PK
-        uuid user_id FK
-        uuid message_id FK
-        text original_text
-        text corrected_text
-        timestamptz created_at
-    }
-
-    correction_issues {
-        uuid id PK
-        uuid user_id FK
-        uuid correction_id FK
-        text category
-        text explanation
-    }
-
-    study_cards {
-        uuid id PK
-        uuid user_id FK
-        uuid message_id FK
-        uuid correction_id FK
-        text native_language
-        text target_language
-        text original_text
-        text corrected_text
-        text focus
         text status
-        smallint box
-        timestamptz due_at
-        integer review_count
-        integer lapse_count
-        timestamptz last_reviewed_at
+        uuid attempt_id
         timestamptz created_at
         timestamptz updated_at
     }
-
-    card_reviews {
-        bigint id PK
-        uuid user_id FK
-        uuid card_id FK
-        smallint outcome
-        smallint box_after
-        timestamptz due_next
-        timestamptz reviewed_at
-    }
-
-    rate_limits {
-        text identity_key PK
-        integer hits
-        timestamptz window_expires
-    }
-
-    api_usage {
-        bigint id PK
-        uuid user_id FK
-        text route
-        text model
-        integer input_tokens
-        integer output_tokens
-        integer latency_ms
-        smallint attempts
-        text status
-        text error_code
-        timestamptz created_at
-    }
-
     auth_users ||--o| profiles : id
-    auth_users ||..o{ conversations : user_id
-    conversations ||..o{ messages : conversation_id
-    auth_users ||..o{ messages : user_id
-    auth_users ||..o{ corrections : user_id
-    messages ||..o{ corrections : message_id
-    auth_users ||..o{ correction_issues : user_id
-    corrections ||..o{ correction_issues : correction_id
-    auth_users ||..o{ study_cards : user_id
-    messages |o..o{ study_cards : message_id
-    corrections |o..o{ study_cards : correction_id
-    auth_users ||..o{ card_reviews : user_id
-    study_cards ||..o{ card_reviews : card_id
-    auth_users |o..o{ api_usage : user_id
+    auth_users ||--o{ conversations : user_id
+    conversations ||--o{ chat_turns : conversation_id
 ```
+
+Apply the Supabase migrations before deploying this chat flow. The chat tables have account-scoped row-level security; the server verifies the cookie user and builds model context from saved turns. Guest chats stay in memory, and flashcards still use browser storage. Learning tables and cross-device flashcards belong to the next migration phase.
 
 ## Testing & delivery
 

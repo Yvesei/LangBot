@@ -2,6 +2,7 @@ import { Github, PanelLeftClose } from 'lucide-react';
 import { Logo } from '@/components/ui/brand/Logo';
 import { AuthMenu } from '../header/AuthMenu';
 import { ThemeSwitcher } from './ThemeSwitcher';
+import { SavedChatList } from './SavedChatList';
 import { SidebarActions, type SidebarActionsProps } from './SidebarActions';
 
 export type ChatNavigationProps = SidebarActionsProps;
@@ -53,6 +54,14 @@ export function ChatSidebar(props: ChatSidebarProps) {
         onChangeLanguages={() => navigate(props.onChangeLanguages)}
         reviewCount={props.reviewCount}
         onOpenReview={onOpenReview ? () => navigate(onOpenReview) : undefined}
+      />
+      <SavedChatList
+        conversations={props.conversations ?? []}
+        activeId={props.activeConversationId ?? null}
+        onOpen={(id) => props.onOpenChat && navigate(() => props.onOpenChat!(id))}
+        onDelete={props.onDeleteChat}
+        hasMore={props.hasMoreChats ?? false}
+        onLoadMore={props.onLoadMoreChats}
       />
       <div className="sidebar-footer">
         <ThemeSwitcher />
