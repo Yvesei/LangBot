@@ -1,5 +1,6 @@
 import { Languages, Plus } from 'lucide-react';
 import { ReviewToolbar } from '@/components/ui/review/ReviewToolbar';
+import type { SavedConversation } from '@/lib/chat/saved';
 import { LANGUAGES, type LanguageConfig } from '@/lib/schemas';
 
 export interface SidebarActionsProps {
@@ -9,6 +10,12 @@ export interface SidebarActionsProps {
   onChangeLanguages: () => void;
   onOpenReview?: () => void;
   reviewCount: number;
+  conversations?: SavedConversation[];
+  activeConversationId?: string | null;
+  onOpenChat?: (id: string) => void;
+  onDeleteChat?: (id: string) => void;
+  hasMoreChats?: boolean;
+  onLoadMoreChats?: () => void;
 }
 
 export function SidebarActions(props: SidebarActionsProps) {

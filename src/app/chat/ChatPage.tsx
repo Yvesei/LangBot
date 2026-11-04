@@ -22,6 +22,14 @@ function isChatInputDisabled(state: ChatState) {
 function ChatNotices({ state }: { state: ChatState }) {
   return (
     <>
+      {state.isReady && state.history.error && (
+        <p
+          role="alert"
+          className="notice-error mt-4"
+        >
+          {state.history.error}
+        </p>
+      )}
       {state.error && (
         <p
           role="alert"
@@ -59,6 +67,12 @@ export default function ChatPage() {
       navigation={{
         config: state.config,
         onNewChat: actions.newChat,
+        conversations: state.history.conversations,
+        activeConversationId: state.history.id,
+        onOpenChat: actions.openChat,
+        onDeleteChat: actions.deleteChat,
+        hasMoreChats: state.history.listHasMore,
+        onLoadMoreChats: state.history.loadMoreChats,
         onChangeLanguages: actions.changeLanguages,
         reviewCount: state.reviewGroups.length,
         onOpenReview:

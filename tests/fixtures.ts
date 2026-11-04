@@ -18,6 +18,15 @@ export const tutorResult = {
   reply: 'What fruit do you like?',
   correction: corrected,
 };
+
+export function mockSettingsAndChats(settings: object) {
+  jest.mocked(fetch).mockImplementation(async (input) => {
+    if (String(input).startsWith('/api/conversations')) {
+      return Response.json({ success: true, conversations: [], hasMore: false });
+    }
+    return Response.json(settings);
+  });
+}
 export const chatBody: ChatRequest = {
   prompt: 'I has a apple.',
   languageConfig,
