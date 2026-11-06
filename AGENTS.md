@@ -10,7 +10,7 @@ Tailwind CSS, and Mistral AI. Use pnpm for application commands.
 - `src/app/chat/` and `src/components/ui/`: chat state and user interface.
 - `src/lib/chat/`, `src/lib/learning/`, `src/lib/review/`, and `src/lib/voice/`:
   conversation, saved learning material, review, and voice behavior.
-- `__tests__/`: Jest unit and API integration tests.
+- `tests/unit/` and `tests/integration/`: Jest unit and API integration tests.
 - `tests/lint/`: tests for the repository's custom ESLint rule.
 
 ## Graphify

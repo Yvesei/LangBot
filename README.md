@@ -54,10 +54,12 @@ src/
     ├── schemas/             # Shared request and response contracts
     ├── server/              # Prompts, provider calls, limits, and HTTP helpers
     └── voice/               # Recording, monitoring, and transcription
-__tests__/
+tests/
 ├── unit/                    # UI, state, storage, provider, and voice
-└── integration/             # API routes with mocked model responses
-tests/lint/                 # Custom ESLint rule tests
+├── integration/             # API routes with mocked model responses
+├── lint/                    # Custom ESLint rule tests
+├── helpers/                 # Shared test utilities
+└── fixtures.ts              # Shared test data and response builders
 ```
 
 ### Application flow
@@ -393,7 +395,7 @@ pnpm test:watch        # Rerun Jest tests as files change
 Run a specific test file:
 
 ```bash
-pnpm test __tests__/unit/page.test.tsx
+pnpm test tests/unit/page.test.tsx
 ```
 
 Additional checks:
@@ -416,7 +418,7 @@ pnpm build             # Production build
 - **Deployment:** Vercel previews and production through Git integration.
 - **Test isolation:** mocked model responses; no API credits required.
 
-[Browse tests](__tests__) · [CI workflow](.github/workflows/test.yml) · [Custom lint rule](eslint-function-spacing.mjs)
+[Browse tests](tests) · [CI workflow](.github/workflows/test.yml) · [Custom lint rule](eslint-function-spacing.mjs)
 
 ## Run locally
 

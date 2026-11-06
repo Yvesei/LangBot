@@ -4,7 +4,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import Page from '@/app/page';
 import { send } from '@/lib/api';
 import { STUDY_KEY } from '@/lib/learning';
-import { tutorResult } from '../../tests/fixtures';
+import { tutorResult } from '../fixtures';
 import {
   canRecord,
   RecordedRecognition,

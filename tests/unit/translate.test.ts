@@ -1,5 +1,5 @@
 import { languageConfigSchema, translationRequestSchema } from '@/lib/schemas';
-import { languageConfig } from '../../tests/fixtures';
+import { languageConfig } from '../fixtures';
 
 describe('language and translation validation', () => {
   test.each([

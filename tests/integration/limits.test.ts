@@ -9,7 +9,7 @@ import {
   providerResponse,
   request,
   tutorResult,
-} from '../../tests/fixtures';
+} from '../fixtures';
 
 beforeEach(() => {
   jest.replaceProperty(process, 'env', {

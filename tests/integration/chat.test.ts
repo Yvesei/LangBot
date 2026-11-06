@@ -2,7 +2,7 @@ import { POST } from '@/app/api/chat/route';
 import { enforceLimits } from '@/lib/server/limits';
 import { ApiError } from '@/lib/server/errors';
 import { apiUrl } from '../helpers/api';
-import { chatBody, providerResponse, request, tutorResult } from '../../tests/fixtures';
+import { chatBody, providerResponse, request, tutorResult } from '../fixtures';
 
 jest.mock('@/lib/server/limits', () => ({
   enforceLimits: jest.fn().mockResolvedValue(undefined),

@@ -52,7 +52,7 @@ const eslintConfig = [
     },
   },
   {
-    files: ['__tests__/**/*.{ts,tsx}'],
+    files: ['tests/**/*.{ts,tsx}'],
     rules: {
       'max-lines': ['error', { max: 400, skipBlankLines: true, skipComments: true }],
       'max-lines-per-function': [

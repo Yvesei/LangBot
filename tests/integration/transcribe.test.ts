@@ -1,4 +1,4 @@
-import { providerResponse } from '../../tests/fixtures';
+import { providerResponse } from '../fixtures';
 import { POST } from '@/app/api/transcribe/route';
 import { enforceLimits } from '@/lib/server/limits';
 jest.mock('@/lib/server/limits', () => ({

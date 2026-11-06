@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import { RecordedRecognition } from '@/lib/voice/recognition';
-import { languageConfig } from '../../tests/fixtures';
+import { languageConfig } from '../fixtures';
 
 class FakeRecorder {
   static latest: FakeRecorder;

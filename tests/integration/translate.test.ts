@@ -1,5 +1,5 @@
 import { POST } from '@/app/api/translate/route';
-import { languageConfig, providerResponse, request } from '../../tests/fixtures';
+import { languageConfig, providerResponse, request } from '../fixtures';
 jest.mock('@/lib/server/limits', () => ({
   enforceLimits: jest.fn().mockResolvedValue(undefined),
 }));

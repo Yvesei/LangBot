@@ -22,7 +22,7 @@ import {
   DEFAULT_GUEST_MESSAGE_LIMIT as limit,
 } from '@/lib/auth/guest-message-limit';
 import { middleware } from '@/middleware';
-import { tutorResult } from '../../tests/fixtures';
+import { tutorResult } from '../fixtures';
 
 let mockConfigured = true;
 const settings = {

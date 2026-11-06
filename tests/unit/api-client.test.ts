@@ -1,5 +1,5 @@
 import { send, translateMessage } from '@/lib/api';
-import { chatBody, languageConfig, tutorResult } from '../../tests/fixtures';
+import { chatBody, languageConfig, tutorResult } from '../fixtures';
 
 beforeEach(() => {
   jest.mocked(fetch).mockReset();

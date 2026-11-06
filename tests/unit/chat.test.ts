@@ -1,6 +1,6 @@
 import { chatRequestSchema, correctionRequestSchema } from '@/lib/schemas';
 import { tutorPrompt } from '@/lib/server/prompts';
-import { chatBody } from '../../tests/fixtures';
+import { chatBody } from '../fixtures';
 
 describe('chat input boundaries', () => {
   test.each([

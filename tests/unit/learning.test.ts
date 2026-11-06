@@ -1,5 +1,5 @@
 import { createFlashcards } from '@/lib/learning';
-import { languageConfig } from '../../tests/fixtures';
+import { languageConfig } from '../fixtures';
 
 test('keeps the correction and all explanations together for the flashcard', () => {
   const correction = {
