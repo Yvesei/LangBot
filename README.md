@@ -117,7 +117,7 @@ flowchart TB
 | Correction semantics | Reply and correction share one completion. Unexplained rewrites become `correction: null`; unchanged text returns an empty issues array. [Normalization](src/lib/server/correction.ts) |
 | Async state          | An `AbortController` identifies the active request. Stale results are ignored; retries reuse the message ID. [Request hook](src/app/chat/useMessageRequest.ts)                         |
 | Provider failures    | 25-second deadline; text requests retry once on `429`, `502`, `503`, or `504` if the retry delay fits a 2-second budget. [Retry logic](src/lib/server/mistral-request.ts)              |
-| Context assembly     | Exclude pending/failed turns, trim history by count and encoded size, and include up to three saved correction explanations. [Request builder](src/lib/chat/conversation-request.ts)   |
+| Context assembly     | Read completed messages for the active conversation, trim them by count and size, and include up to three saved correction explanations. [Chat route](src/app/api/chat/route.ts)       |
 | Audio lifecycle      | `MediaRecorder` format negotiation, Web Audio silence detection, generation checks, and track/timer cleanup. [Voice modules](src/lib/voice)                                            |
 | Observability        | Structured completion logs include model, latency, usage, and attempts; API errors include request IDs and status. [Provider metrics](src/lib/server/mistral.ts)                       |
 
@@ -130,9 +130,9 @@ sequenceDiagram
     participant AI as Mistral
 
     UI->>UI: Create controller and pending message
-    UI->>UI: Build bounded history and learning focus
-    UI->>API: POST /api/chat with abort signal
+    UI->>API: POST the conversation ID, message ID, prompt, and learning focus
     API->>API: Check origin, rate, body size, and schema
+    API->>DB: Reserve the message and read recent completed messages
     API->>AI: Request reply and correction using JSON Schema
     AI-->>API: Completion
     API->>API: Validate payload and normalize correction
@@ -148,24 +148,25 @@ sequenceDiagram
 
 All routes use the Node.js runtime. Text requests use `application/json`; transcription accepts raw audio bytes.
 
-| POST endpoint     | Input                                                                  | Result fields               |
-| ----------------- | ---------------------------------------------------------------------- | --------------------------- |
-| `/api/chat`       | `prompt`, `languageConfig`, optional `history` and `learningFocus`     | `reply`, `correction`       |
-| `/api/messages`   | `conversationId`, `messageId`, `prompt`, `languageConfig`, `origin`    | Saved `reply`, `correction` |
-| `/api/correct`    | `content`, `languageConfig`                                            | `correction`                |
-| `/api/translate`  | `content`, `languageConfig`                                            | `translation`               |
-| `/api/transcribe` | Ogg/WebM/MP4 body; `X-Native-Language` and `X-Target-Language` headers | `text`                      |
+| POST endpoint     | Input                                                                                | Result fields               |
+| ----------------- | ------------------------------------------------------------------------------------ | --------------------------- |
+| `/api/chat`       | `conversationId`, `messageId`, `prompt`, `languageConfig`, `learningFocus`, `origin` | Saved `reply`, `correction` |
+| `/api/correct`    | `content`, `languageConfig`                                                          | `correction`                |
+| `/api/translate`  | `content`, `languageConfig`                                                          | `translation`               |
+| `/api/transcribe` | Ogg/WebM/MP4 body; `X-Native-Language` and `X-Target-Language` headers               | `text`                      |
 
-Signed-in clients use `GET /api/conversations` to list or reopen their chats, and `DELETE /api/conversations` to remove a chat or turn. These routes require a verified Supabase session.
+Clients use `GET /api/conversations` to list or reopen their chats, and `DELETE /api/conversations` to remove a chat or message. These routes require a Supabase session, including anonymous sessions for guests.
 
 Example chat request:
 
 ```json
 {
+  "conversationId": "29f01f5a-14de-4a98-829e-fdc680f2beb0",
+  "messageId": "7207ee80-801c-4e25-b8a9-04020135080b",
   "prompt": "I need une cuillère.",
   "languageConfig": { "nativeLanguage": "fr", "targetLanguage": "en" },
-  "history": [],
-  "learningFocus": []
+  "learningFocus": [],
+  "origin": "text"
 }
 ```
 
@@ -173,20 +174,20 @@ Example chat request:
 - **Failure:** `{ "success": false, "error": "..." }` with an HTTP error status.
 - **Correction:** `{ correctedText, issues: [{ category, explanation }] }` or `null` when unavailable.
 - **Response headers:** guarded routes set `X-Request-ID` and `Cache-Control: no-store`; rate-limit errors can include `Retry-After`.
-- **Validation:** strict request schemas, `user`/`assistant` history roles only, and two distinct supported languages.
+- **Validation:** strict request schemas, server-owned conversation context, and two distinct supported languages.
 
 [Request and response schemas](src/lib/schemas) · [Route wrapper](src/lib/server/http.ts) · [Response helpers](src/lib/server/http/responses.ts)
 
 ### Request limits
 
-| Boundary             | Limit                                                          |
-| -------------------- | -------------------------------------------------------------- |
-| Chat prompt          | 2,000 characters                                               |
-| Conversation context | 12 history messages; 20,000 combined prompt/history characters |
-| JSON request         | 32 KiB; 5-second body-read deadline                            |
-| Audio                | 2 MiB upload; 30-second browser recording limit                |
-| Provider call        | 25 seconds, combined with caller cancellation                  |
-| API rate             | 5 requests/minute across routes per resolved client identity   |
+| Boundary             | Limit                                                         |
+| -------------------- | ------------------------------------------------------------- |
+| Chat prompt          | 2,000 characters                                              |
+| Conversation context | 12 stored messages; 20,000 combined prompt/context characters |
+| JSON request         | 32 KiB; 5-second body-read deadline                           |
+| Audio                | 2 MiB upload; 30-second browser recording limit               |
+| Provider call        | 25 seconds, combined with caller cancellation                 |
+| API rate             | 5 requests/minute across routes per resolved client identity  |
 
 Body limits are enforced during stream reads, including without `Content-Length`. Requests with a different `Origin` are rejected. Rate counters are in-memory per server instance; a voice turn normally uses two requests.
 
@@ -221,19 +222,19 @@ Closing a call aborts recording and transcription, cancels playback, and clears 
 
 ### State and persistence
 
-| Data                    | Storage                                                     | Lifecycle                                                 |
-| ----------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| Guest conversation      | React state                                                 | Cleared on reload or new chat                             |
-| Signed-in conversations | Supabase `conversations` and `messages`                     | Reopen across devices; corrections and retry state saved  |
-| Language pair and theme | Supabase `profiles` for accounts; `localStorage` for guests | Restored per account; guest settings stay in this browser |
-| Flashcards              | Schema-validated `localStorage`                             | Latest 100 occurrences; no account or cross-device sync   |
+| Data                    | Storage                                                     | Lifecycle                                               |
+| ----------------------- | ----------------------------------------------------------- | ------------------------------------------------------- |
+| Guest conversations     | Supabase anonymous account, `conversations`, and `messages` | Reopen in the same browser; capped by the server        |
+| Signed-in conversations | Supabase `conversations` and `messages`                     | The anonymous account is linked to Google; chats remain |
+| Language pair and theme | Supabase `profiles`                                         | Restored for the current anonymous or Google account    |
+| Flashcards              | Schema-validated `localStorage`                             | Latest 100 occurrences; no account or cross-device sync |
 
-Signed-in requests use the messages path. A retry reuses the message ID, so a completed reply is returned without asking the model again. The server reads prior messages from the database; the browser does not supply chat history for this path.
+Every chat request uses the chat path. A retry reuses the message ID, so a completed reply is returned without asking the model again. The server reads prior messages from the database; the browser never supplies chat history.
 
 ```mermaid
 sequenceDiagram
     participant Browser
-    participant API as Messages API
+    participant API as Chat API
     participant DB as Supabase
     participant AI as Mistral
     Browser->>API: POST conversation ID, message ID, prompt

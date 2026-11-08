@@ -1,6 +1,5 @@
 /** @jest-environment jsdom */
 import '@testing-library/jest-dom';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createBrowserClient, createServerClient } from '@supabase/ssr';
 import {
   AuthApiError,
@@ -11,43 +10,27 @@ import {
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 
-import Page from '@/app/page';
 import { GET } from '@/app/auth/callback/route';
-import { AuthMenu } from '@/components/ui/chat/header/AuthMenu';
-import { send } from '@/lib/api';
 import { getSupabaseAdminClient } from '@/lib/auth/admin';
 import { getSupabaseUser } from '@/lib/auth/server';
-import {
-  GUEST_MESSAGE_COUNT_STORAGE_KEY as countKey,
-  DEFAULT_GUEST_MESSAGE_LIMIT as limit,
-} from '@/lib/auth/guest-message-limit';
 import { middleware } from '@/middleware';
-import { mockSettingsAndChats, tutorResult } from '../fixtures';
 
 let mockConfigured = true;
-const settings = {
-  success: true,
-  userId: null as string | null,
-  guestMessageLimit: limit,
-  preferences: { nativeLanguage: 'fr', targetLanguage: 'en', theme: 'neo' },
-};
 const account = {
   id: 'user-1',
   email: 'john@doe.com',
   user_metadata: { full_name: 'John Doe' },
 };
-type Session = { user: typeof account };
-type Listener = (event: string, session: Session | null) => void;
-const listeners = new Set<Listener>();
 const auth = {
   getSession: jest.fn(),
+  signInAnonymously: jest.fn(),
+  linkIdentity: jest.fn(),
   signInWithOAuth: jest.fn(),
   signOut: jest.fn(),
   getUser: jest.fn(),
   exchangeCodeForSession: jest.fn(),
 };
 const sdk = jest.mocked({ createBrowserClient, createServerClient, createClient });
-const sendMessage = jest.mocked(send);
 const store = { getAll: jest.fn(), set: jest.fn() };
 const sessionCookie = {
   name: 'session',
@@ -80,36 +63,24 @@ jest.mock('next/server', () => {
   Object.assign(globalThis, { Request, Response, Headers });
   return jest.requireActual('next/server');
 });
-jest.mock('@/lib/api', () => ({ send: jest.fn(), translateMessage: jest.fn() }));
-jest.mock('@/components/ui/voice/VoiceCall', () => ({
-  VoiceCall: () => (
-    <div
-      role="dialog"
-      aria-label="Voice call with Languify"
-    />
-  ),
-}));
 
 beforeEach(() => {
   mockConfigured = true;
-  Object.assign(settings, { userId: null, guestMessageLimit: limit });
-  mockSettingsAndChats(settings);
-  listeners.clear();
   Object.values(auth).forEach((method) => method.mockReset());
-  auth.getSession.mockResolvedValue({ data: { session: null } });
+  auth.getSession.mockResolvedValue({ data: { session: { user: account } } });
   auth.getUser.mockResolvedValue({ data: { user: account }, error: null });
   auth.exchangeCodeForSession.mockResolvedValue({ error: null });
   auth.signInWithOAuth.mockResolvedValue({ error: null });
+  auth.signInAnonymously.mockResolvedValue({
+    data: { session: { user: account } },
+    error: null,
+  });
+  auth.linkIdentity.mockResolvedValue({ error: null });
   const client = {
     auth: {
       ...auth,
 
-      onAuthStateChange: (listener: Listener) => {
-        listeners.add(listener);
-
-        const unsubscribe = () => listeners.delete(listener);
-        return { data: { subscription: { unsubscribe } } };
-      },
+      onAuthStateChange: jest.fn(),
     },
   } as unknown as ReturnType<typeof createBrowserClient>;
   sdk.createBrowserClient.mockReturnValue(client);
@@ -118,207 +89,11 @@ beforeEach(() => {
     .mocked(cookies)
     .mockResolvedValue(store as unknown as Awaited<ReturnType<typeof cookies>>);
   store.getAll.mockReturnValue([{ name: 'session', value: 'old' }]);
-  localStorage.clear();
-  localStorage.setItem('langbot-native', 'fr');
-  localStorage.setItem('langbot-target', 'en');
-  window.HTMLElement.prototype.scrollIntoView = jest.fn();
-  sendMessage.mockReset().mockResolvedValue({ success: true, ...tutorResult });
 });
 
 afterEach(() => {
   jest.restoreAllMocks();
   window.history.replaceState(null, '', '/');
-});
-
-function emit(session: Parameters<Listener>[1]) {
-  settings.userId = session?.user.id ?? null;
-  const event = session ? 'SIGNED_IN' : 'SIGNED_OUT';
-  act(() => listeners.forEach((listener) => listener(event, session)));
-}
-
-async function openChat() {
-  const view = render(<Page />);
-  await waitFor(() => expect(composer()).toBeEnabled());
-  return view;
-}
-
-function composer() {
-  return screen.getByRole('textbox', { name: 'Your message' });
-}
-
-function click(name: string) {
-  fireEvent.click(screen.getByRole('button', { name }));
-}
-
-function submit() {
-  fireEvent.change(composer(), { target: { value: 'I has a apple.' } });
-  click('Send');
-}
-
-function exhaustAllowance() {
-  localStorage.setItem(countKey, String(limit));
-  fireEvent(window, new StorageEvent('storage', { key: countKey }));
-}
-
-test('Google sign-in uses the browser origin and recovers after back navigation', async () => {
-  render(<AuthMenu />);
-  const button = await screen.findByRole('button', { name: 'Sign in with Google' });
-  fireEvent.click(button);
-  expect(auth.signInWithOAuth).toHaveBeenCalledWith({
-    provider: 'google',
-    options: { redirectTo: `${window.location.origin}/auth/callback` },
-  });
-  expect(button).toBeDisabled();
-  await act(async () => undefined);
-  fireEvent(window, new PageTransitionEvent('pageshow', { persisted: true }));
-  expect(button).toBeEnabled();
-});
-
-test('callback errors appear in both entry points until retry; provider failures stay visible', async () => {
-  window.history.replaceState(null, '', '/?auth_error=1&other=value#chat');
-  localStorage.setItem(countKey, String(limit));
-  auth.signInWithOAuth.mockResolvedValue({ error: new Error('Provider disabled') });
-  render(<Page />);
-  await waitFor(() =>
-    expect(screen.getAllByText(/Google sign-in did not finish/)).toHaveLength(2),
-  );
-  expect(window.location.search).toContain('auth_error=1');
-  click('Sign in with Google');
-  expect(await screen.findByText(/Could not start Google sign-in/)).toBeVisible();
-  expect(window.location.search + window.location.hash).toBe('?other=value#chat');
-});
-
-test.each([false, true])('settings (invalid metadata: %s)', async (invalid) => {
-  const user = invalid
-    ? {
-        ...account,
-        user_metadata: { full_name: { invalid: true }, name: ' ', avatar_url: [] },
-      }
-    : account;
-  auth.getSession.mockResolvedValue({ data: { session: { user } } });
-  auth.signOut.mockResolvedValue({ error: new Error('Offline') });
-  const view = render(<AuthMenu />);
-  const trigger = await screen.findByRole('button', { name: 'Account' });
-  trigger.focus();
-  fireEvent.click(trigger);
-  const dialog = screen.getByRole('dialog', { name: 'Settings' });
-  expect(within(dialog).getAllByText(account.email).length).toBeGreaterThan(0);
-  if (!invalid) expect(within(dialog).getByText('John Doe')).toBeVisible();
-  fireEvent.click(within(dialog).getByRole('button', { name: /sign out/i }));
-  expect(await within(dialog).findByRole('alert')).toHaveTextContent(
-    'Could not sign out.',
-  );
-  click('Close settings');
-  expect(trigger).toHaveFocus();
-  fireEvent.click(trigger);
-  emit(null);
-  emit({ user: account });
-  expect(screen.queryByRole('dialog')).toBeNull();
-  view.unmount();
-  expect(listeners.size).toBe(0);
-});
-
-test.each(['stale success', 'stale failure'])('events beat %s', async (outcome) => {
-  const pending = Promise.withResolvers<{ data: { session: Session } }>();
-  auth.getSession.mockReturnValue(pending.promise);
-  render(<Page />);
-  expect(composer()).toBeDisabled();
-  expect(screen.getByRole('button', { name: 'Voice call' })).toBeDisabled();
-  emit(outcome === 'stale failure' ? { user: account } : null);
-  await act(async () => {
-    if (outcome === 'stale success')
-      pending.resolve({ data: { session: { user: account } } });
-    else pending.reject(new Error('Offline'));
-  });
-  expect(composer()).toBeEnabled();
-  expect(screen.queryByRole('button', { name: 'Account' }) !== null).toBe(
-    outcome === 'stale failure',
-  );
-});
-
-test.each([1, 2])('runtime allowance: %s', async (allowance) => {
-  settings.guestMessageLimit = allowance;
-  localStorage.setItem(countKey, String(allowance - 1));
-  const view = await openChat();
-  submit();
-  await screen.findByText(tutorResult.reply);
-  expect(localStorage.getItem(countKey)).toBe(String(allowance));
-  expect(screen.getByRole('dialog')).toHaveTextContent(
-    `You've used your ${allowance} free ${allowance === 1 ? 'message' : 'messages'}.`,
-  );
-  expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeVisible();
-  click('New chat');
-  expect(composer()).toBeDisabled();
-  view.unmount();
-  render(<Page />);
-  await screen.findByRole('button', { name: 'Sign in with Google' });
-  expect(composer()).toBeDisabled();
-  expect(send).toHaveBeenCalledTimes(1);
-});
-
-test.each([false, true])('guest retry (other tab: %s)', async (otherTab) => {
-  auth.getSession.mockRejectedValue(new Error('Offline'));
-  localStorage.setItem(countKey, String(limit - 1));
-  sendMessage.mockRejectedValueOnce(new Error('Please retry.'));
-  await openChat();
-  submit();
-  await screen.findByRole('alert');
-  expect(localStorage.getItem(countKey)).toBe(String(limit - 1));
-  if (otherTab) exhaustAllowance();
-  click('Retry message');
-  if (!otherTab) await screen.findByText(tutorResult.reply);
-  expect(send).toHaveBeenCalledTimes(otherTab ? 1 : 2);
-  expect(localStorage.getItem(countKey)).toBe(String(limit));
-});
-
-test('cancelled replies do not consume an allowance', async () => {
-  const pending = Promise.withResolvers<Awaited<ReturnType<typeof send>>>();
-  sendMessage.mockReturnValue(pending.promise);
-  await openChat();
-  submit();
-  click('New chat');
-  await act(async () => pending.resolve({ success: true, ...tutorResult }));
-  expect(localStorage.getItem(countKey)).toBeNull();
-});
-
-test.each([0, limit])('voice gate with allowance %s', async (allowance) => {
-  settings.guestMessageLimit = allowance;
-  localStorage.setItem(countKey, String(allowance));
-  render(<Page />);
-  await screen.findByRole('button', { name: 'Continue with Google' });
-  emit({ user: account });
-  await waitFor(() => expect(composer()).toBeEnabled());
-  click('Voice call');
-  expect(screen.getByRole('dialog', { name: 'Voice call with Languify' })).toBeVisible();
-  emit(null);
-  expect(composer()).toBeDisabled();
-  emit({ user: account });
-  await waitFor(() => expect(composer()).toBeEnabled());
-  expect(screen.queryByRole('dialog')).toBeNull();
-});
-
-test('another tab exhausting the allowance closes an active guest call', async () => {
-  await openChat();
-  click('Voice call');
-  exhaustAllowance();
-  expect(composer()).toBeDisabled();
-  expect(screen.queryByRole('dialog', { name: 'Voice call with Languify' })).toBeNull();
-});
-
-test('unconfigured auth leaves chat usable and skips browser, server and middleware clients', async () => {
-  await middleware(new NextRequest('https://languify.test/api/chat'));
-  mockConfigured = false;
-  settings.guestMessageLimit = 0;
-  localStorage.setItem(countKey, String(limit));
-  await openChat();
-  submit();
-  await screen.findByText(tutorResult.reply);
-  expect(localStorage.getItem(countKey)).toBe(String(limit));
-  expect(await getSupabaseUser()).toBeNull();
-  await middleware(new NextRequest('https://languify.test/'));
-  expect(createBrowserClient).not.toHaveBeenCalled();
-  expect(createServerClient).not.toHaveBeenCalled();
-  expect(cookies).not.toHaveBeenCalled();
 });
 
 test.each([

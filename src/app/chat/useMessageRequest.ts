@@ -1,8 +1,6 @@
-import { send } from '@/lib/api';
 import { sendConversationMessage } from '@/lib/chat/saved';
 import {
   addAssistantReply,
-  buildChatRequest,
   updateMessageStatus,
   type ConversationMessage,
 } from '@/lib/chat/conversation';
@@ -22,7 +20,6 @@ interface SuccessfulResponseOptions {
   messageId: string;
   content: string;
   result: ChatResult;
-  isGuestMessage: boolean;
 }
 
 interface TutorRequestOptions {
@@ -36,33 +33,19 @@ interface TutorRequestOptions {
 
 function requestTutorResponse(state: ChatState, options: TutorRequestOptions) {
   const { config, content, retryMessage, spokenContent, controller, messageId } = options;
-  if (state.auth.session) {
-    return sendConversationMessage(
-      {
-        conversationId: state.history.noteStarted(
-          state.history.id ?? crypto.randomUUID(),
-          config,
-          !retryMessage,
-        ),
-        messageId,
-        prompt: content,
-        languageConfig: config,
-        learningFocus: state.visibleCards
-          .slice(-3)
-          .map((card) => card.focus.slice(0, 500)),
-        origin: retryMessage?.origin ?? (spokenContent === undefined ? 'text' : 'voice'),
-      },
-      controller.signal,
-    );
-  }
-  return send(
-    buildChatRequest({
-      content,
-      messages: state.messages,
-      cards: state.visibleCards,
-      config,
-      retryMessageId: retryMessage?.id,
-    }),
+  return sendConversationMessage(
+    {
+      conversationId: state.history.noteStarted(
+        state.history.id ?? crypto.randomUUID(),
+        config,
+        !retryMessage,
+      ),
+      messageId,
+      prompt: content,
+      languageConfig: config,
+      learningFocus: state.visibleCards.slice(-3).map((card) => card.focus.slice(0, 500)),
+      origin: retryMessage?.origin ?? (spokenContent === undefined ? 'text' : 'voice'),
+    },
     controller.signal,
   );
 }
@@ -148,6 +131,7 @@ function handleRequestError(
   }
 
   state.setMessages((current) => updateMessageStatus(current, messageId, 'failed'));
+  state.history.reloadChats();
 
   let errorMessage = 'Could not send the message. Please retry.';
   if (requestError instanceof Error) {
@@ -187,10 +171,6 @@ function handleSuccessfulResponse(state: ChatState, options: SuccessfulResponseO
   state.setMessages((current) =>
     addAssistantReply(current, options.messageId, options.result),
   );
-  const guestMessageCount = options.isGuestMessage ? state.recordGuestMessage() : null;
-  if (guestMessageCount !== null && guestMessageCount >= state.guestMessageLimit) {
-    state.setVoiceOpen(false);
-  }
   saveReviewCards(state, options.messageId, options.content, options.result);
 }
 
@@ -202,11 +182,9 @@ export function useMessageRequest(state: ChatState) {
     }
     pendingRequest.controller.abort();
     state.activeChatRequest.current = null;
-    if (!state.auth.session) {
-      state.setMessages((current) =>
-        updateMessageStatus(current, pendingRequest.messageId, 'failed'),
-      );
-    }
+    state.setMessages((current) =>
+      updateMessageStatus(current, pendingRequest.messageId, 'failed'),
+    );
     state.setLoading(false);
   }
 
@@ -216,8 +194,6 @@ export function useMessageRequest(state: ChatState) {
     }
 
     const config = state.config;
-    const isGuestMessage = state.auth.isConfigured && !state.auth.session;
-
     const options = {
       retryMessage,
       spokenContent,
@@ -247,15 +223,12 @@ export function useMessageRequest(state: ChatState) {
         messageId,
       });
 
-      if (state.auth.session) {
-        state.history.reloadChats();
-      }
+      state.history.reloadChats();
       handleSuccessfulResponse(state, {
         controller,
         messageId,
         content,
         result: tutorResponse,
-        isGuestMessage,
       });
     } catch (requestError) {
       handleRequestError(state, controller, messageId, requestError);

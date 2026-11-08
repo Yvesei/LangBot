@@ -21,15 +21,35 @@ const uuid = z.string().uuid();
 const pageSize = 40;
 const createSchema = z.object({ languageConfig: languageConfigSchema }).strict();
 
-async function listChats(client: SupabaseClient, userId: string, offset: number) {
-  const { data, error } = await client
-    .from('conversations')
-    .select('*')
-    .eq('user_id', userId)
-    .order('updated_at', { ascending: false })
-    .order('id', { ascending: false })
-    .range(offset, offset + pageSize);
+async function listChats(
+  client: SupabaseClient,
+  userId: string,
+  isAnonymous: boolean,
+  offset: number,
+) {
+  const [conversations, messages] = await Promise.all([
+    client
+      .from('conversations')
+      .select('*')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(offset, offset + pageSize),
+    isAnonymous
+      ? client.from('messages').select('id', {
+          count: 'exact',
+          head: true,
+        })
+      : Promise.resolve({
+          count: 0,
+          error: null,
+        }),
+  ]);
+  const { data, error } = conversations;
   if (error || !data) {
+    throw databaseUnavailable();
+  }
+  if (messages.error || messages.count === null) {
     throw databaseUnavailable();
   }
   const parsed = z.array(conversationSchema).safeParse(data);
@@ -39,6 +59,7 @@ async function listChats(client: SupabaseClient, userId: string, offset: number)
   return {
     conversations: parsed.data.slice(0, pageSize),
     hasMore: parsed.data.length > pageSize,
+    messageCount: messages.count,
   };
 }
 
@@ -84,7 +105,7 @@ export const GET = chatResponse(async (request) => {
   }
   const id = params.get('id');
   if (!id) {
-    return listChats(client, user.id, offset.data);
+    return listChats(client, user.id, Boolean(user.is_anonymous), offset.data);
   }
   if (!uuid.safeParse(id).success) {
     throw new ApiError(400, 'Invalid chat ID.');

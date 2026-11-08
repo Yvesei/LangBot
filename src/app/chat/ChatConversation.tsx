@@ -50,6 +50,9 @@ export function ChatConversation({ state, actions }: ChatConversationProps) {
   }
 
   if (!state.isReady) {
+    if (state.auth.error) {
+      return <p role="alert">{state.auth.error}</p>;
+    }
     if (state.history.error) {
       return (
         <div>

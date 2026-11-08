@@ -26,6 +26,7 @@ const listSchema = z.object({
   success: z.literal(true),
   conversations: z.array(conversationSchema),
   hasMore: z.boolean(),
+  messageCount: z.number().int().nonnegative(),
 });
 const createSchema = z.object({
   success: z.literal(true),
@@ -107,7 +108,7 @@ export function sendConversationMessage(
   },
   signal: AbortSignal,
 ) {
-  return post('/api/messages', body, savedReplySchema, signal);
+  return post('/api/chat', body, savedReplySchema, signal);
 }
 
 export function conversationLanguages(conversation: SavedConversation): LanguageConfig {

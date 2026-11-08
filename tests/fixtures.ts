@@ -1,4 +1,3 @@
-import type { ChatRequest } from '@/lib/schemas';
 import { apiUrl } from './helpers/api';
 
 export const languageConfig = {
@@ -35,17 +34,16 @@ export function mockSettingsAndChats(settings: object) {
           },
         });
       }
-      return Response.json({ success: true, conversations: [], hasMore: false });
+      return Response.json({
+        success: true,
+        conversations: [],
+        hasMore: false,
+        messageCount: 0,
+      });
     }
     return Response.json(settings);
   });
 }
-export const chatBody: ChatRequest = {
-  prompt: 'I has a apple.',
-  languageConfig,
-  history: [],
-  learningFocus: [],
-};
 
 export function request(body: unknown, path = 'chat') {
   return new Request(apiUrl('/api/' + path), {

@@ -7,6 +7,7 @@ export function useHistoryIndex(userId: string | null) {
     ready: !userId,
     conversations: [] as SavedConversation[],
     hasMore: false,
+    messageCount: 0,
     error: '',
   });
   const [revision, setRevision] = useState(0);
@@ -25,6 +26,7 @@ export function useHistoryIndex(userId: string | null) {
             ready: !userId,
             conversations: [],
             hasMore: false,
+            messageCount: 0,
             error: '',
           },
     );
@@ -37,6 +39,7 @@ export function useHistoryIndex(userId: string | null) {
               ready: true,
               conversations: result.conversations,
               hasMore: result.hasMore,
+              messageCount: result.messageCount,
               error: '',
             });
           }
@@ -69,6 +72,7 @@ export function useHistoryIndex(userId: string | null) {
         ...previous,
         conversations: [...previous.conversations, ...result.conversations],
         hasMore: result.hasMore,
+        messageCount: result.messageCount,
         error: '',
       }));
     } catch {

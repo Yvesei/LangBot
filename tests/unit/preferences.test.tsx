@@ -18,6 +18,8 @@ function auth(userId: string | null): AuthSessionState {
     session: userId ? ({ user: { id: userId } } as Session) : null,
     isLoading: false,
     isConfigured: true,
+    isAnonymous: false,
+    error: '',
   };
 }
 

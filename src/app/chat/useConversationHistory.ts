@@ -169,6 +169,7 @@ export function useConversationHistory(userId: string | null, setMessages: SetMe
   return {
     conversations: index.conversations,
     listHasMore: index.hasMore,
+    messageCount: index.messageCount,
     loadMoreChats: index.loadMore,
     reloadChats: index.reload,
 

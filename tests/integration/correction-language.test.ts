@@ -1,4 +1,3 @@
-import { POST as chat } from '@/app/api/chat/route';
 import { POST as correct } from '@/app/api/correct/route';
 import { createFlashcards } from '@/lib/learning';
 import { LANGUAGES } from '@/lib/schemas';
@@ -39,22 +38,18 @@ beforeEach(() => {
 
 afterEach(() => jest.restoreAllMocks());
 
-describe.each([
-  { path: 'chat', handler: chat },
-  { path: 'correct', handler: correct },
-])('$path correction languages', ({ path, handler }) => {
+describe('correction languages', () => {
   test.each(scenarios)(
     '$languageConfig.nativeLanguage → $languageConfig.targetLanguage keeps explanations in the native language',
-    async ({ languageConfig, original, correctedText, explanation, reply }) => {
+    async ({ languageConfig, original, correctedText, explanation }) => {
       const correction = {
         correctedText,
         issues: [{ category: 'grammar', explanation }],
       };
-      const output = path === 'chat' ? { reply, correction } : correction;
-      jest.mocked(fetch).mockResolvedValue(providerResponse(output));
-      const content = path === 'chat' ? { prompt: original } : { content: original };
-
-      const response = await handler(request({ ...content, languageConfig }, path));
+      jest.mocked(fetch).mockResolvedValue(providerResponse(correction));
+      const response = await correct(
+        request({ content: original, languageConfig }, 'correct'),
+      );
       const result = await response.json();
 
       expect(response.status).toBe(200);
@@ -62,23 +57,15 @@ describe.each([
       expect(fetch).toHaveBeenCalledTimes(1);
       const sent = JSON.parse(jest.mocked(fetch).mock.calls[0][1]!.body as string);
       const properties = sent.response_format.json_schema.schema.properties;
-      const correctionProperties =
-        path === 'chat' ? properties.correction.properties : properties;
-      expect(correctionProperties.issues.description).toContain(
+      expect(properties.issues.description).toContain(
         `${LANGUAGES[languageConfig.nativeLanguage]} (${languageConfig.nativeLanguage})`,
       );
-      expect(correctionProperties.correctedText.description).toContain(
+      expect(properties.correctedText.description).toContain(
         `${LANGUAGES[languageConfig.targetLanguage]} (${languageConfig.targetLanguage})`,
       );
       expect(sent.messages[0].content).toContain(
         `Write EVERY issues[].explanation in ${LANGUAGES[languageConfig.nativeLanguage]}`,
       );
-      if (path === 'chat') {
-        expect(result.reply).toBe(reply);
-        expect(properties.reply.description).toContain(
-          `${LANGUAGES[languageConfig.targetLanguage]} (${languageConfig.targetLanguage})`,
-        );
-      }
       expect(
         createFlashcards('message', result.correction, languageConfig, original),
       ).toEqual([

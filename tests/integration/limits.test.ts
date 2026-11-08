@@ -1,15 +1,7 @@
-import { POST as chat } from '@/app/api/chat/route';
 import { POST as correct } from '@/app/api/correct/route';
 import { POST as translate } from '@/app/api/translate/route';
 import { POST as transcribe } from '@/app/api/transcribe/route';
-import {
-  chatBody,
-  corrected,
-  languageConfig,
-  providerResponse,
-  request,
-  tutorResult,
-} from '../fixtures';
+import { corrected, languageConfig, providerResponse, request } from '../fixtures';
 
 beforeEach(() => {
   jest.replaceProperty(process, 'env', {
@@ -36,16 +28,10 @@ function audioRequest() {
 
 test('shares the five-request limit across text and transcription routes and resets after a minute', async () => {
   const clock = jest.spyOn(Date, 'now').mockReturnValue(0);
-  const chatRoute = {
-    handler: chat,
-    path: 'chat',
-    body: chatBody,
-    output: tutorResult,
-  };
   const correctionRoute = {
     handler: correct,
     path: 'correct',
-    body: { content: chatBody.prompt, languageConfig },
+    body: { content: 'I has a apple.', languageConfig },
     output: corrected,
   };
   const translationRoute = {
@@ -55,7 +41,12 @@ test('shares the five-request limit across text and transcription routes and res
     output: { translation: 'Bonjour' },
   };
 
-  for (const route of [chatRoute, correctionRoute, translationRoute, chatRoute]) {
+  for (const route of [
+    correctionRoute,
+    translationRoute,
+    correctionRoute,
+    translationRoute,
+  ]) {
     jest.mocked(fetch).mockResolvedValueOnce(providerResponse(route.output));
     const response = await route.handler(request(route.body, route.path));
 
@@ -78,8 +69,8 @@ test('shares the five-request limit across text and transcription routes and res
   expect(fetch).toHaveBeenCalledTimes(5);
 
   clock.mockReturnValue(60_000);
-  jest.mocked(fetch).mockResolvedValueOnce(providerResponse(tutorResult));
-  const allowed = await chat(request(chatBody));
+  jest.mocked(fetch).mockResolvedValueOnce(providerResponse(corrected));
+  const allowed = await correct(request(correctionRoute.body, correctionRoute.path));
 
   expect(allowed.status).toBe(200);
   expect(fetch).toHaveBeenCalledTimes(6);

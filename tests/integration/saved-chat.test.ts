@@ -1,4 +1,4 @@
-import { POST } from '@/app/api/messages/route';
+import { POST } from '@/app/api/chat/route';
 import { GET, POST as createConversation } from '@/app/api/conversations/route';
 import { getChatAccount } from '@/lib/server/chat/account';
 import { ensureConversation, finishTurn, reserveTurn } from '@/lib/server/chat/storage';
@@ -37,7 +37,7 @@ const body = {
 
 function post(bodyValue: unknown = body) {
   return POST(
-    new Request('http://localhost:3000/api/messages', {
+    new Request('http://localhost:3000/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bodyValue),
@@ -143,6 +143,42 @@ test('replays a completed retry without calling the model', async () => {
   });
   expect(complete).not.toHaveBeenCalled();
   expect(finishTurn).not.toHaveBeenCalled();
+});
+
+test('enforces the anonymous message allowance from the database', async () => {
+  const messages = {
+    select: jest.fn((_columns: string, options?: { head?: boolean }) => {
+      if (options?.head) {
+        return Promise.resolve({ count: 5, error: null });
+      }
+      return {
+        eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }),
+      };
+    }),
+  };
+  const settings = {
+    select: () => ({
+      eq: () => ({
+        maybeSingle: () =>
+          Promise.resolve({ data: { guest_message_limit: 5 }, error: null }),
+      }),
+    }),
+  };
+  jest.mocked(getChatAccount).mockResolvedValue({
+    client: {
+      from: (table: string) => (table === 'messages' ? messages : settings),
+    } as never,
+    user: { id: userId, is_anonymous: true } as never,
+  });
+
+  const response = await post();
+
+  expect(response.status).toBe(403);
+  expect(await response.json()).toMatchObject({
+    error: 'Your free messages are used. Sign in with Google to continue.',
+  });
+  expect(ensureConversation).not.toHaveBeenCalled();
+  expect(complete).not.toHaveBeenCalled();
 });
 
 test('rejects browser-supplied history and requires a signed-in account', async () => {

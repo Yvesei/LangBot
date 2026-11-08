@@ -17,6 +17,8 @@ export interface AuthSessionState {
   session: Session | null;
   isLoading: boolean;
   isConfigured: boolean;
+  isAnonymous: boolean;
+  error: string;
 }
 
 /** Tracks both session restoration and sign-in changes for the current browser. */
@@ -24,6 +26,7 @@ export function useAuthSession(): AuthSessionState {
   const isConfigured = isSupabaseConfigured();
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(isConfigured);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const client = getSupabaseBrowserClient();
@@ -31,31 +34,68 @@ export function useAuthSession(): AuthSessionState {
       setIsLoading(false);
       return;
     }
+    const browserClient = client;
 
     let active = true;
-    let authChanged = false;
+    let creatingAnonymousSession = false;
+
+    function setActiveSession(nextSession: Session | null) {
+      setSession(nextSession);
+      setError('');
+      setIsLoading(false);
+    }
+
+    async function createAnonymousSession() {
+      if (!active || creatingAnonymousSession) {
+        return;
+      }
+      creatingAnonymousSession = true;
+      try {
+        const { data, error: signInError } = await browserClient.auth.signInAnonymously();
+        if (!active) {
+          return;
+        }
+        setSession(data.session);
+        setError(signInError ? 'Could not start your chat session. Please retry.' : '');
+        setIsLoading(false);
+      } catch {
+        if (active) {
+          setSession(null);
+          setError('Could not start your chat session. Please retry.');
+          setIsLoading(false);
+        }
+      } finally {
+        creatingAnonymousSession = false;
+      }
+    }
 
     const {
       data: { subscription },
-    } = client.auth.onAuthStateChange((_event, nextSession) => {
+    } = browserClient.auth.onAuthStateChange((_event, nextSession) => {
       if (active) {
-        authChanged = true;
-        setSession(nextSession);
-        setIsLoading(false);
+        if (nextSession) {
+          setActiveSession(nextSession);
+        } else {
+          void createAnonymousSession();
+        }
       }
     });
 
-    client.auth
+    browserClient.auth
       .getSession()
       .then(({ data }) => {
-        if (active && !authChanged) {
-          setSession(data.session);
-          setIsLoading(false);
+        if (active) {
+          if (data.session) {
+            setActiveSession(data.session);
+          } else {
+            void createAnonymousSession();
+          }
         }
       })
       .catch(() => {
-        if (active && !authChanged) {
+        if (active) {
           setSession(null);
+          setError('Could not restore your chat session. Please retry.');
           setIsLoading(false);
         }
       });
@@ -70,5 +110,7 @@ export function useAuthSession(): AuthSessionState {
     session,
     isLoading,
     isConfigured,
+    isAnonymous: Boolean(session?.user.is_anonymous),
+    error,
   };
 }

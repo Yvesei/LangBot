@@ -5,5 +5,4 @@ export interface ConversationMessage extends ChatMessage {
   origin?: 'text' | 'voice';
 }
 
-export { buildChatRequest } from './conversation-request';
 export { addAssistantReply, updateMessageStatus } from './conversation-messages';

@@ -9,4 +9,3 @@ export type ChatMessage = {
   status?: 'pending' | 'complete' | 'failed';
 };
 export type ChatResponse = { success: true } & ChatResult;
-export type { ChatRequest } from '../schemas';

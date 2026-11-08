@@ -5,7 +5,6 @@ import { usePreferences } from '@/lib/config/usePreferences';
 import { loadCards, sameLanguages, saveCards, type StudyCard } from '@/lib/learning';
 import { groupReviewCards } from '@/lib/review';
 import type { LanguageConfig } from '@/lib/schemas';
-import { useGuestMessageCount } from '@/lib/auth/guest-message-limit';
 import { useAuthSession } from '@/lib/auth/client';
 import { useConversationHistory } from './useConversationHistory';
 import { usePendingTurnRefresh } from './usePendingTurnRefresh';
@@ -48,13 +47,10 @@ function useSavedCards() {
 
 function guestLimitReached(
   auth: ReturnType<typeof useAuthSession>,
-  isReady: boolean,
   count: number,
   limit: number,
 ) {
-  return (
-    auth.isConfigured && !auth.isLoading && isReady && !auth.session && count >= limit
-  );
+  return auth.isAnonymous && count >= limit;
 }
 
 function useScrollToNewest(
@@ -77,7 +73,6 @@ function useScrollToNewest(
 export function useChatState() {
   const auth = useAuthSession();
   const preferences = usePreferences(auth);
-  const { guestMessageCount, recordGuestMessage } = useGuestMessageCount();
   const { setConfig, guestMessageLimit } = preferences;
   const { cards, setCards, cardsReady, storageWarning } = useSavedCards();
   const [isSelectingLanguages, setIsSelectingLanguages] = useState(false);
@@ -86,7 +81,8 @@ export function useChatState() {
   const userId = auth.session?.user.id ?? null;
   const history = useConversationHistory(userId, setMessages);
   const config = history.config ?? preferences.config;
-  const isReady = cardsReady && preferences.isReady && history.isReady;
+  const isReady =
+    cardsReady && preferences.isReady && history.isReady && Boolean(auth.session);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -126,8 +122,7 @@ export function useChatState() {
   const visibleCards = getVisibleCards(cards, config);
   const isGuestLimitReached = guestLimitReached(
     auth,
-    isReady,
-    guestMessageCount,
+    history.messageCount,
     guestMessageLimit,
   );
 
@@ -142,7 +137,6 @@ export function useChatState() {
     history,
     isGuestLimitReached,
     guestMessageLimit,
-    recordGuestMessage,
     config,
     setConfig,
     isReady,
