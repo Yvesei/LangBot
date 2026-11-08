@@ -79,7 +79,7 @@ export const POST = guardedRoute(async (request) => {
 
   try {
     const { data, error } = await client
-      .from('chat_turns')
+      .from('messages')
       .select('prompt,reply')
       .eq('conversation_id', body.conversationId)
       .eq('status', 'complete')

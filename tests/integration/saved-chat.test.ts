@@ -87,7 +87,7 @@ beforeEach(() => {
 
     then: (resolve: (value: object) => void) => resolve({ error: null }),
   };
-  const from = jest.fn((table) => (table === 'chat_turns' ? turns : conversations));
+  const from = jest.fn((table) => (table === 'messages' ? turns : conversations));
   jest.mocked(getChatAccount).mockResolvedValue({
     client: { from } as never,
     user: { id: userId } as never,

@@ -50,7 +50,7 @@ async function loadChat(
 ) {
   const conversation = await getConversation(client, userId, id);
   const { data, error } = await client
-    .from('chat_turns')
+    .from('messages')
     .select('*')
     .eq('conversation_id', id)
     .order('created_at', { ascending: false })
@@ -121,7 +121,7 @@ export const DELETE = chatResponse(async (request) => {
   await getConversation(client, user.id, conversationId);
   const query = turnId
     ? client
-        .from('chat_turns')
+        .from('messages')
         .delete()
         .eq('conversation_id', conversationId)
         .eq('id', turnId)

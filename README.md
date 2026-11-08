@@ -224,11 +224,11 @@ Closing a call aborts recording and transcription, cancels playback, and clears 
 | Data                    | Storage                                                     | Lifecycle                                                 |
 | ----------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
 | Guest conversation      | React state                                                 | Cleared on reload or new chat                             |
-| Signed-in conversations | Supabase `conversations` and `chat_turns`                   | Reopen across devices; corrections and retry state saved  |
+| Signed-in conversations | Supabase `conversations` and `messages`                     | Reopen across devices; corrections and retry state saved  |
 | Language pair and theme | Supabase `profiles` for accounts; `localStorage` for guests | Restored per account; guest settings stay in this browser |
 | Flashcards              | Schema-validated `localStorage`                             | Latest 100 occurrences; no account or cross-device sync   |
 
-Signed-in requests use the saved-chat path. A retry reuses the turn ID, so a completed reply is returned without asking the model again. The server reads prior turns from the database; the browser does not supply chat history for this path.
+Signed-in requests use the saved-chat path. A retry reuses the message ID, so a completed reply is returned without asking the model again. The server reads prior messages from the database; the browser does not supply chat history for this path.
 
 ```mermaid
 sequenceDiagram
@@ -236,12 +236,12 @@ sequenceDiagram
     participant API as Saved-chat API
     participant DB as Supabase
     participant AI as Mistral
-    Browser->>API: POST conversation ID, turn ID, prompt
-    API->>DB: Verify owner and reserve turn
-    API->>DB: Read recent completed turns
+    Browser->>API: POST conversation ID, message ID, prompt
+    API->>DB: Verify owner and reserve message
+    API->>DB: Read recent completed messages
     API->>AI: Generate reply and correction
     AI-->>API: Validated result
-    API->>DB: Complete turn with reply and correction
+    API->>DB: Complete message with reply and correction
     API-->>Browser: Saved result
     Browser->>API: GET conversations or a saved chat
     API->>DB: Read account-owned chats
@@ -263,7 +263,7 @@ Cards retain their `sourceMessageId`; deleting a turn removes its associated car
 
 ### Database schema
 
-The app uses `app_settings` for the guest allowance, `profiles` for account preferences, and `rate_limits` for request throttling. Signed-in chats use `conversations` and `chat_turns`; each turn keeps the learner message, assistant reply, correction, and retry state together. `auth_users` below represents Supabase's `auth.users`.
+The app uses `app_settings` for the guest allowance, `profiles` for account preferences, and `rate_limits` for request throttling. Signed-in chats use `conversations` and `messages`; each record keeps the learner message, assistant reply, correction, and retry state together. `auth_users` below represents Supabase's `auth.users`.
 
 ```mermaid
 erDiagram
@@ -294,7 +294,7 @@ erDiagram
         timestamptz created_at
         timestamptz updated_at
     }
-    chat_turns {
+    messages {
         uuid id PK
         uuid conversation_id FK
         text prompt
@@ -308,10 +308,10 @@ erDiagram
     }
     auth_users ||--o| profiles : id
     auth_users ||--o{ conversations : user_id
-    conversations ||--o{ chat_turns : conversation_id
+    conversations ||--o{ messages : conversation_id
 ```
 
-Apply the Supabase migrations before deploying this chat flow. The chat tables have account-scoped row-level security; the server verifies the cookie user and builds model context from saved turns. Guest chats stay in memory, and flashcards still use browser storage. Learning tables and cross-device flashcards belong to the next migration phase.
+Apply the Supabase migrations before deploying this chat flow. The chat tables have account-scoped row-level security; the server verifies the cookie user and builds model context from saved messages. Guest chats stay in memory, and flashcards still use browser storage. Learning tables and cross-device flashcards belong to the next migration phase.
 
 ## Testing & delivery
 

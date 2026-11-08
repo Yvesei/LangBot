@@ -102,7 +102,7 @@ export async function getTurn(
   id: string,
 ) {
   const { data, error } = await client
-    .from('chat_turns')
+    .from('messages')
     .select('*')
     .eq('conversation_id', conversationId)
     .eq('id', id)
@@ -157,7 +157,7 @@ async function claimExistingTurn(
     throw new ApiError(409, 'This message is still being processed.');
   }
   const { data, error } = await client
-    .from('chat_turns')
+    .from('messages')
     .update({
       status: 'pending',
       attempt_id: attemptId,
@@ -192,7 +192,7 @@ export async function reserveTurn(
 ): Promise<Reservation> {
   const attemptId = crypto.randomUUID();
   const { data, error } = await client
-    .from('chat_turns')
+    .from('messages')
     .insert({
       id: options.id,
       conversation_id: conversationId,
@@ -225,7 +225,7 @@ export async function finishTurn(
   result: ChatResult,
 ) {
   const { data, error } = await client
-    .from('chat_turns')
+    .from('messages')
     .update({
       reply: result.reply,
       correction: result.correction,
@@ -247,7 +247,7 @@ export async function finishTurn(
 
 export async function failTurn(client: SupabaseClient, id: string, attemptId: string) {
   await client
-    .from('chat_turns')
+    .from('messages')
     .update({
       status: 'failed',
       updated_at: new Date().toISOString(),
