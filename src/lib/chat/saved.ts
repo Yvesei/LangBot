@@ -27,6 +27,10 @@ const listSchema = z.object({
   conversations: z.array(conversationSchema),
   hasMore: z.boolean(),
 });
+const createSchema = z.object({
+  success: z.literal(true),
+  conversation: conversationSchema,
+});
 const detailSchema = z.object({
   success: z.literal(true),
   conversation: conversationSchema,
@@ -68,6 +72,10 @@ export async function loadConversation(id: string, offset: number, signal: Abort
     },
   );
   return readResponse(response, detailSchema);
+}
+
+export function createSavedConversation(config: LanguageConfig, signal: AbortSignal) {
+  return post('/api/conversations', { languageConfig: config }, createSchema, signal);
 }
 
 export async function deleteSavedChat(conversationId: string, turnId?: string) {

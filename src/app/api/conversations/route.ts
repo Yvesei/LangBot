@@ -11,12 +11,15 @@ import {
   getConversation,
   turnSchema,
 } from '@/lib/server/chat/storage';
+import { createConversation } from '@/lib/server/chat/conversations';
 import { ApiError } from '@/lib/server/errors';
 import { readJsonBody } from '@/lib/server/http/request-body';
+import { languageConfigSchema } from '@/lib/schemas/language';
 
 export const runtime = 'nodejs';
 const uuid = z.string().uuid();
 const pageSize = 40;
+const createSchema = z.object({ languageConfig: languageConfigSchema }).strict();
 
 async function listChats(client: SupabaseClient, userId: string, offset: number) {
   const { data, error } = await client
@@ -87,6 +90,18 @@ export const GET = chatResponse(async (request) => {
     throw new ApiError(400, 'Invalid chat ID.');
   }
   return loadChat(client, user.id, id, offset.data);
+});
+
+export const POST = chatResponse(async (request) => {
+  assertSameOrigin(request);
+  const { client, user } = await getChatAccount();
+  const parsed = createSchema.safeParse(await readJsonBody(request));
+  if (!parsed.success) {
+    throw new ApiError(400, 'Invalid conversation.');
+  }
+  return {
+    conversation: await createConversation(client, user.id, parsed.data.languageConfig),
+  };
 });
 
 export const DELETE = chatResponse(async (request) => {

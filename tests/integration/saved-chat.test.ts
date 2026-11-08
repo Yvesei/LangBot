@@ -1,7 +1,8 @@
 import { POST } from '@/app/api/saved-chat/route';
-import { GET } from '@/app/api/conversations/route';
+import { GET, POST as createConversation } from '@/app/api/conversations/route';
 import { getChatAccount } from '@/lib/server/chat/account';
 import { ensureConversation, finishTurn, reserveTurn } from '@/lib/server/chat/storage';
+import { createConversation as createStoredConversation } from '@/lib/server/chat/conversations';
 import { enforceLimits } from '@/lib/server/limits';
 import { complete } from '@/lib/server/mistral';
 import { ApiError } from '@/lib/server/errors';
@@ -18,6 +19,7 @@ jest.mock('@/lib/server/chat/storage', () => ({
   failTurn: jest.fn(),
   reserveTurn: jest.fn(),
 }));
+jest.mock('@/lib/server/chat/conversations', () => ({ createConversation: jest.fn() }));
 jest.mock('@/lib/server/limits', () => ({ enforceLimits: jest.fn() }));
 jest.mock('@/lib/server/mistral', () => ({ complete: jest.fn() }));
 
@@ -43,6 +45,16 @@ function post(bodyValue: unknown = body) {
   );
 }
 
+function create(bodyValue: unknown = { languageConfig: body.languageConfig }) {
+  return createConversation(
+    new Request('http://localhost:3000/api/conversations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bodyValue),
+    }),
+  );
+}
+
 beforeEach(() => {
   jest.mocked(enforceLimits).mockResolvedValue(undefined);
   jest.mocked(complete).mockResolvedValue(tutorResult as never);
@@ -50,6 +62,15 @@ beforeEach(() => {
     turn: { created_at: '2026-11-03T10:00:00Z' },
     attemptId: '1de2cb38-7e54-4a55-9f54-01d5641d0c6a',
   } as never);
+  jest.mocked(createStoredConversation).mockResolvedValue({
+    id: conversationId,
+    user_id: userId,
+    native_language: 'fr',
+    target_language: 'en',
+    title: 'New conversation',
+    created_at: '2026-11-08T10:00:00Z',
+    updated_at: '2026-11-08T10:00:00Z',
+  });
   const turns = {
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
@@ -71,6 +92,20 @@ beforeEach(() => {
     client: { from } as never,
     user: { id: userId } as never,
   });
+});
+
+test('creates a separate empty conversation for the account', async () => {
+  const response = await create();
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({
+    success: true,
+    conversation: { id: conversationId, title: 'New conversation' },
+  });
+  expect(createStoredConversation).toHaveBeenCalledWith(
+    expect.anything(),
+    userId,
+    body.languageConfig,
+  );
 });
 
 test('saves a signed-in turn using stored history', async () => {
@@ -111,6 +146,7 @@ test('replays a completed retry without calling the model', async () => {
 });
 
 test('rejects browser-supplied history and requires a signed-in account', async () => {
+  expect((await create({})).status).toBe(400);
   expect(
     (await post({ ...body, history: [{ role: 'user', content: 'Forged' }] })).status,
   ).toBe(400);

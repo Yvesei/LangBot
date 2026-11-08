@@ -1,25 +1,16 @@
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 import { loadConversation, turnMessages } from '@/lib/chat/saved';
 import type { ConversationMessage } from '@/lib/chat/conversation';
-import type { LanguageConfig } from '@/lib/schemas';
-
-interface ActiveState {
-  owner: string | null;
-  id: string | null;
-  config: LanguageConfig | null;
-  hasMore: boolean;
-  error: string;
-  ready: boolean;
-}
+import type { ActiveConversationState } from './startSavedConversation';
 
 interface LoadOptions {
-  state: ActiveState;
+  state: ActiveConversationState;
   userId: string | null;
   generation: RefObject<number>;
   owner: RefObject<string | null>;
   stateOffset: RefObject<number>;
   setMessages: Dispatch<SetStateAction<ConversationMessage[]>>;
-  setState: Dispatch<SetStateAction<ActiveState>>;
+  setState: Dispatch<SetStateAction<ActiveConversationState>>;
 }
 
 export async function loadOlderTurns(options: LoadOptions) {

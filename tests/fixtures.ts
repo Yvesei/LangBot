@@ -20,8 +20,21 @@ export const tutorResult = {
 };
 
 export function mockSettingsAndChats(settings: object) {
-  jest.mocked(fetch).mockImplementation(async (input) => {
+  jest.mocked(fetch).mockImplementation(async (input, init) => {
     if (String(input).startsWith('/api/conversations')) {
+      if (init?.method === 'POST') {
+        return Response.json({
+          success: true,
+          conversation: {
+            id: 'ef7eb1f6-f1f4-412b-bcc7-0814e4788bf9',
+            title: 'New conversation',
+            native_language: 'fr',
+            target_language: 'en',
+            created_at: '2026-11-08T10:00:00Z',
+            updated_at: '2026-11-08T10:00:00Z',
+          },
+        });
+      }
       return Response.json({ success: true, conversations: [], hasMore: false });
     }
     return Response.json(settings);
