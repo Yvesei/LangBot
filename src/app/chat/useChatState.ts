@@ -7,7 +7,6 @@ import { groupReviewCards } from '@/lib/review';
 import type { LanguageConfig } from '@/lib/schemas';
 import { useAuthSession } from '@/lib/auth/client';
 import { useConversationHistory } from './useConversationHistory';
-import { usePendingTurnRefresh } from './usePendingTurnRefresh';
 
 interface ActiveChatRequest {
   controller: AbortController;
@@ -90,13 +89,6 @@ export function useChatState() {
   const activeChatRequest = useRef<ActiveChatRequest | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const preserveScrollRef = useRef(false);
-  usePendingTurnRefresh({
-    conversationId: history.id,
-    userId,
-    messages,
-    setMessages,
-    activeRequest: activeChatRequest,
-  });
 
   const previousUserId = useRef(userId);
   useEffect(() => {
