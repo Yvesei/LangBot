@@ -96,7 +96,7 @@ export async function deleteSavedChat(conversationId: string, turnId?: string) {
   );
 }
 
-export function sendSavedChat(
+export function sendConversationMessage(
   body: {
     conversationId: string;
     messageId: string;
@@ -107,7 +107,7 @@ export function sendSavedChat(
   },
   signal: AbortSignal,
 ) {
-  return post('/api/saved-chat', body, savedReplySchema, signal);
+  return post('/api/messages', body, savedReplySchema, signal);
 }
 
 export function conversationLanguages(conversation: SavedConversation): LanguageConfig {

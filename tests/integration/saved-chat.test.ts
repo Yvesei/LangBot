@@ -1,4 +1,4 @@
-import { POST } from '@/app/api/saved-chat/route';
+import { POST } from '@/app/api/messages/route';
 import { GET, POST as createConversation } from '@/app/api/conversations/route';
 import { getChatAccount } from '@/lib/server/chat/account';
 import { ensureConversation, finishTurn, reserveTurn } from '@/lib/server/chat/storage';
@@ -37,7 +37,7 @@ const body = {
 
 function post(bodyValue: unknown = body) {
   return POST(
-    new Request('http://localhost:3000/api/saved-chat', {
+    new Request('http://localhost:3000/api/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bodyValue),

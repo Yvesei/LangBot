@@ -1,5 +1,5 @@
 import { send } from '@/lib/api';
-import { sendSavedChat } from '@/lib/chat/saved';
+import { sendConversationMessage } from '@/lib/chat/saved';
 import {
   addAssistantReply,
   buildChatRequest,
@@ -37,7 +37,7 @@ interface TutorRequestOptions {
 function requestTutorResponse(state: ChatState, options: TutorRequestOptions) {
   const { config, content, retryMessage, spokenContent, controller, messageId } = options;
   if (state.auth.session) {
-    return sendSavedChat(
+    return sendConversationMessage(
       {
         conversationId: state.history.noteStarted(
           state.history.id ?? crypto.randomUUID(),

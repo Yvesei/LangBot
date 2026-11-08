@@ -151,7 +151,7 @@ All routes use the Node.js runtime. Text requests use `application/json`; transc
 | POST endpoint     | Input                                                                  | Result fields               |
 | ----------------- | ---------------------------------------------------------------------- | --------------------------- |
 | `/api/chat`       | `prompt`, `languageConfig`, optional `history` and `learningFocus`     | `reply`, `correction`       |
-| `/api/saved-chat` | `conversationId`, `messageId`, `prompt`, `languageConfig`, `origin`    | Saved `reply`, `correction` |
+| `/api/messages`   | `conversationId`, `messageId`, `prompt`, `languageConfig`, `origin`    | Saved `reply`, `correction` |
 | `/api/correct`    | `content`, `languageConfig`                                            | `correction`                |
 | `/api/translate`  | `content`, `languageConfig`                                            | `translation`               |
 | `/api/transcribe` | Ogg/WebM/MP4 body; `X-Native-Language` and `X-Target-Language` headers | `text`                      |
@@ -228,12 +228,12 @@ Closing a call aborts recording and transcription, cancels playback, and clears 
 | Language pair and theme | Supabase `profiles` for accounts; `localStorage` for guests | Restored per account; guest settings stay in this browser |
 | Flashcards              | Schema-validated `localStorage`                             | Latest 100 occurrences; no account or cross-device sync   |
 
-Signed-in requests use the saved-chat path. A retry reuses the message ID, so a completed reply is returned without asking the model again. The server reads prior messages from the database; the browser does not supply chat history for this path.
+Signed-in requests use the messages path. A retry reuses the message ID, so a completed reply is returned without asking the model again. The server reads prior messages from the database; the browser does not supply chat history for this path.
 
 ```mermaid
 sequenceDiagram
     participant Browser
-    participant API as Saved-chat API
+    participant API as Messages API
     participant DB as Supabase
     participant AI as Mistral
     Browser->>API: POST conversation ID, message ID, prompt
