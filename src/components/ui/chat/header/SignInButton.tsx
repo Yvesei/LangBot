@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { GoogleMark } from '@/components/ui/brand/GoogleMark';
-import { getSupabaseBrowserClient } from '@/lib/auth/client';
+import { getSupabaseBrowserClient, useAuthSession } from '@/lib/auth/client';
 
 interface SignInButtonProps {
   variant?: 'icon' | 'call-to-action';
@@ -19,6 +19,7 @@ function clearCallbackError() {
 
 export function SignInButton({ variant = 'icon' }: SignInButtonProps) {
   const isCallToAction = variant === 'call-to-action';
+  const { session } = useAuthSession();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,10 +55,16 @@ export function SignInButton({ variant = 'icon' }: SignInButtonProps) {
     setIsPending(true);
 
     try {
-      const { error: authError } = await client.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
-      });
+      const options = { redirectTo: `${window.location.origin}/auth/callback` };
+      const { error: authError } = session?.user.is_anonymous
+        ? await client.auth.linkIdentity({
+            provider: 'google',
+            options,
+          })
+        : await client.auth.signInWithOAuth({
+            provider: 'google',
+            options,
+          });
 
       if (authError) {
         setError('Could not start Google sign-in. Please try again.');

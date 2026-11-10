@@ -1,13 +1,12 @@
-import { send } from '@/lib/api';
+import { sendConversationMessage } from '@/lib/chat/saved';
 import {
   addAssistantReply,
-  buildChatRequest,
   updateMessageStatus,
   type ConversationMessage,
 } from '@/lib/chat/conversation';
 import { createFlashcards } from '@/lib/learning';
 import type { ChatResult, LanguageConfig } from '@/lib/schemas';
-import type { ChatState } from './useChatState';
+import type { ChatState } from '../useChatState';
 
 const MAX_SAVED_CARDS = 100;
 
@@ -21,7 +20,34 @@ interface SuccessfulResponseOptions {
   messageId: string;
   content: string;
   result: ChatResult;
-  isGuestMessage: boolean;
+}
+
+interface TutorRequestOptions {
+  config: LanguageConfig;
+  content: string;
+  retryMessage?: ConversationMessage;
+  spokenContent?: string;
+  controller: AbortController;
+  messageId: string;
+}
+
+function requestTutorResponse(state: ChatState, options: TutorRequestOptions) {
+  const { config, content, retryMessage, spokenContent, controller, messageId } = options;
+  return sendConversationMessage(
+    {
+      conversationId: state.history.noteStarted(
+        state.history.id ?? crypto.randomUUID(),
+        config,
+        !retryMessage,
+      ),
+      messageId,
+      prompt: content,
+      languageConfig: config,
+      learningFocus: state.visibleCards.slice(-3).map((card) => card.focus.slice(0, 500)),
+      origin: retryMessage?.origin ?? (spokenContent === undefined ? 'text' : 'voice'),
+    },
+    controller.signal,
+  );
 }
 
 function getMessageContent(state: ChatState, options: SendMessageOptions) {
@@ -59,6 +85,7 @@ function addPendingMessage(
       content,
       timestamp: new Date(),
       status: 'pending',
+      origin: options.spokenContent === undefined ? 'text' : 'voice',
     },
   ]);
 }
@@ -77,6 +104,7 @@ function canStartMessage(
     Boolean(state.config) &&
     state.isReady &&
     !state.activeChatRequest.current &&
+    !state.messages.some((message) => message.status === 'pending') &&
     !state.isSelectingLanguages &&
     !state.auth.isLoading &&
     !state.isGuestLimitReached
@@ -103,6 +131,7 @@ function handleRequestError(
   }
 
   state.setMessages((current) => updateMessageStatus(current, messageId, 'failed'));
+  state.history.reloadChats();
 
   let errorMessage = 'Could not send the message. Please retry.';
   if (requestError instanceof Error) {
@@ -142,10 +171,6 @@ function handleSuccessfulResponse(state: ChatState, options: SuccessfulResponseO
   state.setMessages((current) =>
     addAssistantReply(current, options.messageId, options.result),
   );
-  const guestMessageCount = options.isGuestMessage ? state.recordGuestMessage() : null;
-  if (guestMessageCount !== null && guestMessageCount >= state.guestMessageLimit) {
-    state.setVoiceOpen(false);
-  }
   saveReviewCards(state, options.messageId, options.content, options.result);
 }
 
@@ -169,8 +194,6 @@ export function useMessageRequest(state: ChatState) {
     }
 
     const config = state.config;
-    const isGuestMessage = state.auth.isConfigured && !state.auth.session;
-
     const options = {
       retryMessage,
       spokenContent,
@@ -191,23 +214,21 @@ export function useMessageRequest(state: ChatState) {
     addPendingMessage(state, messageId, content, options);
 
     try {
-      const tutorResponse = await send(
-        buildChatRequest({
-          content,
-          messages: state.messages,
-          cards: state.visibleCards,
-          config,
-          retryMessageId: retryMessage?.id,
-        }),
-        controller.signal,
-      );
+      const tutorResponse = await requestTutorResponse(state, {
+        config,
+        content,
+        retryMessage,
+        spokenContent,
+        controller,
+        messageId,
+      });
 
+      state.history.reloadChats();
       handleSuccessfulResponse(state, {
         controller,
         messageId,
         content,
         result: tutorResponse,
-        isGuestMessage,
       });
     } catch (requestError) {
       handleRequestError(state, controller, messageId, requestError);

@@ -25,7 +25,7 @@ export function AuthMenu() {
     return null;
   }
 
-  if (!user) {
+  if (!user || user.is_anonymous) {
     return <SignInButton />;
   }
 

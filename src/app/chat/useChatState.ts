@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 import type { ConversationMessage } from '@/lib/chat/conversation';
 import { usePreferences } from '@/lib/config/usePreferences';
 import { loadCards, sameLanguages, saveCards, type StudyCard } from '@/lib/learning';
 import { groupReviewCards } from '@/lib/review';
 import type { LanguageConfig } from '@/lib/schemas';
-import { useGuestMessageCount } from '@/lib/auth/guest-message-limit';
 import { useAuthSession } from '@/lib/auth/client';
+import { useConversationHistory } from './conversation/useConversationHistory';
 
 interface ActiveChatRequest {
   controller: AbortController;
@@ -43,69 +44,79 @@ function useSavedCards() {
   };
 }
 
+function guestLimitReached(
+  auth: ReturnType<typeof useAuthSession>,
+  count: number,
+  limit: number | null,
+) {
+  return limit !== null && auth.isAnonymous && count >= limit;
+}
+
+function useScrollToNewest(
+  messages: ConversationMessage[],
+  endRef: RefObject<HTMLDivElement | null>,
+  preserveRef: RefObject<boolean>,
+) {
+  useLayoutEffect(() => {
+    if (preserveRef.current) {
+      preserveRef.current = false;
+      return;
+    }
+    endRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'end',
+    });
+  }, [messages, endRef, preserveRef]);
+}
+
 export function useChatState() {
   const auth = useAuthSession();
   const preferences = usePreferences(auth);
-  const { guestMessageCount, recordGuestMessage } = useGuestMessageCount();
-  const { config, setConfig, guestMessageLimit } = preferences;
+  const { setConfig, guestMessageLimit } = preferences;
   const { cards, setCards, cardsReady, storageWarning } = useSavedCards();
-  const isReady = cardsReady && preferences.isReady;
   const [isSelectingLanguages, setIsSelectingLanguages] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
+  const userId = auth.session?.user.id ?? null;
+  const history = useConversationHistory(userId, setMessages);
+  const config = history.config ?? preferences.config;
+  const isReady =
+    cardsReady && preferences.isReady && history.isReady && Boolean(auth.session);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [reviewOpen, setReviewOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const activeChatRequest = useRef<ActiveChatRequest | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const preserveScrollRef = useRef(false);
 
-  const userId = auth.session?.user.id ?? null;
-  const context = useRef({
-    userId,
-    config,
-  });
+  const previousUserId = useRef(userId);
   useEffect(() => {
-    const previous = context.current;
-    context.current = {
-      userId,
-      config: config ?? previous.config,
-    };
-    if (previous.userId !== userId) {
-      setVoiceOpen(false);
+    if (previousUserId.current === userId) {
+      return;
     }
-    const changedAccount = previous.userId && previous.userId !== userId;
-    const changedLanguages =
-      previous.config && config && !sameLanguages(previous.config, config);
-    if (changedAccount || changedLanguages) {
-      activeChatRequest.current?.controller.abort();
-      activeChatRequest.current = null;
-      setMessages([]);
-      setPrompt('');
-      setLoading(false);
-      setError('');
-      setReviewOpen(false);
-      setVoiceOpen(false);
-      setIsSelectingLanguages(false);
-    }
-  }, [userId, config]);
+    previousUserId.current = userId;
+    activeChatRequest.current?.controller.abort();
+    activeChatRequest.current = null;
+    setMessages([]);
+    setPrompt('');
+    setLoading(false);
+    setError('');
+    setReviewOpen(false);
+    setVoiceOpen(false);
+    setIsSelectingLanguages(false);
+  }, [userId]);
 
   useEffect(() => () => activeChatRequest.current?.controller.abort(), []);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'end',
-    });
-  }, [messages]);
+  useScrollToNewest(messages, messagesEndRef, preserveScrollRef);
 
   const visibleCards = getVisibleCards(cards, config);
-  const isGuestLimitReached =
-    auth.isConfigured &&
-    !auth.isLoading &&
-    isReady &&
-    !auth.session &&
-    guestMessageCount >= guestMessageLimit;
+  const isGuestLimitReached = guestLimitReached(
+    auth,
+    history.messageCount,
+    guestMessageLimit,
+  );
 
   useEffect(() => {
     if (isGuestLimitReached) {
@@ -115,9 +126,9 @@ export function useChatState() {
 
   return {
     auth,
+    history,
     isGuestLimitReached,
     guestMessageLimit,
-    recordGuestMessage,
     config,
     setConfig,
     isReady,
@@ -138,6 +149,7 @@ export function useChatState() {
     hasPreferenceSaveError: Boolean(preferences.warning && auth.session),
     activeChatRequest,
     messagesEndRef,
+    preserveScrollRef,
     cards,
     setCards,
     reviewOpen,

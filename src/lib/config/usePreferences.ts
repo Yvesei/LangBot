@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AuthSessionState } from '../auth/client';
-import { DEFAULT_GUEST_MESSAGE_LIMIT } from '../auth/guest-message-limit';
 import { languageConfigSchema, type LanguageConfig } from '../schemas/language';
 import { getTheme, setTheme, setThemePersistence } from '../theme/store';
 import { getLanguageConfigFromStorage, saveLanguageConfigToStorage } from './language';
@@ -117,7 +116,7 @@ function useLoadedPreferences(
     owner: undefined as string | null | undefined,
     ready: false,
     config: null as LanguageConfig | null,
-    guestMessageLimit: DEFAULT_GUEST_MESSAGE_LIMIT,
+    guestMessageLimit: null as number | null,
     error: '',
   });
   const guestTheme = useRef(DEFAULT_THEME as ReturnType<typeof getTheme>);
@@ -148,16 +147,6 @@ function useLoadedPreferences(
       }
       setTheme(guestTheme.current, false);
     }
-    if (!auth.isConfigured) {
-      setState({
-        owner: userId,
-        ready: true,
-        config: getLanguageConfigFromStorage(),
-        guestMessageLimit: DEFAULT_GUEST_MESSAGE_LIMIT,
-        error: '',
-      });
-      return;
-    }
     void loadPreferences(userId, controller.signal)
       .then((settings) => {
         if (!active) {
@@ -186,7 +175,7 @@ function useLoadedPreferences(
       active = false;
       controller.abort();
     };
-  }, [auth.isLoading, auth.isConfigured, userId, revision, themeVersion]);
+  }, [auth.isLoading, userId, revision, themeVersion]);
 
   return {
     state,

@@ -4,8 +4,7 @@ import { getRetryDelay, waitForRetry } from '@/lib/server/retry';
 import { readBytes } from '@/lib/server/http';
 import { providerResponse, corrected, languageConfig, tutorResult } from '../fixtures';
 import { wordDiff } from '@/lib/diff';
-import { addAssistantReply, buildChatRequest } from '@/lib/chat/conversation';
-import { MAX_REQUEST_BYTES } from '@/lib/config/limits';
+import { addAssistantReply } from '@/lib/chat/conversation';
 import { createFlashcards } from '@/lib/learning';
 import { groupReviewCards } from '@/lib/review';
 
@@ -166,43 +165,6 @@ test('stalled stream reads preserve timeout errors and release the reader', asyn
   await rejection;
   expect(request.body?.locked).toBe(false);
   expect(jest.getTimerCount()).toBe(0);
-});
-
-test('chat history drops pending/failed turns and stops at the first oversized recent turn', () => {
-  const messages = [
-    conversationMessage('old', 'Old'),
-    conversationMessage('oversized', 'x'.repeat(20000)),
-    conversationMessage('recent', 'Recent'),
-    { ...conversationMessage('pending', 'Pending'), status: 'pending' as const },
-    { ...conversationMessage('failed', 'Failed'), status: 'failed' as const },
-  ];
-  const request = buildChatRequest({
-    content: 'Hello',
-    messages,
-    cards: [],
-    config: languageConfig,
-  });
-  expect(request.history).toEqual([{ role: 'user', content: 'Recent' }]);
-});
-
-test('chat history respects UTF-8 request size and retry cutoffs', () => {
-  const messages = Array.from({ length: 12 }, (_, index) =>
-    conversationMessage(String(index), '語'.repeat(1000)),
-  );
-  const options = {
-    content: 'Hello',
-    messages,
-    cards: [],
-    config: languageConfig,
-  };
-  const request = buildChatRequest(options);
-  expect(
-    new TextEncoder().encode(JSON.stringify(request)).byteLength,
-  ).toBeLessThanOrEqual(MAX_REQUEST_BYTES);
-  expect(request.history.length).toBeLessThan(messages.length);
-  expect(buildChatRequest({ ...options, retryMessageId: '1' }).history).toEqual([
-    { role: 'user', content: messages[0].content },
-  ]);
 });
 
 test('reply insertion preserves unrelated message identities', () => {

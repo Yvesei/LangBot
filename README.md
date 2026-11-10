@@ -115,9 +115,9 @@ flowchart TB
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Model output         | Zod → JSON Schema with `strict: true`; validate the completion envelope and parsed payload before returning it. [Provider parsing](src/lib/server/mistral-response.ts)                 |
 | Correction semantics | Reply and correction share one completion. Unexplained rewrites become `correction: null`; unchanged text returns an empty issues array. [Normalization](src/lib/server/correction.ts) |
-| Async state          | An `AbortController` identifies the active request. Stale results are ignored; retries reuse the message ID. [Request hook](src/app/chat/useMessageRequest.ts)                         |
+| Async state          | An `AbortController` identifies the active request. Stale results are ignored; retries reuse the message ID. [Request hook](src/app/chat/message/useMessageRequest.ts)                 |
 | Provider failures    | 25-second deadline; text requests retry once on `429`, `502`, `503`, or `504` if the retry delay fits a 2-second budget. [Retry logic](src/lib/server/mistral-request.ts)              |
-| Context assembly     | Exclude pending/failed turns, trim history by count and encoded size, and include up to three saved correction explanations. [Request builder](src/lib/chat/conversation-request.ts)   |
+| Context assembly     | Read completed messages for the active conversation, trim them by count and size, and include up to three saved correction explanations. [Chat route](src/app/api/chat/route.ts)       |
 | Audio lifecycle      | `MediaRecorder` format negotiation, Web Audio silence detection, generation checks, and track/timer cleanup. [Voice modules](src/lib/voice)                                            |
 | Observability        | Structured completion logs include model, latency, usage, and attempts; API errors include request IDs and status. [Provider metrics](src/lib/server/mistral.ts)                       |
 
@@ -130,7 +130,7 @@ sequenceDiagram
     participant AI as Mistral
 
     UI->>UI: Create controller and pending message
-    UI->>UI: Build bounded history and learning focus
+    UI->>UI: Create learning focus
     UI->>API: POST /api/chat with abort signal
     API->>API: Check origin, rate, body size, and schema
     API->>AI: Request reply and correction using JSON Schema
@@ -150,7 +150,7 @@ All routes use the Node.js runtime. Text requests use `application/json`; transc
 
 | POST endpoint     | Input                                                                  | Result fields         |
 | ----------------- | ---------------------------------------------------------------------- | --------------------- |
-| `/api/chat`       | `prompt`, `languageConfig`, optional `history` and `learningFocus`     | `reply`, `correction` |
+| `/api/chat`       | `conversationId`, `messageId`, `prompt`, `languageConfig`, `learningFocus`, `origin` | `reply`, `correction` |
 | `/api/correct`    | `content`, `languageConfig`                                            | `correction`          |
 | `/api/translate`  | `content`, `languageConfig`                                            | `translation`         |
 | `/api/transcribe` | Ogg/WebM/MP4 body; `X-Native-Language` and `X-Target-Language` headers | `text`                |
@@ -159,10 +159,12 @@ Example chat request:
 
 ```json
 {
+  "conversationId": "29f01f5a-14de-4a98-829e-fdc680f2beb0",
+  "messageId": "7207ee80-801c-4e25-b8a9-04020135080b",
   "prompt": "I need une cuillère.",
   "languageConfig": { "nativeLanguage": "fr", "targetLanguage": "en" },
-  "history": [],
-  "learningFocus": []
+  "learningFocus": [],
+  "origin": "text"
 }
 ```
 
@@ -170,7 +172,7 @@ Example chat request:
 - **Failure:** `{ "success": false, "error": "..." }` with an HTTP error status.
 - **Correction:** `{ correctedText, issues: [{ category, explanation }] }` or `null` when unavailable.
 - **Response headers:** guarded routes set `X-Request-ID` and `Cache-Control: no-store`; rate-limit errors can include `Retry-After`.
-- **Validation:** strict request schemas, `user`/`assistant` history roles only, and two distinct supported languages.
+- **Validation:** strict request schemas, server-owned conversation context, and two distinct supported languages.
 
 [Request and response schemas](src/lib/schemas) · [Route wrapper](src/lib/server/http.ts) · [Response helpers](src/lib/server/http/responses.ts)
 
@@ -179,7 +181,7 @@ Example chat request:
 | Boundary             | Limit                                                          |
 | -------------------- | -------------------------------------------------------------- |
 | Chat prompt          | 2,000 characters                                               |
-| Conversation context | 12 history messages; 20,000 combined prompt/history characters |
+| Conversation context | 12 stored messages; 20,000 combined prompt/context characters  |
 | JSON request         | 32 KiB; 5-second body-read deadline                            |
 | Audio                | 2 MiB upload; 30-second browser recording limit                |
 | Provider call        | 25 seconds, combined with caller cancellation                  |
@@ -220,8 +222,8 @@ Closing a call aborts recording and transcription, cancels playback, and clears 
 
 | Data                    | Storage                                                     | Lifecycle                                                 |
 | ----------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| Conversation            | React state                                                 | Cleared on reload or new chat                             |
-| Language pair and theme | Supabase `profiles` for accounts; `localStorage` for guests | Restored per account; guest settings stay in this browser |
+| Conversation            | Supabase `conversations` and `messages`                     | Restored after reload; new chats stay separate            |
+| Language pair and theme | Supabase `profiles`                                         | Restored for the current anonymous or Google account      |
 | Flashcards              | Schema-validated `localStorage`                             | Latest 100 occurrences; no account or cross-device sync   |
 
 ```mermaid
@@ -239,18 +241,18 @@ Cards retain their `sourceMessageId`; deleting a turn removes its associated car
 
 ### Database schema
 
-`app_settings` and `profiles` back the current settings flow. The remaining tables describe planned chat and learning persistence. `auth_users` represents Supabase's `auth.users`; the other tables belong to `public`.
+`app_settings`, `profiles`, `conversations`, and `messages` back the current settings and chat flow. The remaining tables describe planned learning persistence. `auth_users` represents Supabase's `auth.users`; the other tables belong to `public`.
 
-| Setting                   | Guest storage                    | Account/shared database column     |
-| ------------------------- | -------------------------------- | ---------------------------------- |
-| Preferred native language | `localStorage`: `langbot-native` | `profiles.native_language`         |
-| Preferred target language | `localStorage`: `langbot-target` | `profiles.target_language`         |
-| Theme                     | `localStorage`: `langbot-theme`  | `profiles.ui_theme`                |
-| Guest message allowance   | Loaded from the server           | `app_settings.guest_message_limit` |
+| Setting                   | Storage                                  | Database column                    |
+| ------------------------- | ---------------------------------------- | ---------------------------------- |
+| Preferred native language | Anonymous or Google account profile      | `profiles.native_language`         |
+| Preferred target language | Anonymous or Google account profile      | `profiles.target_language`         |
+| Theme                     | Anonymous or Google account profile      | `profiles.ui_theme`                |
+| Guest message allowance   | Counted from saved messages               | `app_settings.guest_message_limit` |
 
-The app restores account preferences through `GET /api/settings` and saves changes through `PATCH /api/settings`. Profile language preferences stay empty until setup is completed. Guest settings remain separate in browser storage and are restored on sign-out. Drafts, dialogs, and active voice-call state remain in React.
+The app restores preferences through `GET /api/settings` and saves changes through `PATCH /api/settings`. Profile language preferences stay empty until setup is completed. Drafts, dialogs, and active voice-call state remain in React.
 
-`app_settings.guest_message_limit` defaults to five completed messages before sign-in. The guest's consumed-message count stays in browser storage for now; it is separate from this setting and the per-minute API rate limit.
+`app_settings.guest_message_limit` defaults to five messages before sign-in. The guest's consumed-message count is derived from saved messages; it is separate from the per-minute API rate limit.
 
 UUID IDs and numeric identity IDs are generated on insert. `profiles.id` uses the existing Auth user ID, and `rate_limits.identity_key` is supplied by the server. Creation timestamps and initial `updated_at` values default to `now()`; subsequent updates must set `updated_at` in application code.
 
@@ -291,11 +293,14 @@ erDiagram
     messages {
         uuid id PK
         uuid conversation_id FK
-        uuid user_id FK
-        text role
-        text content
+        text prompt
+        text reply
+        jsonb correction
         text origin
+        text status
+        uuid attempt_id
         timestamptz created_at
+        timestamptz updated_at
     }
 
     corrections {
@@ -368,7 +373,6 @@ erDiagram
     auth_users ||--o| profiles : id
     auth_users ||..o{ conversations : user_id
     conversations ||..o{ messages : conversation_id
-    auth_users ||..o{ messages : user_id
     auth_users ||..o{ corrections : user_id
     messages ||..o{ corrections : message_id
     auth_users ||..o{ correction_issues : user_id
@@ -431,7 +435,7 @@ pnpm install --frozen-lockfile
 cp .env.example .env.local
 ```
 
-Set `.env.local` (`MISTRAL_API_KEY` is required; model variables override the defaults; Supabase variables are optional and enable Google sign-in):
+Set `.env.local` (`MISTRAL_API_KEY` and the Supabase variables are required; model variables override the defaults):
 
 ```env
 MISTRAL_API_KEY=your_mistral_api_key_here
@@ -440,6 +444,16 @@ MISTRAL_TRANSCRIPTION_MODEL=voxtral-small-latest
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
+
+### Production database migrations
+
+Merges to `main` apply pending Supabase migrations through GitHub Actions. Configure the repository's `production` environment with:
+
+| GitHub value                   | Where to find it                                                                                    |
+| ------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Secret `SUPABASE_ACCESS_TOKEN` | Supabase **Account → Access Tokens**                                                                |
+| Secret `SUPABASE_DB_PASSWORD`  | Project **Settings → Database**; this is the same database password often named `POSTGRES_PASSWORD` |
+| Variable `SUPABASE_PROJECT_ID` | Project **Settings → General → Reference ID**                                                       |
 
 ```bash
 pnpm dev
