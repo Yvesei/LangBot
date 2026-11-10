@@ -6,7 +6,7 @@ import {
 } from '@/lib/chat/conversation';
 import { createFlashcards } from '@/lib/learning';
 import type { ChatResult, LanguageConfig } from '@/lib/schemas';
-import type { ChatState } from './useChatState';
+import type { ChatState } from '../useChatState';
 
 const MAX_SAVED_CARDS = 100;
 

@@ -6,7 +6,7 @@ import { loadCards, sameLanguages, saveCards, type StudyCard } from '@/lib/learn
 import { groupReviewCards } from '@/lib/review';
 import type { LanguageConfig } from '@/lib/schemas';
 import { useAuthSession } from '@/lib/auth/client';
-import { useConversationHistory } from './useConversationHistory';
+import { useConversationHistory } from './conversation/useConversationHistory';
 
 interface ActiveChatRequest {
   controller: AbortController;

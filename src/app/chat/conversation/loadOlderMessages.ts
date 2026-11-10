@@ -1,7 +1,7 @@
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 import { loadConversation, turnMessages } from '@/lib/chat/saved';
 import type { ConversationMessage } from '@/lib/chat/conversation';
-import type { ActiveConversationState } from './startSavedConversation';
+import type { ActiveConversationState } from './createConversation';
 
 interface LoadOptions {
   state: ActiveConversationState;
@@ -13,7 +13,7 @@ interface LoadOptions {
   setState: Dispatch<SetStateAction<ActiveConversationState>>;
 }
 
-export async function loadOlderTurns(options: LoadOptions) {
+export async function loadOlderMessages(options: LoadOptions) {
   const { state, userId, generation, owner, stateOffset, setMessages, setState } =
     options;
   if (!state.id || !state.hasMore || !userId) {

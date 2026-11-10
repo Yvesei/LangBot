@@ -1,7 +1,7 @@
 import type { ConversationMessage } from '@/lib/chat/conversation';
 import type { LanguageConfig } from '@/lib/schemas';
 import type { ChatState } from './useChatState';
-import { useMessageRequest } from './useMessageRequest';
+import { useMessageRequest } from './message/useMessageRequest';
 import { deleteSavedChat } from '@/lib/chat/saved';
 
 type MessageRequest = Pick<ReturnType<typeof useMessageRequest>, 'cancel'>;

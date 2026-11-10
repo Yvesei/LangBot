@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { listConversations, type SavedConversation } from '@/lib/chat/saved';
 
-export function useHistoryIndex(userId: string | null) {
+export function useConversationList(userId: string | null) {
   const [state, setState] = useState({
     owner: null as string | null,
     ready: !userId,

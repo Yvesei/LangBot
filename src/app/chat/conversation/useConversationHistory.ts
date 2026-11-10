@@ -8,12 +8,9 @@ import {
 } from '@/lib/chat/saved';
 import type { ConversationMessage } from '@/lib/chat/conversation';
 import type { LanguageConfig } from '@/lib/schemas';
-import { loadOlderTurns } from './loadOlderTurns';
-import {
-  startSavedConversation,
-  type ActiveConversationState,
-} from './startSavedConversation';
-import { useHistoryIndex } from './useHistoryIndex';
+import { loadOlderMessages } from './loadOlderMessages';
+import { createConversation, type ActiveConversationState } from './createConversation';
+import { useConversationList } from './useConversationList';
 
 type SetMessages = Dispatch<SetStateAction<ConversationMessage[]>>;
 const emptyActive = {
@@ -82,7 +79,7 @@ function useActiveHistory(userId: string | null, setMessages: SetMessages) {
   );
 
   function startNew(config?: LanguageConfig | null) {
-    return startSavedConversation({
+    return createConversation({
       state,
       userId,
       config,
@@ -94,7 +91,7 @@ function useActiveHistory(userId: string | null, setMessages: SetMessages) {
   }
 
   function loadOlder() {
-    return loadOlderTurns({
+    return loadOlderMessages({
       state,
       userId,
       generation,
@@ -133,7 +130,7 @@ function useActiveHistory(userId: string | null, setMessages: SetMessages) {
 }
 
 export function useConversationHistory(userId: string | null, setMessages: SetMessages) {
-  const index = useHistoryIndex(userId);
+  const index = useConversationList(userId);
   const active = useActiveHistory(userId, setMessages);
   const initialized = useRef<string | null>(null);
   const open = active.open;

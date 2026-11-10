@@ -28,7 +28,7 @@ function isCurrent(options: StartOptions, version: number) {
   );
 }
 
-export async function startSavedConversation(options: StartOptions) {
+export async function createConversation(options: StartOptions) {
   const { state, userId, config, generation, setMessages, setState } = options;
   if (!state.ready) {
     return null;
