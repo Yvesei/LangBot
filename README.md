@@ -435,7 +435,7 @@ pnpm install --frozen-lockfile
 cp .env.example .env.local
 ```
 
-Set `.env.local` (`MISTRAL_API_KEY` is required; model variables override the defaults; Supabase variables are optional and enable Google sign-in):
+Set `.env.local` (`MISTRAL_API_KEY` and the Supabase variables are required; model variables override the defaults):
 
 ```env
 MISTRAL_API_KEY=your_mistral_api_key_here
@@ -444,6 +444,16 @@ MISTRAL_TRANSCRIPTION_MODEL=voxtral-small-latest
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
+
+### Production database migrations
+
+Merges to `main` apply pending Supabase migrations through GitHub Actions. Configure the repository's `production` environment with:
+
+| GitHub value                   | Where to find it                                                                                    |
+| ------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Secret `SUPABASE_ACCESS_TOKEN` | Supabase **Account → Access Tokens**                                                                |
+| Secret `SUPABASE_DB_PASSWORD`  | Project **Settings → Database**; this is the same database password often named `POSTGRES_PASSWORD` |
+| Variable `SUPABASE_PROJECT_ID` | Project **Settings → General → Reference ID**                                                       |
 
 ```bash
 pnpm dev
