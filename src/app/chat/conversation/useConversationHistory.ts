@@ -168,6 +168,7 @@ export function useConversationHistory(userId: string | null, setMessages: SetMe
     listHasMore: index.hasMore,
     messageCount: index.messageCount,
     loadMoreChats: index.loadMore,
+    renameConversation: index.rename,
     reloadChats: index.reload,
 
     retry: () => {

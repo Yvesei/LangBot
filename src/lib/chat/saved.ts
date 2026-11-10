@@ -79,6 +79,24 @@ export function createSavedConversation(config: LanguageConfig, signal: AbortSig
   return post('/api/conversations', { languageConfig: config }, createSchema, signal);
 }
 
+export async function renameSavedConversation(conversationId: string, title: string) {
+  const response = await fetch('/api/conversations', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      conversationId,
+      title,
+    }),
+  });
+  return readResponse(
+    response,
+    z.object({
+      success: z.literal(true),
+      updated: z.literal(true),
+    }),
+  );
+}
+
 export async function deleteSavedChat(conversationId: string, turnId?: string) {
   const response = await fetch('/api/conversations', {
     method: 'DELETE',

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { ApiError } from '@/lib/server/errors';
-import { correctionSchema, type ChatResult, type LanguageConfig } from '@/lib/schemas';
+import { correctionSchema, type ChatResult } from '@/lib/schemas';
 
 export const conversationSchema = z.object({
   id: z.string().uuid(),
@@ -52,48 +52,6 @@ export async function getConversation(
     throw databaseUnavailable();
   }
   return parsed.data;
-}
-
-interface NewConversation {
-  id: string;
-  config: LanguageConfig;
-  prompt: string;
-}
-
-export async function ensureConversation(
-  client: SupabaseClient,
-  userId: string,
-  options: NewConversation,
-) {
-  const { id, config, prompt } = options;
-  let conversation: z.infer<typeof conversationSchema> | null = null;
-  try {
-    conversation = await getConversation(client, userId, id);
-  } catch (error) {
-    if (!(error instanceof ApiError) || error.status !== 404) {
-      throw error;
-    }
-  }
-  if (!conversation) {
-    const { error } = await client.from('conversations').insert({
-      id,
-      user_id: userId,
-      native_language: config.nativeLanguage,
-      target_language: config.targetLanguage,
-      title: prompt.slice(0, 80),
-    });
-    if (error && error.code !== '23505') {
-      throw databaseUnavailable();
-    }
-    conversation = await getConversation(client, userId, id);
-  }
-  if (
-    conversation.native_language !== config.nativeLanguage ||
-    conversation.target_language !== config.targetLanguage
-  ) {
-    throw new ApiError(409, 'This chat uses different languages. Start a new chat.');
-  }
-  return conversation;
 }
 
 export async function getTurn(

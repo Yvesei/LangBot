@@ -1,5 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
-import { listConversations, type SavedConversation } from '@/lib/chat/saved';
+import {
+  listConversations,
+  renameSavedConversation,
+  type SavedConversation,
+} from '@/lib/chat/saved';
+
+function renameInList(conversations: SavedConversation[], id: string, title: string) {
+  return conversations.map((chat) =>
+    chat.id === id
+      ? {
+          ...chat,
+          title,
+        }
+      : chat,
+  );
+}
 
 export function useConversationList(userId: string | null) {
   const [state, setState] = useState({
@@ -88,6 +103,16 @@ export function useConversationList(userId: string | null) {
   return {
     ...state,
     loadMore,
+
+    rename: async (id: string, title: string) => {
+      await renameSavedConversation(id, title);
+      if (owner.current === userId) {
+        setState((previous) => ({
+          ...previous,
+          conversations: renameInList(previous.conversations, id, title),
+        }));
+      }
+    },
 
     reload: () => setRevision((value) => value + 1),
   };

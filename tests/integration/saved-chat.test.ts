@@ -1,7 +1,8 @@
 import { POST } from '@/app/api/chat/route';
-import { GET, POST as createConversation } from '@/app/api/conversations/route';
+import { GET, PATCH, POST as createConversation } from '@/app/api/conversations/route';
 import { getChatAccount } from '@/lib/server/chat/account';
-import { ensureConversation, finishTurn, reserveTurn } from '@/lib/server/chat/storage';
+import { finishTurn, reserveTurn } from '@/lib/server/chat/storage';
+import { ensureConversation } from '@/lib/server/chat/conversations';
 import { createConversation as createStoredConversation } from '@/lib/server/chat/conversations';
 import { enforceLimits } from '@/lib/server/limits';
 import { complete } from '@/lib/server/mistral';
@@ -14,12 +15,14 @@ jest.mock('@/lib/server/chat/account', () => ({
 }));
 jest.mock('@/lib/server/chat/storage', () => ({
   ...jest.requireActual('@/lib/server/chat/storage'),
-  ensureConversation: jest.fn(),
   finishTurn: jest.fn(),
   failTurn: jest.fn(),
   reserveTurn: jest.fn(),
 }));
-jest.mock('@/lib/server/chat/conversations', () => ({ createConversation: jest.fn() }));
+jest.mock('@/lib/server/chat/conversations', () => ({
+  createConversation: jest.fn(),
+  ensureConversation: jest.fn(),
+}));
 jest.mock('@/lib/server/limits', () => ({ enforceLimits: jest.fn() }));
 jest.mock('@/lib/server/mistral', () => ({ complete: jest.fn() }));
 
@@ -106,6 +109,37 @@ test('creates a separate empty conversation for the account', async () => {
     userId,
     body.languageConfig,
   );
+});
+
+test('renames only a conversation owned by the account', async () => {
+  const query = {
+    update: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    maybeSingle: jest
+      .fn()
+      .mockResolvedValue({ data: { id: conversationId }, error: null }),
+  };
+  jest.mocked(getChatAccount).mockResolvedValue({
+    client: { from: () => query } as never,
+    user: { id: userId } as never,
+  });
+
+  const rename = (title: string) =>
+    PATCH(
+      new Request('http://localhost:3000/api/conversations', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId, title }),
+      }),
+    );
+  expect((await rename('  My chat  ')).status).toBe(200);
+  expect(query.update).toHaveBeenCalledWith({ title: 'My chat' });
+  expect(query.eq).toHaveBeenCalledWith('user_id', userId);
+  query.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+  expect((await rename('Other chat')).status).toBe(404);
+  expect((await rename('   ')).status).toBe(400);
+  expect((await rename('x'.repeat(81))).status).toBe(400);
 });
 
 test('saves a signed-in turn using stored history', async () => {

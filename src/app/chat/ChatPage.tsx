@@ -22,14 +22,16 @@ function isChatInputDisabled(state: ChatState) {
 function ChatNotices({ state }: { state: ChatState }) {
   return (
     <>
-      {state.isReady && state.history.error && (
-        <p
-          role="alert"
-          className="notice-error mt-4"
-        >
-          {state.history.error}
-        </p>
-      )}
+      {state.isReady &&
+        state.history.error &&
+        state.history.error !== 'Your chats could not be loaded.' && (
+          <p
+            role="alert"
+            className="notice-error mt-4"
+          >
+            {state.history.error}
+          </p>
+        )}
       {state.error && (
         <p
           role="alert"
@@ -79,6 +81,7 @@ export default function ChatPage() {
         activeConversationId: state.history.id,
         onOpenChat: actions.openChat,
         onDeleteChat: actions.deleteChat,
+        onRenameChat: state.history.renameConversation,
         hasMoreChats: state.history.listHasMore,
         onLoadMoreChats: state.history.loadMoreChats,
         onChangeLanguages: actions.changeLanguages,
@@ -90,7 +93,9 @@ export default function ChatPage() {
       }}
     >
       <main className="chat-main flex min-h-0 flex-1 overflow-y-auto">
-        <div className="content-column">
+        <div
+          className={`content-column${state.isReady ? '' : ' content-column-loading'}`}
+        >
           <ChatConversation
             state={state}
             actions={actions}
