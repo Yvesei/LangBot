@@ -14,6 +14,8 @@ interface TranscriptionOptions {
 export class RecordingTranscriber {
   private upload: AbortController | null = null;
 
+  constructor(private request: typeof transcribeAudio = transcribeAudio) {}
+
   abort() {
     this.upload?.abort();
     this.upload = null;
@@ -24,11 +26,7 @@ export class RecordingTranscriber {
     this.upload = controller;
     const timer = setTimeout(() => controller.abort(), TRANSCRIPTION_TIMEOUT_MS);
     try {
-      const text = await transcribeAudio(
-        options.audio,
-        options.config,
-        controller.signal,
-      );
+      const text = await this.request(options.audio, options.config, controller.signal);
       if (options.isCurrent()) {
         options.complete(text);
       }

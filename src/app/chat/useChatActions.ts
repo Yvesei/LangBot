@@ -1,4 +1,5 @@
 import type { ConversationMessage } from '@/lib/chat/conversation';
+import { useMutation } from '@tanstack/react-query';
 import type { LanguageConfig } from '@/lib/schemas';
 import type { ChatState } from './useChatState';
 import { useMessageRequest } from './message/useMessageRequest';
@@ -10,6 +11,7 @@ async function deleteChatMessage(
   state: ChatState,
   request: MessageRequest,
   messageId: string,
+  remove: (options: { conversationId: string; turnId: string }) => Promise<unknown>,
 ) {
   const message = state.messages.find((item) => item.id === messageId);
   const turnId = message?.replyTo ?? messageId;
@@ -18,8 +20,12 @@ async function deleteChatMessage(
   request.cancel();
   if (saved && state.history.id) {
     try {
-      await deleteSavedChat(state.history.id, turnId);
+      await remove({
+        conversationId: state.history.id,
+        turnId,
+      });
       state.history.noteRemoved();
+      state.history.reloadChats();
     } catch {
       state.setError('Could not delete this message. Please retry.');
       return;
@@ -36,6 +42,15 @@ async function deleteChatMessage(
 
 export function useChatActions(state: ChatState) {
   const request = useMessageRequest(state);
+  const deleteMessageMutation = useMutation({
+    mutationFn: ({
+      conversationId,
+      turnId,
+    }: {
+      conversationId: string;
+      turnId: string;
+    }) => deleteSavedChat(conversationId, turnId),
+  });
 
   function newChat() {
     request.cancel();
@@ -75,7 +90,7 @@ export function useChatActions(state: ChatState) {
     try {
       await state.history.deleteConversation(id);
     } catch {
-      state.setError('Could not delete this chat. Please retry.');
+      return;
     }
   }
 
@@ -116,7 +131,8 @@ export function useChatActions(state: ChatState) {
     deleteChat,
     selectLanguages,
 
-    deleteMessage: (messageId: string) => deleteChatMessage(state, request, messageId),
+    deleteMessage: (messageId: string) =>
+      deleteChatMessage(state, request, messageId, deleteMessageMutation.mutateAsync),
     forgetReview,
     clearError,
     send,

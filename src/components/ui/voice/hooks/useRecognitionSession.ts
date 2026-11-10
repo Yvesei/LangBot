@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { transcribeAudio } from '@/lib/api/transcribe';
 import { getRecognitionErrorMessage } from '@/lib/voice/messages';
 import { canRecord, RecordedRecognition } from '@/lib/voice/recognition';
 import {
@@ -137,6 +139,19 @@ function prepareSession(options: RecognitionSessionOptions) {
 
 export function useRecognitionSession(options: RecognitionSessionOptions) {
   const { state, props } = options;
+  const transcribe = useMutation({
+    gcTime: 0,
+
+    mutationFn: ({
+      audio,
+      config,
+      signal,
+    }: {
+      audio: Blob;
+      config: VoiceCallProps['config'];
+      signal: AbortSignal;
+    }) => transcribeAudio(audio, config, signal),
+  });
 
   useEffect(() => {
     if (!props.open) {
@@ -148,7 +163,15 @@ export function useRecognitionSession(options: RecognitionSessionOptions) {
         state.isOpen.current = false;
       };
     }
-    const recognition = new RecordedRecognition(props.config);
+    const recognition = new RecordedRecognition(props.config, (audio, config, signal) =>
+      transcribe
+        .mutateAsync({
+          audio,
+          config,
+          signal,
+        })
+        .finally(() => transcribe.reset()),
+    );
     configureRecognition({
       ...options,
       recognition,

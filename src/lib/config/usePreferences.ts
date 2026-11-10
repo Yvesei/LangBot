@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AuthSessionState } from '../auth/client';
 import { languageConfigSchema, type LanguageConfig } from '../schemas/language';
 import { getTheme, setTheme, setThemePersistence } from '../theme/store';
@@ -7,6 +8,21 @@ import { requestSettings, type PreferenceUpdate } from './preferences';
 import { DEFAULT_THEME, resolveTheme, THEME_STORAGE_KEY, type UITheme } from './theme';
 
 function useProfileWriter(userId: string | null) {
+  const { mutateAsync } = useMutation({
+    mutationFn: ({
+      signal,
+      accountId,
+      preferences,
+    }: {
+      signal: AbortSignal;
+      accountId: string;
+      preferences: PreferenceUpdate;
+    }) =>
+      requestSettings(signal, {
+        userId: accountId,
+        preferences,
+      }),
+  });
   const scope = useMemo(
     () => ({
       userId,
@@ -49,8 +65,9 @@ function useProfileWriter(userId: string | null) {
         const controller = new AbortController();
         scope.controller = controller;
         try {
-          const result = await requestSettings(controller.signal, {
-            userId: scope.userId,
+          const result = await mutateAsync({
+            signal: controller.signal,
+            accountId: scope.userId,
             preferences,
           });
           if (result.userId !== scope.userId) {
@@ -79,7 +96,7 @@ function useProfileWriter(userId: string | null) {
         }
       });
     },
-    [scope],
+    [scope, mutateAsync],
   );
   return {
     save,
@@ -108,16 +125,22 @@ async function loadPreferences(userId: string | null, signal: AbortSignal) {
 
 function useLoadedPreferences(
   auth: AuthSessionState,
-  revision: number,
   themeVersion: React.RefObject<number>,
 ) {
   const userId = auth.session?.user.id ?? null;
-  const [state, setState] = useState({
-    owner: undefined as string | null | undefined,
-    ready: false,
-    config: null as LanguageConfig | null,
-    guestMessageLimit: null as number | null,
-    error: '',
+  const client = useQueryClient();
+  const query = useQuery({
+    queryKey: ['settings', userId],
+    enabled: !auth.isLoading,
+    staleTime: 30_000,
+
+    queryFn: async ({ signal }) => {
+      const version = themeVersion.current;
+      return {
+        ...(await loadPreferences(userId, signal)),
+        version,
+      };
+    },
   });
   const guestTheme = useRef(DEFAULT_THEME as ReturnType<typeof getTheme>);
   useEffect(() => {
@@ -128,15 +151,6 @@ function useLoadedPreferences(
     if (auth.isLoading) {
       return;
     }
-    let active = true;
-    const controller = new AbortController();
-    const version = themeVersion.current;
-    setState((previous) => ({
-      ...previous,
-      owner: userId,
-      ready: false,
-      error: '',
-    }));
     if (!userId) {
       try {
         guestTheme.current = resolveTheme(
@@ -147,49 +161,40 @@ function useLoadedPreferences(
       }
       setTheme(guestTheme.current, false);
     }
-    void loadPreferences(userId, controller.signal)
-      .then((settings) => {
-        if (!active) {
-          return;
-        }
-        setState({
-          ...settings,
-          owner: userId,
-          ready: true,
-          error: '',
-        });
-        if (settings.theme && version === themeVersion.current) {
-          setTheme(settings.theme, false);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setState((previous) => ({
-            ...previous,
-            ready: false,
-            error: 'Your settings could not be loaded.',
-          }));
-        }
-      });
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [auth.isLoading, userId, revision, themeVersion]);
+  }, [auth.isLoading, userId]);
+
+  useEffect(() => {
+    if (query.data?.theme && query.data.version === themeVersion.current) {
+      setTheme(query.data.theme, false);
+    }
+  }, [query.data, themeVersion]);
 
   return {
-    state,
-    setState,
+    state: query.data,
     userId,
+    error: query.isError ? 'Your settings could not be loaded.' : '',
+    ready: Boolean(query.data) && !auth.isLoading,
+
+    retry: () => void query.refetch(),
+
+    setConfig: (config: LanguageConfig) =>
+      client.setQueryData(['settings', userId], (previous: typeof query.data) =>
+        previous
+          ? {
+              ...previous,
+              config,
+            }
+          : previous,
+      ),
   };
 }
 
 export function usePreferences(auth: AuthSessionState) {
-  const [revision, setRevision] = useState(0);
   const [guestWarning, setGuestWarning] = useState('');
   const themeVersion = useRef(0);
   const deferredTheme = useRef<UITheme | null>(null);
-  const { state, setState, userId } = useLoadedPreferences(auth, revision, themeVersion);
+  const loaded = useLoadedPreferences(auth, themeVersion);
+  const { state, userId } = loaded;
   const writer = useProfileWriter(userId);
   const save = writer.save;
 
@@ -214,10 +219,7 @@ export function usePreferences(auth: AuthSessionState) {
   }, [userId, auth.isLoading, save]);
 
   function setConfig(config: LanguageConfig) {
-    setState((previous) => ({
-      ...previous,
-      config,
-    }));
+    loaded.setConfig(config);
     if (userId) {
       writer.save({ languageConfig: config });
       return;
@@ -227,13 +229,13 @@ export function usePreferences(auth: AuthSessionState) {
   }
 
   return {
-    config: state.owner === userId ? state.config : null,
+    config: state?.config ?? null,
     setConfig,
-    isReady: state.owner === userId && state.ready && !auth.isLoading,
-    guestMessageLimit: state.guestMessageLimit,
-    error: state.error,
+    isReady: loaded.ready,
+    guestMessageLimit: state?.guestMessageLimit ?? null,
+    error: loaded.error,
 
-    retry: () => setRevision((value) => value + 1),
+    retry: loaded.retry,
     warning: userId ? writer.warning : guestWarning,
     retrySave: writer.retry,
   };

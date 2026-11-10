@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
+import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import {
   conversationLanguages,
-  deleteSavedChat,
+  createSavedConversation,
   loadConversation,
   turnMessages,
 } from '@/lib/chat/saved';
@@ -26,7 +27,25 @@ const initialActive = (owner: string | null): ActiveConversationState => ({
   ...emptyActive,
 });
 
+function fetchConversation(client: QueryClient, userId: string, id: string) {
+  return client.fetchQuery({
+    queryKey: ['conversation', userId, id, 0],
+
+    queryFn: ({ signal }) => loadConversation(id, 0, signal),
+    staleTime: 30_000,
+  });
+}
+
+function useCreateConversation() {
+  return useMutation({
+    mutationFn: ({ config, signal }: { config: LanguageConfig; signal: AbortSignal }) =>
+      createSavedConversation(config, signal),
+  });
+}
+
 function useActiveHistory(userId: string | null, setMessages: SetMessages) {
+  const queryClient = useQueryClient();
+  const createMutation = useCreateConversation();
   const [state, setState] = useState(initialActive(userId));
   const generation = useRef(0);
   const stateOffset = useRef(40);
@@ -50,7 +69,7 @@ function useActiveHistory(userId: string | null, setMessages: SetMessages) {
         error: '',
       }));
       try {
-        const result = await loadConversation(id, 0, new AbortController().signal);
+        const result = await fetchConversation(queryClient, userId, id);
         if (generation.current !== version || owner.current !== userId) {
           return;
         }
@@ -75,7 +94,7 @@ function useActiveHistory(userId: string | null, setMessages: SetMessages) {
         }
       }
     },
-    [userId, setMessages],
+    [userId, setMessages, queryClient],
   );
 
   function startNew(config?: LanguageConfig | null) {
@@ -87,6 +106,7 @@ function useActiveHistory(userId: string | null, setMessages: SetMessages) {
       owner,
       setMessages,
       setState,
+      create: createMutation.mutateAsync,
     });
   }
 
@@ -99,6 +119,7 @@ function useActiveHistory(userId: string | null, setMessages: SetMessages) {
       stateOffset,
       setMessages,
       setState,
+      queryClient,
     });
   }
 
@@ -130,8 +151,17 @@ function useActiveHistory(userId: string | null, setMessages: SetMessages) {
 }
 
 export function useConversationHistory(userId: string | null, setMessages: SetMessages) {
+  const queryClient = useQueryClient();
   const index = useConversationList(userId);
   const active = useActiveHistory(userId, setMessages);
+  const activeRef = useRef({
+    id: active.id,
+    userId,
+  });
+  activeRef.current = {
+    id: active.id,
+    userId,
+  };
   const initialized = useRef<string | null>(null);
   const open = active.open;
   useEffect(() => {
@@ -149,11 +179,11 @@ export function useConversationHistory(userId: string | null, setMessages: SetMe
   }, [userId, index.ready, index.owner, index.conversations, open]);
 
   async function deleteConversation(id: string) {
-    await deleteSavedChat(id);
-    if (active.id === id) {
+    await index.deleteChat(id);
+    queryClient.removeQueries({ queryKey: ['conversation', userId, id] });
+    if (activeRef.current.id === id && activeRef.current.userId === userId) {
       void active.startNew();
     }
-    index.reload();
   }
 
   async function startNew(config?: LanguageConfig | null) {
@@ -169,7 +199,11 @@ export function useConversationHistory(userId: string | null, setMessages: SetMe
     messageCount: index.messageCount,
     loadMoreChats: index.loadMore,
     renameConversation: index.rename,
-    reloadChats: index.reload,
+
+    reloadChats: () => {
+      index.reload();
+      void queryClient.invalidateQueries({ queryKey: ['conversation', userId] });
+    },
 
     retry: () => {
       if (active.error && active.id) {

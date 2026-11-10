@@ -2,6 +2,7 @@ import type { LanguageConfig } from '../schemas';
 import { RecordingMonitor } from './recording-monitor';
 import { RecordingTranscriber } from './recording-transcriber';
 import { startRecording } from './recording';
+import type { transcribeAudio } from '../api/transcribe';
 
 export type RecognitionEvent = {
   resultIndex: number;
@@ -42,9 +43,14 @@ export class RecordedRecognition implements Recognition {
   private busy = false;
   private recorder: MediaRecorder | null = null;
   private monitor = new RecordingMonitor();
-  private transcriber = new RecordingTranscriber();
+  private transcriber: RecordingTranscriber;
 
-  constructor(private config: LanguageConfig) {}
+  constructor(
+    private config: LanguageConfig,
+    transcribe?: typeof transcribeAudio,
+  ) {
+    this.transcriber = new RecordingTranscriber(transcribe);
+  }
 
   start = () => {
     if (this.busy) {

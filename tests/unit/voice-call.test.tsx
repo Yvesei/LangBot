@@ -1,6 +1,8 @@
 /** @jest-environment jsdom */
 import '@testing-library/jest-dom';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render as rtlRender, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactElement, ReactNode } from 'react';
 import * as voice from '@/lib/voice/recognition';
 import type { LanguageConfig } from '@/lib/schemas';
 import { VoiceCall } from '@/components/ui/voice/VoiceCall';
@@ -47,8 +49,18 @@ class FakeUtterance {
 const speak = jest.fn();
 const cancel = jest.fn();
 const config = { ...languageConfig };
+let queryClient: QueryClient;
+
+function render(ui: ReactElement) {
+  return rtlRender(ui, {
+    wrapper: ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    ),
+  });
+}
 
 beforeEach(() => {
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   jest.mocked(voice.canRecord).mockReturnValue(true);
   jest.mocked(voice.RecordedRecognition).mockImplementation((config) => {
     return new FakeRecognition(config) as unknown as voice.RecordedRecognition;
@@ -79,7 +91,10 @@ beforeEach(() => {
   window.HTMLElement.prototype.scrollIntoView = jest.fn();
 });
 
-afterEach(() => jest.restoreAllMocks());
+afterEach(() => {
+  queryClient.clear();
+  jest.restoreAllMocks();
+});
 
 const baseProps = {
   open: true,

@@ -7,7 +7,7 @@ interface SavedChatListProps {
   activeId: string | null;
   onOpen: (id: string) => void;
   onDelete?: (id: string) => void;
-  onRename?: (id: string, title: string) => Promise<void>;
+  onRename?: (id: string, title: string) => void;
   hasMore: boolean;
   onLoadMore?: () => void;
 }
@@ -18,33 +18,23 @@ function RenameChat({
   onClose,
 }: {
   chat: SavedConversation;
-  onRename: (id: string, title: string) => Promise<void>;
+  onRename: (id: string, title: string) => void;
   onClose: () => void;
 }) {
   const [title, setTitle] = useState(chat.title);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     inputRef.current?.focus();
     inputRef.current?.select();
   }, []);
 
-  async function save() {
+  function save() {
     const trimmed = title.trim();
-    if (!trimmed || saving) {
+    if (!trimmed) {
       return;
     }
-    setSaving(true);
-    setError('');
-    try {
-      await onRename(chat.id, trimmed);
-      onClose();
-    } catch {
-      setError('Could not rename this chat. Please retry.');
-    } finally {
-      setSaving(false);
-    }
+    onRename(chat.id, trimmed);
+    onClose();
   }
 
   return (
@@ -52,7 +42,7 @@ function RenameChat({
       className="saved-chat-edit"
       onSubmit={(event) => {
         event.preventDefault();
-        void save();
+        save();
       }}
     >
       <div className="saved-chat-row">
@@ -63,7 +53,7 @@ function RenameChat({
           maxLength={80}
           onChange={(event) => setTitle(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === 'Escape' && !saving) {
+            if (event.key === 'Escape') {
               onClose();
             }
           }}
@@ -72,7 +62,7 @@ function RenameChat({
           type="submit"
           className="icon-button"
           aria-label="Save title"
-          disabled={saving || !title.trim()}
+          disabled={!title.trim()}
         >
           <Check size={16} />
         </button>
@@ -80,13 +70,11 @@ function RenameChat({
           type="button"
           className="icon-button"
           aria-label="Cancel rename"
-          disabled={saving}
           onClick={onClose}
         >
           <X size={16} />
         </button>
       </div>
-      {error && <p role="alert">{error}</p>}
     </form>
   );
 }

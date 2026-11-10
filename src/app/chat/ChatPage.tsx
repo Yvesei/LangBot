@@ -1,5 +1,8 @@
 'use client';
 
+import { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
 import { ChatLayout } from '@/components/ui/chat/sidebar/ChatLayout';
 import { GuestMessageLimitPrompt } from '@/components/ui/chat/GuestMessageLimitPrompt';
 import { ChatInput } from '@/components/ui/chat/input/ChatInput';
@@ -68,7 +71,7 @@ function GuestLimitNotice({ state }: { state: ChatState }) {
   return <GuestMessageLimitPrompt limit={state.guestMessageLimit} />;
 }
 
-export default function ChatPage() {
+function ChatPageContent() {
   const state = useChatState();
   const actions = useChatActions(state);
 
@@ -136,5 +139,25 @@ export default function ChatPage() {
         />
       )}
     </ChatLayout>
+  );
+}
+
+export default function ChatPage() {
+  const [client] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            retry: false,
+            refetchOnWindowFocus: false,
+          },
+        },
+      }),
+  );
+  return (
+    <QueryClientProvider client={client}>
+      <ChatPageContent />
+      <Toaster richColors />
+    </QueryClientProvider>
   );
 }

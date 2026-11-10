@@ -1,5 +1,5 @@
 import type { Dispatch, RefObject, SetStateAction } from 'react';
-import { conversationLanguages, createSavedConversation } from '@/lib/chat/saved';
+import { conversationLanguages, type createSavedConversation } from '@/lib/chat/saved';
 import type { ConversationMessage } from '@/lib/chat/conversation';
 import type { LanguageConfig } from '@/lib/schemas';
 
@@ -20,6 +20,10 @@ interface StartOptions {
   owner: RefObject<string | null>;
   setMessages: Dispatch<SetStateAction<ConversationMessage[]>>;
   setState: Dispatch<SetStateAction<ActiveConversationState>>;
+  create: (options: {
+    config: LanguageConfig;
+    signal: AbortSignal;
+  }) => ReturnType<typeof createSavedConversation>;
 }
 
 function isCurrent(options: StartOptions, version: number) {
@@ -48,10 +52,10 @@ export async function createConversation(options: StartOptions) {
     return null;
   }
   try {
-    const result = await createSavedConversation(
-      nextConfig,
-      new AbortController().signal,
-    );
+    const result = await options.create({
+      config: nextConfig,
+      signal: new AbortController().signal,
+    });
     if (!isCurrent(options, version)) {
       return null;
     }
