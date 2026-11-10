@@ -115,7 +115,7 @@ flowchart TB
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Model output         | Zod → JSON Schema with `strict: true`; validate the completion envelope and parsed payload before returning it. [Provider parsing](src/lib/server/mistral-response.ts)                 |
 | Correction semantics | Reply and correction share one completion. Unexplained rewrites become `correction: null`; unchanged text returns an empty issues array. [Normalization](src/lib/server/correction.ts) |
-| Async state          | An `AbortController` identifies the active request. Stale results are ignored; retries reuse the message ID. [Request hook](src/app/chat/useMessageRequest.ts)                         |
+| Async state          | An `AbortController` identifies the active request. Stale results are ignored; retries reuse the message ID. [Request hook](src/app/chat/message/useMessageRequest.ts)                 |
 | Provider failures    | 25-second deadline; text requests retry once on `429`, `502`, `503`, or `504` if the retry delay fits a 2-second budget. [Retry logic](src/lib/server/mistral-request.ts)              |
 | Context assembly     | Read completed messages for the active conversation, trim them by count and size, and include up to three saved correction explanations. [Chat route](src/app/api/chat/route.ts)       |
 | Audio lifecycle      | `MediaRecorder` format negotiation, Web Audio silence detection, generation checks, and track/timer cleanup. [Voice modules](src/lib/voice)                                            |
@@ -130,9 +130,9 @@ sequenceDiagram
     participant AI as Mistral
 
     UI->>UI: Create controller and pending message
-    UI->>API: POST the conversation ID, message ID, prompt, and learning focus
+    UI->>UI: Create learning focus
+    UI->>API: POST /api/chat with abort signal
     API->>API: Check origin, rate, body size, and schema
-    API->>DB: Reserve the message and read recent completed messages
     API->>AI: Request reply and correction using JSON Schema
     AI-->>API: Completion
     API->>API: Validate payload and normalize correction
@@ -148,14 +148,12 @@ sequenceDiagram
 
 All routes use the Node.js runtime. Text requests use `application/json`; transcription accepts raw audio bytes.
 
-| POST endpoint     | Input                                                                                | Result fields               |
-| ----------------- | ------------------------------------------------------------------------------------ | --------------------------- |
-| `/api/chat`       | `conversationId`, `messageId`, `prompt`, `languageConfig`, `learningFocus`, `origin` | Saved `reply`, `correction` |
-| `/api/correct`    | `content`, `languageConfig`                                                          | `correction`                |
-| `/api/translate`  | `content`, `languageConfig`                                                          | `translation`               |
-| `/api/transcribe` | Ogg/WebM/MP4 body; `X-Native-Language` and `X-Target-Language` headers               | `text`                      |
-
-Clients use `GET /api/conversations` to list or reopen their chats, and `DELETE /api/conversations` to remove a chat or message. These routes require a Supabase session, including anonymous sessions for guests.
+| POST endpoint     | Input                                                                  | Result fields         |
+| ----------------- | ---------------------------------------------------------------------- | --------------------- |
+| `/api/chat`       | `conversationId`, `messageId`, `prompt`, `languageConfig`, `learningFocus`, `origin` | `reply`, `correction` |
+| `/api/correct`    | `content`, `languageConfig`                                            | `correction`          |
+| `/api/translate`  | `content`, `languageConfig`                                            | `translation`         |
+| `/api/transcribe` | Ogg/WebM/MP4 body; `X-Native-Language` and `X-Target-Language` headers | `text`                |
 
 Example chat request:
 
@@ -180,14 +178,14 @@ Example chat request:
 
 ### Request limits
 
-| Boundary             | Limit                                                         |
-| -------------------- | ------------------------------------------------------------- |
-| Chat prompt          | 2,000 characters                                              |
-| Conversation context | 12 stored messages; 20,000 combined prompt/context characters |
-| JSON request         | 32 KiB; 5-second body-read deadline                           |
-| Audio                | 2 MiB upload; 30-second browser recording limit               |
-| Provider call        | 25 seconds, combined with caller cancellation                 |
-| API rate             | 5 requests/minute across routes per resolved client identity  |
+| Boundary             | Limit                                                          |
+| -------------------- | -------------------------------------------------------------- |
+| Chat prompt          | 2,000 characters                                               |
+| Conversation context | 12 stored messages; 20,000 combined prompt/context characters  |
+| JSON request         | 32 KiB; 5-second body-read deadline                            |
+| Audio                | 2 MiB upload; 30-second browser recording limit                |
+| Provider call        | 25 seconds, combined with caller cancellation                  |
+| API rate             | 5 requests/minute across routes per resolved client identity   |
 
 Body limits are enforced during stream reads, including without `Content-Length`. Requests with a different `Origin` are rejected. Rate counters are in-memory per server instance; a voice turn normally uses two requests.
 
@@ -222,32 +220,11 @@ Closing a call aborts recording and transcription, cancels playback, and clears 
 
 ### State and persistence
 
-| Data                    | Storage                                                     | Lifecycle                                               |
-| ----------------------- | ----------------------------------------------------------- | ------------------------------------------------------- |
-| Guest conversations     | Supabase anonymous account, `conversations`, and `messages` | Reopen in the same browser; capped by the server        |
-| Signed-in conversations | Supabase `conversations` and `messages`                     | The anonymous account is linked to Google; chats remain |
-| Language pair and theme | Supabase `profiles`                                         | Restored for the current anonymous or Google account    |
-| Flashcards              | Schema-validated `localStorage`                             | Latest 100 occurrences; no account or cross-device sync |
-
-Every chat request uses the chat path. A retry reuses the message ID, so a completed reply is returned without asking the model again. The server reads prior messages from the database; the browser never supplies chat history.
-
-```mermaid
-sequenceDiagram
-    participant Browser
-    participant API as Chat API
-    participant DB as Supabase
-    participant AI as Mistral
-    Browser->>API: POST conversation ID, message ID, prompt
-    API->>DB: Verify owner and reserve message
-    API->>DB: Read recent completed messages
-    API->>AI: Generate reply and correction
-    AI-->>API: Validated result
-    API->>DB: Complete message with reply and correction
-    API-->>Browser: Saved result
-    Browser->>API: GET conversations or a saved chat
-    API->>DB: Read account-owned chats
-    API-->>Browser: Reopen messages after reload
-```
+| Data                    | Storage                                                     | Lifecycle                                                 |
+| ----------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
+| Conversation            | Supabase `conversations` and `messages`                     | Restored after reload; new chats stay separate            |
+| Language pair and theme | Supabase `profiles`                                         | Restored for the current anonymous or Google account      |
+| Flashcards              | Schema-validated `localStorage`                             | Latest 100 occurrences; no account or cross-device sync   |
 
 ```mermaid
 flowchart LR
@@ -264,28 +241,45 @@ Cards retain their `sourceMessageId`; deleting a turn removes its associated car
 
 ### Database schema
 
-The app uses `app_settings` for the guest allowance, `profiles` for account preferences, and `rate_limits` for request throttling. Signed-in chats use `conversations` and `messages`; each record keeps the learner message, assistant reply, correction, and retry state together. `auth_users` below represents Supabase's `auth.users`.
+`app_settings`, `profiles`, `conversations`, and `messages` back the current settings and chat flow. The remaining tables describe planned learning persistence. `auth_users` represents Supabase's `auth.users`; the other tables belong to `public`.
+
+| Setting                   | Storage                                  | Database column                    |
+| ------------------------- | ---------------------------------------- | ---------------------------------- |
+| Preferred native language | Anonymous or Google account profile      | `profiles.native_language`         |
+| Preferred target language | Anonymous or Google account profile      | `profiles.target_language`         |
+| Theme                     | Anonymous or Google account profile      | `profiles.ui_theme`                |
+| Guest message allowance   | Counted from saved messages               | `app_settings.guest_message_limit` |
+
+The app restores preferences through `GET /api/settings` and saves changes through `PATCH /api/settings`. Profile language preferences stay empty until setup is completed. Drafts, dialogs, and active voice-call state remain in React.
+
+`app_settings.guest_message_limit` defaults to five messages before sign-in. The guest's consumed-message count is derived from saved messages; it is separate from the per-minute API rate limit.
+
+UUID IDs and numeric identity IDs are generated on insert. `profiles.id` uses the existing Auth user ID, and `rate_limits.identity_key` is supplied by the server. Creation timestamps and initial `updated_at` values default to `now()`; subsequent updates must set `updated_at` in application code.
 
 ```mermaid
 erDiagram
     auth_users {
         uuid id PK
     }
-    profiles {
-        uuid id PK, FK
-        text native_language
-        text target_language
-        text ui_theme
-    }
+
     app_settings {
         text id PK
         integer guest_message_limit
+        timestamptz created_at
+        timestamptz updated_at
     }
-    rate_limits {
-        text identity_key PK
-        integer hits
-        timestamptz window_expires
+
+    profiles {
+        uuid id PK, FK
+        text display_name
+        text native_language
+        text target_language
+        text ui_language
+        text ui_theme
+        timestamptz created_at
+        timestamptz updated_at
     }
+
     conversations {
         uuid id PK
         uuid user_id FK
@@ -295,6 +289,7 @@ erDiagram
         timestamptz created_at
         timestamptz updated_at
     }
+
     messages {
         uuid id PK
         uuid conversation_id FK
@@ -307,12 +302,88 @@ erDiagram
         timestamptz created_at
         timestamptz updated_at
     }
-    auth_users ||--o| profiles : id
-    auth_users ||--o{ conversations : user_id
-    conversations ||--o{ messages : conversation_id
-```
 
-Apply the Supabase migrations before deploying this chat flow. The chat tables have account-scoped row-level security; the server verifies the cookie user and builds model context from saved messages. Guest chats stay in memory, and flashcards still use browser storage. Learning tables and cross-device flashcards belong to the next migration phase.
+    corrections {
+        uuid id PK
+        uuid user_id FK
+        uuid message_id FK
+        text original_text
+        text corrected_text
+        timestamptz created_at
+    }
+
+    correction_issues {
+        uuid id PK
+        uuid user_id FK
+        uuid correction_id FK
+        text category
+        text explanation
+    }
+
+    study_cards {
+        uuid id PK
+        uuid user_id FK
+        uuid message_id FK
+        uuid correction_id FK
+        text native_language
+        text target_language
+        text original_text
+        text corrected_text
+        text focus
+        text status
+        smallint box
+        timestamptz due_at
+        integer review_count
+        integer lapse_count
+        timestamptz last_reviewed_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    card_reviews {
+        bigint id PK
+        uuid user_id FK
+        uuid card_id FK
+        smallint outcome
+        smallint box_after
+        timestamptz due_next
+        timestamptz reviewed_at
+    }
+
+    rate_limits {
+        text identity_key PK
+        integer hits
+        timestamptz window_expires
+    }
+
+    api_usage {
+        bigint id PK
+        uuid user_id FK
+        text route
+        text model
+        integer input_tokens
+        integer output_tokens
+        integer latency_ms
+        smallint attempts
+        text status
+        text error_code
+        timestamptz created_at
+    }
+
+    auth_users ||--o| profiles : id
+    auth_users ||..o{ conversations : user_id
+    conversations ||..o{ messages : conversation_id
+    auth_users ||..o{ corrections : user_id
+    messages ||..o{ corrections : message_id
+    auth_users ||..o{ correction_issues : user_id
+    corrections ||..o{ correction_issues : correction_id
+    auth_users ||..o{ study_cards : user_id
+    messages |o..o{ study_cards : message_id
+    corrections |o..o{ study_cards : correction_id
+    auth_users ||..o{ card_reviews : user_id
+    study_cards ||..o{ card_reviews : card_id
+    auth_users |o..o{ api_usage : user_id
+```
 
 ## Testing & delivery
 
