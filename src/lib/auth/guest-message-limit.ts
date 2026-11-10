@@ -1,1 +1,0 @@
-export const DEFAULT_GUEST_MESSAGE_LIMIT = 5;

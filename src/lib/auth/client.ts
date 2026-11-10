@@ -16,7 +16,6 @@ export function getSupabaseBrowserClient(): SupabaseClient | null {
 export interface AuthSessionState {
   session: Session | null;
   isLoading: boolean;
-  isConfigured: boolean;
   isAnonymous: boolean;
   error: string;
 }
@@ -109,7 +108,6 @@ export function useAuthSession(): AuthSessionState {
   return {
     session,
     isLoading,
-    isConfigured,
     isAnonymous: Boolean(session?.user.is_anonymous),
     error,
   };

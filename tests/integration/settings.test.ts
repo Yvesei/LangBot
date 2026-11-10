@@ -65,15 +65,10 @@ function patchSettings(body: unknown, origin = 'http://localhost:3000') {
   );
 }
 
-test('keeps local defaults without Supabase and rejects preference writes', async () => {
+test('fails closed without Supabase and rejects preference writes', async () => {
   mockConfigured = false;
   const response = await getSettings();
-  expect(await response.json()).toEqual({
-    success: true,
-    userId: null,
-    guestMessageLimit: 5,
-    preferences: null,
-  });
+  expect(response.status).toBe(503);
   expect(response.headers.get('Cache-Control')).toBe('no-store');
   expect((await patchSettings({ theme: 'neo' })).status).toBe(401);
   expect(createServerClient).not.toHaveBeenCalled();

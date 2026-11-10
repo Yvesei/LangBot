@@ -73,11 +73,7 @@ function withResponse(handler: (request: Request) => Promise<object>) {
 export const GET = withResponse(async () => {
   const client = getSupabaseServerClient();
   if (!client) {
-    return {
-      userId: null,
-      guestMessageLimit: 5,
-      preferences: null,
-    };
+    throw unavailable();
   }
 
   const [guestMessageLimit, user] = await Promise.all([

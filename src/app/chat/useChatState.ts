@@ -47,9 +47,9 @@ function useSavedCards() {
 function guestLimitReached(
   auth: ReturnType<typeof useAuthSession>,
   count: number,
-  limit: number,
+  limit: number | null,
 ) {
-  return auth.isAnonymous && count >= limit;
+  return limit !== null && auth.isAnonymous && count >= limit;
 }
 
 function useScrollToNewest(

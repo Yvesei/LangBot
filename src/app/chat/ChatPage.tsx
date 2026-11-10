@@ -58,6 +58,14 @@ function ChatNotices({ state }: { state: ChatState }) {
   );
 }
 
+function GuestLimitNotice({ state }: { state: ChatState }) {
+  if (!state.isGuestLimitReached || state.guestMessageLimit === null) {
+    return null;
+  }
+
+  return <GuestMessageLimitPrompt limit={state.guestMessageLimit} />;
+}
+
 export default function ChatPage() {
   const state = useChatState();
   const actions = useChatActions(state);
@@ -100,9 +108,7 @@ export default function ChatPage() {
         onVoiceCall={actions.openVoiceCall}
         disabled={isChatInputDisabled(state)}
       />
-      {state.isGuestLimitReached && (
-        <GuestMessageLimitPrompt limit={state.guestMessageLimit} />
-      )}
+      <GuestLimitNotice state={state} />
       {state.config && state.voiceOpen && !isChatInputDisabled(state) && (
         <VoiceCall
           open
