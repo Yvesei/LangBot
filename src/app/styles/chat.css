@@ -38,16 +38,6 @@
   flex: 1;
   place-items: center;
 }
-.chat-loading-retry {
-  padding: 0;
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-}
-.chat-loading-retry .ai-loader,
-.chat-loading-retry .ai-loader::before {
-  animation-play-state: paused;
-}
 .ai-loader {
   position: relative;
   width: 52px;

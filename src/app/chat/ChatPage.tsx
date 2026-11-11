@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
+import { toast, Toaster } from 'sonner';
+import { AuthSessionProvider } from '@/lib/auth/client';
 import { ChatLayout } from '@/components/ui/chat/sidebar/ChatLayout';
 import { GuestMessageLimitPrompt } from '@/components/ui/chat/GuestMessageLimitPrompt';
 import { ChatInput } from '@/components/ui/chat/input/ChatInput';
@@ -23,44 +24,65 @@ function isChatInputDisabled(state: ChatState) {
 }
 
 function ChatNotices({ state }: { state: ChatState }) {
-  return (
-    <>
-      {state.isReady &&
-        state.history.error &&
-        state.history.error !== 'Your chats could not be loaded.' && (
-          <p
-            role="alert"
-            className="notice-error mt-4"
-          >
-            {state.history.error}
-          </p>
-        )}
-      {state.error && (
-        <p
-          role="alert"
-          className="notice-error mt-4"
-        >
-          {state.error}
-        </p>
-      )}
-      {state.storageWarning && (
-        <p
-          role="status"
-          className="mt-4 text-base font-medium text-[var(--muted)]"
-        >
-          {state.storageWarning}
-        </p>
-      )}
-      {state.hasPreferenceSaveError && (
-        <button
-          type="button"
-          onClick={state.retrySavePreferences}
-        >
-          Retry saving preferences
-        </button>
-      )}
-    </>
-  );
+  const latest = useRef(state);
+  latest.current = state;
+  useEffect(() => {
+    const notices = [
+      {
+        id: 'auth',
+        message: state.auth.error,
+
+        retry: () => latest.current.auth.retry?.(),
+      },
+      {
+        id: 'settings',
+        message: state.preferencesError,
+
+        retry: () => latest.current.retryPreferences(),
+      },
+      {
+        id: 'chats',
+        message: state.history.error,
+
+        retry: () => latest.current.history.retry(),
+      },
+      {
+        id: 'chat-error',
+        message: state.error,
+      },
+      {
+        id: 'storage',
+        message: state.storageWarning,
+        retry: state.hasPreferenceSaveError
+          ? () => latest.current.retrySavePreferences()
+          : undefined,
+      },
+    ];
+    for (const notice of notices) {
+      if (notice.message) {
+        toast.error(notice.message, {
+          id: notice.id,
+          duration: notice.retry ? Infinity : undefined,
+          action: notice.retry
+            ? {
+                label: 'Retry',
+                onClick: notice.retry,
+              }
+            : undefined,
+        });
+      } else {
+        toast.dismiss(notice.id);
+      }
+    }
+  }, [
+    state.auth.error,
+    state.preferencesError,
+    state.history.error,
+    state.error,
+    state.storageWarning,
+    state.hasPreferenceSaveError,
+  ]);
+  return null;
 }
 
 function GuestLimitNotice({ state }: { state: ChatState }) {
@@ -156,8 +178,13 @@ export default function ChatPage() {
   );
   return (
     <QueryClientProvider client={client}>
-      <ChatPageContent />
-      <Toaster richColors />
+      <AuthSessionProvider>
+        <ChatPageContent />
+      </AuthSessionProvider>
+      <Toaster
+        richColors
+        position="bottom-center"
+      />
     </QueryClientProvider>
   );
 }

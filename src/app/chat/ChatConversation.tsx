@@ -51,26 +51,6 @@ export function ChatConversation({ state, actions }: ChatConversationProps) {
   }
 
   if (!state.isReady) {
-    if (state.auth.error) {
-      return <p role="alert">{state.auth.error}</p>;
-    }
-    if (state.history.error || state.preferencesError) {
-      return (
-        <div className="chat-loading">
-          <button
-            type="button"
-            className="chat-loading-retry"
-            onClick={state.history.error ? state.history.retry : state.retryPreferences}
-            aria-label="Loading failed. Retry"
-            title="Loading failed. Retry"
-          >
-            <span aria-hidden="true">
-              <LoadingIndicator />
-            </span>
-          </button>
-        </div>
-      );
-    }
     return (
       <div className="chat-loading">
         <LoadingIndicator />

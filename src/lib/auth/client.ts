@@ -1,4 +1,11 @@
-import { useEffect, useState } from 'react';
+import {
+  createContext,
+  createElement,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 
@@ -18,18 +25,33 @@ export interface AuthSessionState {
   isLoading: boolean;
   isAnonymous: boolean;
   error: string;
+  retry?: () => void;
 }
 
-/** Tracks both session restoration and sign-in changes for the current browser. */
-export function useAuthSession(): AuthSessionState {
+const AuthContext = createContext<AuthSessionState | null>(null);
+let anonymousRequest: ReturnType<SupabaseClient['auth']['signInAnonymously']> | null =
+  null;
+
+function signInAsGuest(client: SupabaseClient) {
+  if (!anonymousRequest) {
+    anonymousRequest = client.auth.signInAnonymously().finally(() => {
+      anonymousRequest = null;
+    });
+  }
+  return anonymousRequest;
+}
+
+function useSessionState(): AuthSessionState {
   const isConfigured = isSupabaseConfigured();
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(isConfigured);
   const [error, setError] = useState('');
+  const [revision, setRevision] = useState(0);
 
   useEffect(() => {
     const client = getSupabaseBrowserClient();
     if (!client) {
+      setError('Could not start your chat session. Please retry.');
       setIsLoading(false);
       return;
     }
@@ -50,12 +72,16 @@ export function useAuthSession(): AuthSessionState {
       }
       creatingAnonymousSession = true;
       try {
-        const { data, error: signInError } = await browserClient.auth.signInAnonymously();
+        const { data, error: signInError } = await signInAsGuest(browserClient);
         if (!active) {
           return;
         }
         setSession(data.session);
-        setError(signInError ? 'Could not start your chat session. Please retry.' : '');
+        setError(
+          signInError || !data.session
+            ? 'Could not start your chat session. Please retry.'
+            : '',
+        );
         setIsLoading(false);
       } catch {
         if (active) {
@@ -70,20 +96,23 @@ export function useAuthSession(): AuthSessionState {
 
     const {
       data: { subscription },
-    } = browserClient.auth.onAuthStateChange((_event, nextSession) => {
+    } = browserClient.auth.onAuthStateChange((event, nextSession) => {
       if (active) {
         if (nextSession) {
           setActiveSession(nextSession);
-        } else {
-          void createAnonymousSession();
+        } else if (event === 'SIGNED_OUT') {
+          setTimeout(() => void createAnonymousSession(), 0);
         }
       }
     });
 
     browserClient.auth
       .getSession()
-      .then(({ data }) => {
+      .then(({ data, error: sessionError }) => {
         if (active) {
+          if (sessionError) {
+            throw sessionError;
+          }
           if (data.session) {
             setActiveSession(data.session);
           } else {
@@ -103,12 +132,31 @@ export function useAuthSession(): AuthSessionState {
       active = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [revision]);
 
   return {
     session,
     isLoading,
     isAnonymous: Boolean(session?.user.is_anonymous),
     error,
+
+    retry: () => {
+      setError('');
+      setIsLoading(true);
+      setRevision((value) => value + 1);
+    },
   };
+}
+
+export function AuthSessionProvider({ children }: { children: ReactNode }) {
+  const value = useSessionState();
+  return createElement(AuthContext.Provider, { value }, children);
+}
+
+export function useAuthSession(): AuthSessionState {
+  const session = useContext(AuthContext);
+  if (!session) {
+    throw new Error('AuthSessionProvider is missing.');
+  }
+  return session;
 }
