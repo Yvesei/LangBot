@@ -1,4 +1,5 @@
 import { sendConversationMessage } from '@/lib/chat/saved';
+import { useMutation } from '@tanstack/react-query';
 import {
   addAssistantReply,
   updateMessageStatus,
@@ -175,6 +176,12 @@ function handleSuccessfulResponse(state: ChatState, options: SuccessfulResponseO
 }
 
 export function useMessageRequest(state: ChatState) {
+  const mutation = useMutation({
+    gcTime: 0,
+
+    mutationFn: (options: TutorRequestOptions) => requestTutorResponse(state, options),
+  });
+
   function cancel() {
     const pendingRequest = state.activeChatRequest.current;
     if (!pendingRequest) {
@@ -214,7 +221,7 @@ export function useMessageRequest(state: ChatState) {
     addPendingMessage(state, messageId, content, options);
 
     try {
-      const tutorResponse = await requestTutorResponse(state, {
+      const tutorResponse = await mutation.mutateAsync({
         config,
         content,
         retryMessage,
@@ -233,6 +240,7 @@ export function useMessageRequest(state: ChatState) {
     } catch (requestError) {
       handleRequestError(state, controller, messageId, requestError);
     } finally {
+      mutation.reset();
       finishRequest(state, controller);
     }
   }

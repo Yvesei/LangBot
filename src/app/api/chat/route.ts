@@ -3,11 +3,11 @@ import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { getChatAccount } from '@/lib/server/chat/account';
 import {
   databaseUnavailable,
-  ensureConversation,
   failTurn,
   finishTurn,
   reserveTurn,
 } from '@/lib/server/chat/storage';
+import { ensureConversation } from '@/lib/server/chat/conversations';
 import { MAX_CONVERSATION_LENGTH, MAX_HISTORY_MESSAGES } from '@/lib/config/limits';
 import { normalizeCorrection } from '@/lib/server/correction';
 import { ApiError } from '@/lib/server/errors';

@@ -1,6 +1,101 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 
-function trapFocus(event: KeyboardEvent, panel: HTMLElement | null) {
+const COMPACT_WIDTH = 56;
+const DEFAULT_WIDTH = 208;
+const MAX_WIDTH = 420;
+const RESIZE_STEP = 16;
+
+function clampWidth(width: number) {
+  return Math.min(Math.max(width, COMPACT_WIDTH), MAX_WIDTH);
+}
+
+function widthForKey(key: string, width: number) {
+  switch (key) {
+    case 'ArrowLeft':
+      return width - RESIZE_STEP;
+    case 'ArrowRight':
+      return width + RESIZE_STEP;
+    case 'Home':
+      return COMPACT_WIDTH;
+    case 'End':
+      return MAX_WIDTH;
+    default:
+      return null;
+  }
+}
+
+function useSidebarSize() {
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const expandedWidth = useRef(DEFAULT_WIDTH);
+
+  const resize = useCallback((nextWidth: number) => {
+    const clampedWidth = clampWidth(nextWidth);
+    setWidth(clampedWidth);
+    setIsCollapsed(clampedWidth === COMPACT_WIDTH);
+    if (clampedWidth > COMPACT_WIDTH) {
+      expandedWidth.current = clampedWidth;
+    }
+  }, []);
+
+  const toggleCollapsed = useCallback(() => {
+    resize(isCollapsed ? expandedWidth.current : COMPACT_WIDTH);
+  }, [isCollapsed, resize]);
+
+  const startResize = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.button !== 0) {
+        return;
+      }
+      event.preventDefault();
+      const startX = event.clientX;
+      const startWidth = width;
+
+      function move(moveEvent: globalThis.PointerEvent) {
+        resize(startWidth + moveEvent.clientX - startX);
+      }
+
+      function stop() {
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', stop);
+      }
+
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', stop, { once: true });
+    },
+    [resize, width],
+  );
+
+  const resizeWithKeyboard = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      const nextWidth = widthForKey(event.key, width);
+      if (nextWidth === null) {
+        return;
+      }
+      event.preventDefault();
+      resize(nextWidth);
+    },
+    [resize, width],
+  );
+
+  return {
+    width,
+    isCollapsed,
+    toggleCollapsed,
+    startResize,
+    resizeWithKeyboard,
+  };
+}
+
+function trapFocus(event: globalThis.KeyboardEvent, panel: HTMLElement | null) {
   if (event.key !== 'Tab' || !panel) {
     return;
   }
@@ -24,6 +119,7 @@ export function useSidebar() {
   const panelRef = useRef<HTMLElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
+  const sidebarSize = useSidebarSize();
 
   const close = useCallback(() => setIsOpen(false), []);
 
@@ -75,6 +171,7 @@ export function useSidebar() {
     panelRef,
     toggleRef,
     close,
+    ...sidebarSize,
 
     show: () => setIsOpen(true),
   };

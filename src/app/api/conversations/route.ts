@@ -125,6 +125,35 @@ export const POST = chatResponse(async (request) => {
   };
 });
 
+export const PATCH = chatResponse(async (request) => {
+  assertSameOrigin(request);
+  const { client, user } = await getChatAccount();
+  const parsed = z
+    .object({
+      conversationId: uuid,
+      title: z.string().trim().min(1).max(80),
+    })
+    .strict()
+    .safeParse(await readJsonBody(request));
+  if (!parsed.success) {
+    throw new ApiError(400, 'Invalid conversation title.');
+  }
+  const { data, error } = await client
+    .from('conversations')
+    .update({ title: parsed.data.title })
+    .eq('id', parsed.data.conversationId)
+    .eq('user_id', user.id)
+    .select('id')
+    .maybeSingle();
+  if (error) {
+    throw databaseUnavailable();
+  }
+  if (!data) {
+    throw new ApiError(404, 'Chat not found.');
+  }
+  return { updated: true };
+});
+
 export const DELETE = chatResponse(async (request) => {
   assertSameOrigin(request);
   const { client, user } = await getChatAccount();

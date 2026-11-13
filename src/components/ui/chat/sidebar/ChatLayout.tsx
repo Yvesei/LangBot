@@ -17,6 +17,11 @@ export function ChatLayout({ navigation, children }: ChatLayoutProps) {
         isOpen={sidebar.isOpen}
         panelRef={sidebar.panelRef}
         onClose={sidebar.close}
+        width={sidebar.width}
+        isCollapsed={sidebar.isCollapsed}
+        onToggleCollapsed={sidebar.toggleCollapsed}
+        onResizeStart={sidebar.startResize}
+        onResizeWithKeyboard={sidebar.resizeWithKeyboard}
       />
       {sidebar.isOpen && (
         <button

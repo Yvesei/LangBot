@@ -1,4 +1,5 @@
 import { ConversationWelcome } from '@/components/ui/chat/welcome/ConversationWelcome';
+import { LoadingIndicator } from '@/components/ui/feedback/LoadingIndicator';
 import { Message } from '@/components/ui/chat/message/Message';
 import { EmptyState } from '@/components/ui/setup/EmptyState';
 import type { ChatActions } from './useChatActions';
@@ -50,36 +51,11 @@ export function ChatConversation({ state, actions }: ChatConversationProps) {
   }
 
   if (!state.isReady) {
-    if (state.auth.error) {
-      return <p role="alert">{state.auth.error}</p>;
-    }
-    if (state.history.error) {
-      return (
-        <div>
-          <p role="alert">{state.history.error}</p>
-          <button
-            type="button"
-            onClick={state.history.retry}
-          >
-            Retry loading chats
-          </button>
-        </div>
-      );
-    }
-    if (state.preferencesError) {
-      return (
-        <div>
-          <p role="alert">{state.preferencesError}</p>
-          <button
-            type="button"
-            onClick={state.retryPreferences}
-          >
-            Retry loading settings
-          </button>
-        </div>
-      );
-    }
-    return <p role="status">Loading your chat…</p>;
+    return (
+      <div className="chat-loading">
+        <LoadingIndicator />
+      </div>
+    );
   }
   if (!state.config || state.isSelectingLanguages) {
     return (

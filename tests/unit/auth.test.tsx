@@ -9,11 +9,14 @@ import {
 } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
+import { StrictMode, type ReactNode } from 'react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 
 import { GET } from '@/app/auth/callback/route';
 import { getSupabaseAdminClient } from '@/lib/auth/admin';
 import { getSupabaseUser } from '@/lib/auth/server';
 import { middleware } from '@/middleware';
+import { AuthSessionProvider, useAuthSession } from '@/lib/auth/client';
 
 let mockConfigured = true;
 const account = {
@@ -202,4 +205,60 @@ test.each(['', '  ', ' anon-key ', undefined])('public key fallback: %j', (anonK
     expect(config.SUPABASE_URL).toBe(url);
     expect(config.SUPABASE_ANON_KEY).toBe(anonKey?.trim() || 'publishable-key');
   });
+});
+
+test('creates one guest session for all consumers on a first visit', async () => {
+  let finish!: (value: unknown) => void;
+  auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
+  auth.signInAnonymously.mockReturnValue(
+    new Promise((resolve) => {
+      finish = resolve;
+    }),
+  );
+  sdk.createBrowserClient.mockReturnValue({
+    auth: {
+      ...auth,
+
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: jest.fn() } } }),
+    },
+  } as never);
+
+  function wrapper({ children }: { children: ReactNode }) {
+    return (
+      <StrictMode>
+        <AuthSessionProvider>{children}</AuthSessionProvider>
+      </StrictMode>
+    );
+  }
+  const { result } = renderHook(
+    () => [useAuthSession(), useAuthSession(), useAuthSession()],
+    { wrapper },
+  );
+  await waitFor(() => expect(auth.signInAnonymously).toHaveBeenCalledTimes(1));
+  await act(async () => finish({ data: { session: { user: account } }, error: null }));
+  await waitFor(() =>
+    expect(result.current.every((item) => item.session?.user.id === account.id)).toBe(
+      true,
+    ),
+  );
+});
+
+test('retries an unsuccessful guest session', async () => {
+  auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
+  auth.signInAnonymously.mockResolvedValueOnce({
+    data: { session: null },
+    error: new Error('Offline'),
+  });
+  sdk.createBrowserClient.mockReturnValue({
+    auth: {
+      ...auth,
+
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: jest.fn() } } }),
+    },
+  } as never);
+  const { result } = renderHook(() => useAuthSession(), { wrapper: AuthSessionProvider });
+  await waitFor(() => expect(result.current.error).toBeTruthy());
+  act(() => result.current.retry?.());
+  await waitFor(() => expect(result.current.session?.user.id).toBe(account.id));
+  expect(result.current.error).toBe('');
 });

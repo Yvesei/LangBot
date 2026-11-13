@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 import { GoogleMark } from '@/components/ui/brand/GoogleMark';
 import { getSupabaseBrowserClient, useAuthSession } from '@/lib/auth/client';
@@ -22,6 +23,14 @@ export function SignInButton({ variant = 'icon' }: SignInButtonProps) {
   const { session } = useAuthSession();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error, { id: 'sign-in-error' });
+    } else {
+      toast.dismiss('sign-in-error');
+    }
+  }, [error]);
 
   useEffect(() => {
     function restoreSignIn(event: PageTransitionEvent) {
@@ -91,14 +100,6 @@ export function SignInButton({ variant = 'icon' }: SignInButtonProps) {
         <GoogleMark />
         {isCallToAction && <span>Continue with Google</span>}
       </button>
-      {error && (
-        <span
-          className="auth-menu-error"
-          role="alert"
-        >
-          {error}
-        </span>
-      )}
     </div>
   );
 }

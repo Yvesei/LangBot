@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { ConversationMessage } from '@/lib/chat/conversation';
 import { usePreferences } from '@/lib/config/usePreferences';
 import { loadCards, sameLanguages, saveCards, type StudyCard } from '@/lib/learning';
@@ -70,6 +71,7 @@ function useScrollToNewest(
 }
 
 export function useChatState() {
+  const queryClient = useQueryClient();
   const auth = useAuthSession();
   const preferences = usePreferences(auth);
   const { setConfig, guestMessageLimit } = preferences;
@@ -95,6 +97,11 @@ export function useChatState() {
     if (previousUserId.current === userId) {
       return;
     }
+    queryClient.removeQueries({ queryKey: ['conversations', previousUserId.current] });
+    queryClient.removeQueries({ queryKey: ['conversation', previousUserId.current] });
+    queryClient.removeQueries({ queryKey: ['settings', previousUserId.current] });
+    queryClient.removeQueries({ queryKey: ['translation'] });
+    queryClient.getMutationCache().clear();
     previousUserId.current = userId;
     activeChatRequest.current?.controller.abort();
     activeChatRequest.current = null;
@@ -105,7 +112,7 @@ export function useChatState() {
     setReviewOpen(false);
     setVoiceOpen(false);
     setIsSelectingLanguages(false);
-  }, [userId]);
+  }, [userId, queryClient]);
 
   useEffect(() => () => activeChatRequest.current?.controller.abort(), []);
 

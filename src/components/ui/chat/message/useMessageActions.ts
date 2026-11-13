@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { translateMessage } from '@/lib/api';
 import type { ChatMessage } from '@/lib/types';
 import type { LanguageConfig } from '@/lib/schemas';
@@ -8,14 +9,21 @@ export function useMessageTranslation(
   config: LanguageConfig,
   setError: Dispatch<SetStateAction<string>>,
 ) {
-  const [translation, setTranslation] = useState<string | null>(null);
   const [showTranslation, setShowTranslation] = useState(false);
-  const [translating, setTranslating] = useState(false);
-  const activeRequest = useRef<AbortController | null>(null);
+  const query = useQuery({
+    queryKey: [
+      'translation',
+      message.id,
+      message.content,
+      config.nativeLanguage,
+      config.targetLanguage,
+    ],
 
-  useEffect(() => {
-    return () => activeRequest.current?.abort();
-  }, []);
+    queryFn: ({ signal }) => translateMessage(message.content, config, signal),
+    enabled: false,
+    staleTime: 5 * 60_000,
+  });
+  const translation = query.data?.translation ?? null;
 
   async function translate() {
     if (translation) {
@@ -23,41 +31,27 @@ export function useMessageTranslation(
       return;
     }
 
-    if (activeRequest.current) {
+    if (query.isFetching) {
       return;
     }
 
-    const controller = new AbortController();
-    activeRequest.current = controller;
-    setTranslating(true);
     setError('');
-
-    try {
-      const response = await translateMessage(message.content, config, controller.signal);
-
-      if (!controller.signal.aborted) {
-        setTranslation(response.translation);
-        setShowTranslation(true);
-      }
-    } catch (error) {
-      if (!controller.signal.aborted) {
-        setError(
-          error instanceof Error ? error.message : 'Translation failed. Please retry.',
-        );
-      }
-    } finally {
-      if (!controller.signal.aborted) {
-        setTranslating(false);
-      }
-
-      activeRequest.current = null;
+    const result = await query.refetch();
+    if (result.data) {
+      setShowTranslation(true);
+    } else if (result.error) {
+      setError(
+        result.error instanceof Error
+          ? result.error.message
+          : 'Translation failed. Please retry.',
+      );
     }
   }
 
   return {
     translation,
     showTranslation,
-    translating,
+    translating: query.isFetching,
     translate,
   };
 }

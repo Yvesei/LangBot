@@ -14,6 +14,7 @@ export interface SidebarActionsProps {
   activeConversationId?: string | null;
   onOpenChat?: (id: string) => void;
   onDeleteChat?: (id: string) => void;
+  onRenameChat?: (id: string, title: string) => void;
   hasMoreChats?: boolean;
   onLoadMoreChats?: () => void;
 }

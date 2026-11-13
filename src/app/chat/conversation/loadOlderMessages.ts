@@ -1,4 +1,5 @@
 import type { Dispatch, RefObject, SetStateAction } from 'react';
+import type { QueryClient } from '@tanstack/react-query';
 import { loadConversation, turnMessages } from '@/lib/chat/saved';
 import type { ConversationMessage } from '@/lib/chat/conversation';
 import type { ActiveConversationState } from './createConversation';
@@ -11,6 +12,7 @@ interface LoadOptions {
   stateOffset: RefObject<number>;
   setMessages: Dispatch<SetStateAction<ConversationMessage[]>>;
   setState: Dispatch<SetStateAction<ActiveConversationState>>;
+  queryClient: QueryClient;
 }
 
 export async function loadOlderMessages(options: LoadOptions) {
@@ -21,11 +23,14 @@ export async function loadOlderMessages(options: LoadOptions) {
   }
   const version = generation.current;
   try {
-    const result = await loadConversation(
-      state.id,
-      stateOffset.current,
-      new AbortController().signal,
-    );
+    const id = state.id;
+    const offset = stateOffset.current;
+    const result = await options.queryClient.fetchQuery({
+      queryKey: ['conversation', userId, id, offset],
+
+      queryFn: ({ signal }) => loadConversation(id, offset, signal),
+      staleTime: 30_000,
+    });
     if (generation.current !== version || owner.current !== userId) {
       return;
     }

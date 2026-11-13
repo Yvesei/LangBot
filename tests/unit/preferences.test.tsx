@@ -2,6 +2,8 @@
 import '@testing-library/jest-dom';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { Session } from '@supabase/supabase-js';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 
 import type { AuthSessionState } from '@/lib/auth/client';
 import type { AppSettings } from '@/lib/config/preferences';
@@ -12,6 +14,11 @@ import { setThemePersistence, toggleTheme } from '@/lib/theme/store';
 const guestConfig = { nativeLanguage: 'fr', targetLanguage: 'en' } as const;
 const savedConfig = { nativeLanguage: 'de', targetLanguage: 'en' } as const;
 const selectedConfig = { nativeLanguage: 'es', targetLanguage: 'fr' } as const;
+let queryClient: QueryClient;
+
+function Wrapper({ children }: { children: ReactNode }) {
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+}
 
 function auth(userId: string | null): AuthSessionState {
   return {
@@ -55,6 +62,9 @@ function expectGuestStorage() {
 }
 
 beforeEach(() => {
+  queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
   jest.mocked(fetch).mockReset();
   setThemePersistence();
   localStorage.clear();
@@ -65,6 +75,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  queryClient.clear();
   setThemePersistence();
   jest.restoreAllMocks();
 });
@@ -80,6 +91,7 @@ test('restores account preferences, saves changes to the database, and restores 
     );
   const { result, rerender } = renderHook(({ account }) => usePreferences(account), {
     initialProps: { account: auth(userId) },
+    wrapper: Wrapper,
   });
 
   await waitFor(() => expect(result.current.isReady).toBe(true));
@@ -131,6 +143,7 @@ test('ignores a delayed response from the previous account after switching users
     .mockResolvedValueOnce(response(next));
   const { result, rerender } = renderHook(({ account }) => usePreferences(account), {
     initialProps: { account: auth('user-1') },
+    wrapper: Wrapper,
   });
   const previousSignal = jest.mocked(fetch).mock.calls[0][1]?.signal;
   expect(result.current.isReady).toBe(false);
@@ -155,6 +168,7 @@ test('saves a theme chosen while restoring auth to the resolved account without 
   });
   const { result, rerender } = renderHook(({ account }) => usePreferences(account), {
     initialProps: { account: { ...auth(null), isLoading: true } },
+    wrapper: Wrapper,
   });
 
   act(() => toggleTheme());
@@ -207,6 +221,7 @@ test.each(['retry', 'account switch'] as const)(
     });
     const { result, rerender } = renderHook(({ account }) => usePreferences(account), {
       initialProps: { account: auth(userId) },
+      wrapper: Wrapper,
     });
     await waitFor(() => expect(result.current.isReady).toBe(true));
 
@@ -249,7 +264,7 @@ test('keeps configured guests blocked when settings are unavailable until a succ
     .mocked(fetch)
     .mockResolvedValueOnce(response({ error: 'Database is unavailable.' }, 503))
     .mockResolvedValueOnce(response(settings(null, 0)));
-  const { result } = renderHook(() => usePreferences(auth(null)));
+  const { result } = renderHook(() => usePreferences(auth(null)), { wrapper: Wrapper });
 
   await waitFor(() =>
     expect(result.current.error).toBe('Your settings could not be loaded.'),
