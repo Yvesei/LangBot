@@ -1,7 +1,6 @@
 import type { Correction, LanguageConfig } from './schemas';
 import type { StudyCard } from './learning/schema';
 
-export { loadCards, saveCards } from './learning/storage';
 export { STUDY_KEY, studyCardSchema, type StudyCard } from './learning/schema';
 
 export function createFlashcards(

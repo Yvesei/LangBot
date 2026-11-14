@@ -9,8 +9,6 @@ import { createFlashcards } from '@/lib/learning';
 import type { ChatResult, LanguageConfig } from '@/lib/schemas';
 import type { ChatState } from '../useChatState';
 
-const MAX_SAVED_CARDS = 100;
-
 interface SendMessageOptions {
   retryMessage?: ConversationMessage;
   spokenContent?: string;
@@ -160,7 +158,7 @@ function saveReviewCards(
 
   state.setCards((current) => {
     const retainedCards = current.filter((card) => card.sourceMessageId !== messageId);
-    return [...retainedCards, ...cards].slice(-MAX_SAVED_CARDS);
+    return [...retainedCards, ...cards];
   });
 }
 

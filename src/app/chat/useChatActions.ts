@@ -34,9 +34,7 @@ async function deleteChatMessage(
   state.setMessages((current) =>
     current.filter((item) => item.id !== targetId && item.replyTo !== targetId),
   );
-  state.setCards((current) =>
-    current.filter((card) => card.sourceMessageId !== targetId),
-  );
+  state.removeCardsForMessage(targetId);
   state.setError('');
 }
 
