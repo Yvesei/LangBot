@@ -79,7 +79,10 @@ export async function readBytes(request: Request, maxBytes: number) {
   }
 }
 
-export async function readJsonBody(request: Request): Promise<unknown> {
+export async function readJsonBody(
+  request: Request,
+  maxBytes = MAX_REQUEST_BYTES,
+): Promise<unknown> {
   const contentType = request.headers
     .get('content-type')
     ?.split(';')[0]
@@ -90,7 +93,7 @@ export async function readJsonBody(request: Request): Promise<unknown> {
     throw new ApiError(415, 'Send application/json.');
   }
 
-  const body = await readBytes(request, MAX_REQUEST_BYTES);
+  const body = await readBytes(request, maxBytes);
 
   try {
     return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(body));

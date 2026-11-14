@@ -3,7 +3,8 @@ import type { RefObject } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ConversationMessage } from '@/lib/chat/conversation';
 import { usePreferences } from '@/lib/config/usePreferences';
-import { loadCards, sameLanguages, saveCards, type StudyCard } from '@/lib/learning';
+import { sameLanguages, type StudyCard } from '@/lib/learning';
+import { useCards } from '@/lib/learning/useCards';
 import { groupReviewCards } from '@/lib/review';
 import type { LanguageConfig } from '@/lib/schemas';
 import { useAuthSession } from '@/lib/auth/client';
@@ -20,29 +21,6 @@ function getVisibleCards(cards: StudyCard[], config: LanguageConfig | null) {
   }
 
   return cards.filter((card) => sameLanguages(card.languageConfig, config));
-}
-
-function useSavedCards() {
-  const [cards, setCards] = useState<StudyCard[]>([]);
-  const [cardsReady, setCardsReady] = useState(false);
-  const [storageWarning, setStorageWarning] = useState('');
-  useEffect(() => {
-    setCards(loadCards());
-    setCardsReady(true);
-  }, []);
-  useEffect(() => {
-    if (cardsReady && !saveCards(cards)) {
-      setStorageWarning(
-        'Browser storage is unavailable. Flashcards will last only for this visit.',
-      );
-    }
-  }, [cards, cardsReady]);
-  return {
-    cards,
-    setCards,
-    cardsReady,
-    storageWarning,
-  };
 }
 
 function guestLimitReached(
@@ -75,15 +53,14 @@ export function useChatState() {
   const auth = useAuthSession();
   const preferences = usePreferences(auth);
   const { setConfig, guestMessageLimit } = preferences;
-  const { cards, setCards, cardsReady, storageWarning } = useSavedCards();
+  const userId = auth.session?.user.id ?? null;
+  const { cards, setCards, removeCardsForMessage } = useCards(userId);
   const [isSelectingLanguages, setIsSelectingLanguages] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
-  const userId = auth.session?.user.id ?? null;
   const history = useConversationHistory(userId, setMessages);
   const config = history.config ?? preferences.config;
-  const isReady =
-    cardsReady && preferences.isReady && history.isReady && Boolean(auth.session);
+  const isReady = preferences.isReady && history.isReady && Boolean(auth.session);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -100,6 +77,7 @@ export function useChatState() {
     queryClient.removeQueries({ queryKey: ['conversations', previousUserId.current] });
     queryClient.removeQueries({ queryKey: ['conversation', previousUserId.current] });
     queryClient.removeQueries({ queryKey: ['settings', previousUserId.current] });
+    queryClient.removeQueries({ queryKey: ['cards', previousUserId.current] });
     queryClient.removeQueries({ queryKey: ['translation'] });
     queryClient.getMutationCache().clear();
     previousUserId.current = userId;
@@ -149,7 +127,7 @@ export function useChatState() {
     setLoading,
     error,
     setError,
-    storageWarning: preferences.warning || storageWarning,
+    storageWarning: preferences.warning,
     preferencesError: preferences.error,
     retryPreferences: preferences.retry,
     retrySavePreferences: preferences.retrySave,
@@ -159,6 +137,7 @@ export function useChatState() {
     preserveScrollRef,
     cards,
     setCards,
+    removeCardsForMessage,
     reviewOpen,
     setReviewOpen,
     voiceOpen,
