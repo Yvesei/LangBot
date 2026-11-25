@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { MessageAuthor } from './MessageAuthor';
 import type { ChatMessage } from '@/lib/types';
 import type { LanguageConfig } from '@/lib/schemas';
@@ -18,13 +17,11 @@ interface MessageProps {
 }
 
 export function Message({ message, config, onDelete, onRetry, busy }: MessageProps) {
-  const [error, setError] = useState('');
-  const translation = useMessageTranslation(message, config, setError);
+  const translation = useMessageTranslation(message, config);
   const clipboard = useMessageCopy({
     message,
     translation: translation.translation,
     showTranslation: translation.showTranslation,
-    setError,
   });
   const user = message.role === 'user';
   const changed = Boolean(
@@ -57,14 +54,6 @@ export function Message({ message, config, onDelete, onRetry, busy }: MessagePro
         onCopy={clipboard.copy}
         onDelete={onDelete}
       />
-      {error && (
-        <p
-          role="alert"
-          className="text-error mt-3 text-base"
-        >
-          {error}
-        </p>
-      )}
     </article>
   );
 }

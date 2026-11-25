@@ -10,6 +10,7 @@ import { languageConfig } from '../fixtures';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ensureConversation } from '@/lib/server/chat/conversations';
 import { useConversationList } from '@/app/chat/conversation/useConversationList';
+import { loadOlderMessages } from '@/app/chat/conversation/loadOlderMessages';
 import { useMessageTranslation } from '@/components/ui/chat/message/useMessageActions';
 import { translateMessage } from '@/lib/api';
 import {
@@ -80,20 +81,66 @@ test('reuses a message translation when the conversation is reopened', async () 
 
   const wrapper = ({ children }: { children: ReactNode }) =>
     createElement(QueryClientProvider, { client }, children);
-  const first = renderHook(
-    () => useMessageTranslation(message, languageConfig, jest.fn()),
-    { wrapper },
-  );
+  const first = renderHook(() => useMessageTranslation(message, languageConfig), {
+    wrapper,
+  });
   await act(async () => first.result.current.translate());
   expect(first.result.current.translation).toBe('Hello');
   first.unmount();
-  const reopened = renderHook(
-    () => useMessageTranslation(message, languageConfig, jest.fn()),
-    { wrapper },
-  );
+  const reopened = renderHook(() => useMessageTranslation(message, languageConfig), {
+    wrapper,
+  });
   await act(async () => reopened.result.current.translate());
   expect(reopened.result.current.showTranslation).toBe(true);
   expect(translateMessage).toHaveBeenCalledTimes(1);
+  client.clear();
+});
+
+test('only applies one older page and ignores a response after switching chats', async () => {
+  const client = new QueryClient();
+  const pending: Array<(value: unknown) => void> = [];
+  jest
+    .spyOn(client, 'fetchQuery')
+    .mockImplementation(
+      () => new Promise((resolve) => pending.push(resolve as (value: unknown) => void)),
+    );
+  const generation = { current: 1 };
+  const options = {
+    state: {
+      owner: 'user',
+      id: 'chat',
+      config: languageConfig,
+      hasMore: true,
+      error: '',
+      ready: true,
+    },
+    userId: 'user',
+    generation,
+    owner: { current: 'user' },
+    stateOffset: { current: 40 },
+    loadingGeneration: { current: null as number | null },
+    setMessages: jest.fn(),
+    setState: jest.fn(),
+    queryClient: client,
+  };
+  const first = loadOlderMessages(options);
+  expect(await loadOlderMessages(options)).toBe('skipped');
+  expect(pending).toHaveLength(1);
+
+  generation.current++;
+  const next = loadOlderMessages({
+    ...options,
+    state: { ...options.state, id: 'other' },
+  });
+  expect(pending).toHaveLength(2);
+  pending[0]({ turns: [], hasMore: false });
+  expect(await first).toBe('stale');
+  expect(
+    await loadOlderMessages({ ...options, state: { ...options.state, id: 'other' } }),
+  ).toBe('skipped');
+  pending[1]({ turns: [], hasMore: false });
+  expect(await next).toBe('done');
+  expect(options.setMessages).toHaveBeenCalledTimes(1);
   client.clear();
 });
 

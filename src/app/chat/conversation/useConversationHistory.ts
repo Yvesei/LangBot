@@ -49,6 +49,7 @@ function useActiveHistory(userId: string | null, setMessages: SetMessages) {
   const [state, setState] = useState(initialActive(userId));
   const generation = useRef(0);
   const stateOffset = useRef(40);
+  const loadingGeneration = useRef<number | null>(null);
   const owner = useRef(userId);
   owner.current = userId;
   useEffect(() => {
@@ -110,19 +111,6 @@ function useActiveHistory(userId: string | null, setMessages: SetMessages) {
     });
   }
 
-  function loadOlder() {
-    return loadOlderMessages({
-      state,
-      userId,
-      generation,
-      owner,
-      stateOffset,
-      setMessages,
-      setState,
-      queryClient,
-    });
-  }
-
   function noteStarted(id: string, config: LanguageConfig, newTurn: boolean) {
     if (state.id) {
       if (newTurn) {
@@ -143,7 +131,19 @@ function useActiveHistory(userId: string | null, setMessages: SetMessages) {
     ...state,
     open,
     startNew,
-    loadOlder,
+
+    loadOlder: () =>
+      loadOlderMessages({
+        state,
+        userId,
+        generation,
+        owner,
+        stateOffset,
+        loadingGeneration,
+        setMessages,
+        setState,
+        queryClient,
+      }),
     noteStarted,
 
     noteRemoved: () => (stateOffset.current = Math.max(0, stateOffset.current - 1)),

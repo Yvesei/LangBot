@@ -1,8 +1,25 @@
 /** @jest-environment jsdom */
-import { createFlashcards, loadCards, saveCards, STUDY_KEY } from '@/lib/learning';
+import { createFlashcards, STUDY_KEY } from '@/lib/learning';
 import { groupReviewCards } from '@/lib/review';
 import { getReviewText } from '@/lib/review/text';
 import { corrected, languageConfig } from '../fixtures';
+import { QueryClient } from '@tanstack/react-query';
+import { TextEncoder } from 'util';
+import { waitFor } from '@testing-library/react';
+import {
+  applyPending,
+  legacyCards,
+  loadOutbox,
+  saveOutbox,
+} from '@/lib/learning/storage';
+import { processQueue, removeCardsForMessage, type Scope } from '@/lib/learning/cardSync';
+import { importLegacyBatch } from '@/lib/learning/importLegacyBatch';
+import { deleteCardsForMessage, importCards } from '@/lib/learning/cardApi';
+
+jest.mock('@/lib/learning/cardApi', () => ({
+  importCards: jest.fn(),
+  deleteCardsForMessage: jest.fn(),
+}));
 
 beforeEach(() => localStorage.clear());
 
@@ -45,7 +62,7 @@ test('keeps language pairs separate even when corrections match', () => {
   expect(groupReviewCards([first, second])).toHaveLength(2);
 });
 
-test('saves a correction as a review card', () => {
+test('creates a review card from a correction', () => {
   const card = createFlashcards(
     'one',
     { ...corrected },
@@ -54,8 +71,6 @@ test('saves a correction as a review card', () => {
   )[0]!;
   expect(card.originalText).toBe('I has a apple.');
   expect(card.correctedText).toBe('I have an apple.');
-  expect(saveCards([card])).toBe(true);
-  expect(loadCards()).toEqual([card]);
 });
 
 test.each([
@@ -116,7 +131,7 @@ test('loads previously saved cards and strips obsolete card fields', () => {
       },
     ]),
   );
-  const cards = loadCards();
+  const cards = legacyCards().map(({ card }) => card);
   expect(cards).toHaveLength(2);
   expect(cards[0]).toMatchObject({
     originalText: '',
@@ -154,6 +169,123 @@ test('saves a translated word using the same flashcard function', () => {
     originalText: 'cuillère',
     correctedText: 'spoon',
   });
-  saveCards(cards);
-  expect(loadCards()).toEqual(cards);
+});
+
+test('restores queued changes only for their account', () => {
+  const card = createFlashcards('one', corrected, languageConfig, 'Hello')[0]!;
+  const operations = [
+    { kind: 'save' as const, card },
+    { kind: 'delete' as const, id: 'old' },
+  ];
+  expect(saveOutbox('user-a', operations, 'tab-one')).toBe(true);
+  expect(saveOutbox('user-a', [{ kind: 'delete', id: 'second' }], 'tab-two')).toBe(true);
+  expect(loadOutbox('user-b', 'tab-one')).toEqual([]);
+  expect(loadOutbox('user-a', 'tab-two')).toEqual([{ kind: 'delete', id: 'second' }]);
+  expect(applyPending([{ ...card, id: 'old' }], loadOutbox('user-a', 'tab-one'))).toEqual(
+    [card],
+  );
+  expect(saveOutbox('user-a', [], 'tab-two')).toBe(true);
+  expect(loadOutbox('user-a', 'tab-one')).toEqual(operations);
+});
+
+test('imports confirmed cards without deleting unmatched or subsequently changed legacy data', async () => {
+  global.TextEncoder = TextEncoder as typeof global.TextEncoder;
+  const first = createFlashcards('one', corrected, languageConfig, 'Hello')[0]!;
+  const second = { ...first, id: 'two' };
+  const changed = { ...first, id: 'three' };
+  localStorage.setItem(
+    STUDY_KEY,
+    JSON.stringify([first, second, { ...changed, focus: 'Changed' }]),
+  );
+  const scope: Scope = {
+    userId: 'user-a',
+    queue: [first, second, changed].map((card) => ({ kind: 'import', card, raw: card })),
+    running: false,
+    blocked: false,
+    imported: true,
+    unmatched: [],
+    controller: null,
+  };
+  scope.queue.push({ kind: 'delete', id: 'one' });
+  const client = new QueryClient();
+  jest.mocked(importCards).mockResolvedValue({
+    success: true,
+    userId: 'user-a',
+    importedIds: ['one', 'three'],
+  });
+  await importLegacyBatch(
+    scope,
+    { client, active: { current: 'user-a' } },
+    new AbortController().signal,
+  );
+  expect(JSON.parse(localStorage.getItem(STUDY_KEY)!)).toEqual([
+    second,
+    { ...changed, focus: 'Changed' },
+  ]);
+  expect(scope.queue).toEqual([{ kind: 'delete', id: 'one' }]);
+  expect(client.getQueryData(['cards', 'user-a'])).toEqual([changed]);
+  expect(scope.unmatched.map((item) => item.card.id)).toEqual(['two']);
+});
+
+test('manual import preserves conflicting cards in browser storage', async () => {
+  const card = createFlashcards('one', corrected, languageConfig, 'Hello')[0]!;
+  localStorage.setItem(STUDY_KEY, JSON.stringify([card]));
+  const scope: Scope = {
+    userId: 'user-a',
+    queue: [{ kind: 'claim', card, raw: card }],
+    running: false,
+    blocked: false,
+    imported: true,
+    unmatched: [],
+    controller: null,
+  };
+  jest
+    .mocked(importCards)
+    .mockResolvedValue({ success: true, userId: 'user-a', importedIds: [] });
+  await importLegacyBatch(
+    scope,
+    { client: new QueryClient(), active: { current: 'user-a' } },
+    new AbortController().signal,
+  );
+  expect(jest.mocked(importCards)).toHaveBeenLastCalledWith(
+    'user-a',
+    [card],
+    expect.anything(),
+    true,
+  );
+  expect(JSON.parse(localStorage.getItem(STUDY_KEY)!)).toEqual([card]);
+  expect(scope.queue).toEqual([]);
+});
+
+test('queues a source deletion when cards have not loaded and retries it', async () => {
+  const scope: Scope = {
+    userId: 'user-a',
+    queue: [],
+    running: false,
+    blocked: false,
+    imported: false,
+    unmatched: [],
+    controller: null,
+  };
+  const context = { client: new QueryClient(), active: { current: 'user-a' } };
+  jest.mocked(deleteCardsForMessage).mockRejectedValueOnce(new Error('offline'));
+  removeCardsForMessage(scope, context, 'message-id');
+  await waitFor(() => expect(scope.blocked).toBe(true));
+  expect(scope.queue).toEqual([{ kind: 'deleteSource', sourceMessageId: 'message-id' }]);
+  expect(saveOutbox('user-a', scope.queue, 'tab-one')).toBe(true);
+  const restored = loadOutbox('user-a', 'tab-one');
+  expect(restored).toEqual(scope.queue);
+  const removed = createFlashcards('message-id', corrected, languageConfig, 'Hello')[0]!;
+  expect(applyPending([removed], scope.queue)).toEqual([]);
+  const restoredScope = { ...scope, queue: restored, blocked: false, controller: null };
+  jest
+    .mocked(deleteCardsForMessage)
+    .mockResolvedValueOnce({ success: true, userId: 'user-a', deleted: true });
+  await processQueue(restoredScope, context);
+  expect(restoredScope.queue).toEqual([]);
+  expect(deleteCardsForMessage).toHaveBeenLastCalledWith(
+    'user-a',
+    'message-id',
+    expect.anything(),
+  );
 });

@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { ConversationWelcome } from '@/components/ui/chat/welcome/ConversationWelcome';
 import { LoadingIndicator } from '@/components/ui/feedback/LoadingIndicator';
 import { Message } from '@/components/ui/chat/message/Message';
@@ -37,14 +38,33 @@ function Messages({ state, actions }: ChatConversationProps) {
 }
 
 export function ChatConversation({ state, actions }: ChatConversationProps) {
+  const loadingOlder = useRef<{ chat: string | null; user: string | undefined } | null>(
+    null,
+  );
+
   async function showOlder() {
+    const request = {
+      chat: state.history.id,
+      user: state.auth.session?.user.id,
+    };
+    if (
+      loadingOlder.current?.chat === request.chat &&
+      loadingOlder.current.user === request.user
+    ) {
+      return;
+    }
+    loadingOlder.current = request;
     const container = state.messagesEndRef.current?.closest('main');
     const previousHeight = container?.scrollHeight ?? 0;
     state.preserveScrollRef.current = true;
-    await state.history.loadOlder();
+    const result = await state.history.loadOlder();
+    if (loadingOlder.current !== request) {
+      return;
+    }
+    loadingOlder.current = null;
     requestAnimationFrame(() => {
       state.preserveScrollRef.current = false;
-      if (container) {
+      if (container && result === 'done') {
         container.scrollTop += container.scrollHeight - previousHeight;
       }
     });

@@ -1,14 +1,11 @@
-import { useState, type Dispatch, type SetStateAction } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { translateMessage } from '@/lib/api';
 import type { ChatMessage } from '@/lib/types';
 import type { LanguageConfig } from '@/lib/schemas';
 
-export function useMessageTranslation(
-  message: ChatMessage,
-  config: LanguageConfig,
-  setError: Dispatch<SetStateAction<string>>,
-) {
+export function useMessageTranslation(message: ChatMessage, config: LanguageConfig) {
   const [showTranslation, setShowTranslation] = useState(false);
   const query = useQuery({
     queryKey: [
@@ -35,12 +32,11 @@ export function useMessageTranslation(
       return;
     }
 
-    setError('');
     const result = await query.refetch();
     if (result.data) {
       setShowTranslation(true);
     } else if (result.error) {
-      setError(
+      toast.error(
         result.error instanceof Error
           ? result.error.message
           : 'Translation failed. Please retry.',
@@ -60,7 +56,6 @@ interface CopyOptions {
   message: ChatMessage;
   translation: string | null;
   showTranslation: boolean;
-  setError: Dispatch<SetStateAction<string>>;
 }
 
 export function useMessageCopy(options: CopyOptions) {
@@ -77,9 +72,8 @@ export function useMessageCopy(options: CopyOptions) {
     try {
       await navigator.clipboard.writeText(content);
       setCopied(true);
-      options.setError('');
     } catch {
-      options.setError('Copy failed. Select the text and copy it manually.');
+      toast.error('Copy failed. Select the text and copy it manually.');
     }
   }
 
